@@ -1,0 +1,733 @@
+// =====================================================
+// Prisma Schema: FinLearn Stock Learning Platform (Improved)
+// Database: PostgreSQL
+// Improvements applied:
+//   ✅ Enums for safety (no typos in status/roles/etc.)
+//   ✅ Metrics split into Daily + Quarterly (no 0-hacks)
+//   ✅ CompanyEvent hybrid: key fields as columns + jsonb details for extensibility
+//   ✅ Decimal precision/scale for finance correctness
+//   ✅ UserSectorPreference normalized to Sector (FK)
+//   ✅ Added practical indexes for common queries
+// =====================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// =========================
+// Enums
+// =========================
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PrimaryGoal {
+  LEARN_BASICS
+  VALUE
+  GROWTH
+  DIVIDEND
+  TRADING_EDU
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum WatchlistCreatedFrom {
+  USER
+  ONBOARDING
+}
+
+enum TradeSide {
+  BUY
+  SELL
+}
+
+enum IngestionStatus {
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+enum EventTypeCode {
+  EARNINGS
+  DIVIDEND
+  SPLIT
+  FILING_10Q
+  FILING_10K
+  OTHER
+}
+
+// =========================
+// Core reference tables
+// =========================
+
+model DataProvider {
+  id        BigInt   @id @default(autoincrement())
+  code      String   @unique // finnhub, fmp, polygon, sec, fred
+  name      String
+  website   String?
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  companyProviderMaps  CompanyProviderMap[]
+  pricesDaily          PriceDaily[]
+  financialsQuarterly  FinancialsQuarterly[]
+  metricsDaily         CompanyMetricDaily[]
+  metricsQuarterly     CompanyMetricQuarterly[]
+  companyEvents        CompanyEvent[]
+  newsItems            NewsItem[]
+  ingestionRuns        IngestionRun[]
+
+  @@map("data_providers")
+}
+
+model Sector {
+  id     BigInt @id @default(autoincrement())
+  code   String @unique
+  nameEn String @map("name_en")
+  nameTh String @map("name_th")
+
+  industries Industry[]
+  companies  Company[]
+  userPrefs  UserSectorPreference[]
+
+  @@map("sectors")
+}
+
+model Industry {
+  id       BigInt @id @default(autoincrement())
+  sectorId BigInt @map("sector_id")
+  code     String @unique
+  nameEn   String @map("name_en")
+  nameTh   String @map("name_th")
+
+  sector    Sector    @relation(fields: [sectorId], references: [id])
+  companies Company[]
+
+  @@map("industries")
+}
+
+model Company {
+  id          BigInt  @id @default(autoincrement())
+  ticker      String  @unique
+  name        String
+  exchange    String? // NASDAQ / NYSE
+
+  sectorId    BigInt? @map("sector_id")
+  industryId  BigInt? @map("industry_id")
+
+  description String?
+  website     String?
+  logoUrl     String? @map("logo_url")
+
+  currency    String  @default("USD")
+  cik         String? // SEC mapping
+  isActive    Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sector   Sector?   @relation(fields: [sectorId], references: [id])
+  industry Industry? @relation(fields: [industryId], references: [id])
+
+  providerMaps        CompanyProviderMap[]
+  pricesDaily         PriceDaily[]
+  financialsQuarterly FinancialsQuarterly[]
+  metricsDaily        CompanyMetricDaily[]
+  metricsQuarterly    CompanyMetricQuarterly[]
+  events              CompanyEvent[]
+  companyNews         CompanyNews[]
+  scores              CompanyScore[]
+  watchlistItems      WatchlistItem[]
+  paperTrades         PaperTrade[]
+  portfolioPositions  PortfolioPositionDaily[]
+  ingestionErrors     IngestionError[]
+
+  @@index([sectorId])
+  @@index([industryId])
+  @@map("companies")
+}
+
+model CompanyProviderMap {
+  id             BigInt  @id @default(autoincrement())
+  companyId      BigInt  @map("company_id")
+  providerId     BigInt  @map("provider_id")
+  providerTicker String? @map("provider_ticker")
+  providerSymbol String? @map("provider_symbol")
+  figi           String?
+  isin           String?
+  cusip          String?
+  cik            String?
+  isPrimary      Boolean @default(false) @map("is_primary")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  company  Company      @relation(fields: [companyId], references: [id])
+  provider DataProvider @relation(fields: [providerId], references: [id])
+
+  @@unique([companyId, providerId])
+  @@map("company_provider_map")
+}
+
+// =========================
+// Market data (time series)
+// =========================
+
+model PriceDaily {
+  companyId BigInt   @map("company_id")
+  date      DateTime @db.Date
+
+  open     Decimal? @db.Decimal(18, 6)
+  high     Decimal? @db.Decimal(18, 6)
+  low      Decimal? @db.Decimal(18, 6)
+  close    Decimal  @db.Decimal(18, 6)
+  adjClose Decimal? @db.Decimal(18, 6) @map("adj_close")
+  volume   BigInt?
+
+  providerId BigInt?  @map("provider_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  company  Company        @relation(fields: [companyId], references: [id])
+  provider DataProvider?  @relation(fields: [providerId], references: [id])
+
+  @@id([companyId, date])
+  @@index([date])
+  @@map("prices_daily")
+}
+
+// =========================
+// Fundamentals (Quarterly)
+// =========================
+
+model FinancialsQuarterly {
+  companyId     BigInt @map("company_id")
+  fiscalYear    Int    @map("fiscal_year")
+  fiscalQuarter Int    @map("fiscal_quarter") // 1..4
+  periodEnd     DateTime? @db.Date @map("period_end")
+
+  // Income statement
+  revenue         Decimal? @db.Decimal(24, 2)
+  grossProfit     Decimal? @db.Decimal(24, 2) @map("gross_profit")
+  operatingIncome Decimal? @db.Decimal(24, 2) @map("operating_income")
+  netIncome       Decimal? @db.Decimal(24, 2) @map("net_income")
+  epsBasic        Decimal? @db.Decimal(18, 6) @map("eps_basic")
+  epsDiluted      Decimal? @db.Decimal(18, 6) @map("eps_diluted")
+
+  // Balance sheet
+  totalAssets        Decimal? @db.Decimal(24, 2) @map("total_assets")
+  totalLiabilities   Decimal? @db.Decimal(24, 2) @map("total_liabilities")
+  totalEquity        Decimal? @db.Decimal(24, 2) @map("total_equity")
+  totalDebt          Decimal? @db.Decimal(24, 2) @map("total_debt")
+  cashAndEquivalents Decimal? @db.Decimal(24, 2) @map("cash_and_equivalents")
+
+  // Cash flow
+  cashFromOps       Decimal? @db.Decimal(24, 2) @map("cash_from_ops")
+  cashFromInvesting Decimal? @db.Decimal(24, 2) @map("cash_from_investing")
+  cashFromFinancing Decimal? @db.Decimal(24, 2) @map("cash_from_financing")
+  freeCashFlow      Decimal? @db.Decimal(24, 2) @map("free_cash_flow")
+
+  providerId BigInt?  @map("provider_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  company  Company        @relation(fields: [companyId], references: [id])
+  provider DataProvider?  @relation(fields: [providerId], references: [id])
+
+  @@id([companyId, fiscalYear, fiscalQuarter])
+  @@index([periodEnd])
+  @@map("financials_quarterly")
+}
+
+// =========================
+// Extensible Metrics (split Daily + Quarterly)
+// =========================
+
+model MetricDefinition {
+  id          BigInt  @id @default(autoincrement())
+  code        String  @unique // pe_ttm, roe, rsi_14, beta_1y, market_cap
+  name        String
+  description String?
+  unit        String? // %, USD, ratio, points
+  category    String? // valuation, profitability, risk, technical, growth
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  dailyValues     CompanyMetricDaily[]
+  quarterlyValues CompanyMetricQuarterly[]
+
+  @@map("metric_definitions")
+}
+
+// Daily metrics (e.g., PE TTM, RSI, Beta, Market Cap)
+model CompanyMetricDaily {
+  companyId BigInt   @map("company_id")
+  metricId  BigInt   @map("metric_id")
+  asOfDate  DateTime @db.Date @map("as_of_date")
+  value     Decimal  @db.Decimal(24, 6)
+
+  providerId BigInt?  @map("provider_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company  Company          @relation(fields: [companyId], references: [id])
+  metric   MetricDefinition @relation(fields: [metricId], references: [id])
+  provider DataProvider?    @relation(fields: [providerId], references: [id])
+
+  @@id([companyId, metricId, asOfDate])
+  @@index([companyId, asOfDate])
+  @@map("company_metrics_daily")
+}
+
+// Quarterly metrics (e.g., ROE quarterly, margin quarterly computed)
+model CompanyMetricQuarterly {
+  companyId     BigInt @map("company_id")
+  metricId      BigInt @map("metric_id")
+  fiscalYear    Int    @map("fiscal_year")
+  fiscalQuarter Int    @map("fiscal_quarter")
+  value         Decimal @db.Decimal(24, 6)
+
+  providerId BigInt?  @map("provider_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company  Company          @relation(fields: [companyId], references: [id])
+  metric   MetricDefinition @relation(fields: [metricId], references: [id])
+  provider DataProvider?    @relation(fields: [providerId], references: [id])
+
+  @@id([companyId, metricId, fiscalYear, fiscalQuarter])
+  @@map("company_metrics_quarterly")
+}
+
+// =========================
+// Company Scores (Beginner rating)
+// =========================
+
+model CompanyScore {
+  companyId BigInt   @map("company_id")
+  asOfDate  DateTime @db.Date @map("as_of_date")
+
+  overall       Decimal @db.Decimal(3, 2) // 0-5
+  valueScore    Decimal? @db.Decimal(3, 2) @map("value_score")
+  growthScore   Decimal? @db.Decimal(3, 2) @map("growth_score")
+  strengthScore Decimal? @db.Decimal(3, 2) @map("strength_score")
+  dividendScore Decimal? @db.Decimal(3, 2) @map("dividend_score")
+  riskScore     Decimal? @db.Decimal(3, 2) @map("risk_score")
+
+  beginnerSummary String? @map("beginner_summary")
+  goodFor         Json?   @map("good_for")    // ["ลงทุนระยะยาว", "รับปันผล"]
+  cautionFor      Json?   @map("caution_for") // ["ราคาผันผวนสูง"]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@id([companyId, asOfDate])
+  @@index([asOfDate])
+  @@map("company_scores")
+}
+
+// =========================
+// Events (generic + extensible) - Hybrid
+// =========================
+
+model EventType {
+  id          BigInt       @id @default(autoincrement())
+  code        EventTypeCode @unique
+  name        String
+  description String?
+
+  events CompanyEvent[]
+
+  @@map("event_types")
+}
+
+model CompanyEvent {
+  id          BigInt   @id @default(autoincrement())
+  companyId   BigInt   @map("company_id")
+  eventTypeId BigInt   @map("event_type_id")
+
+  startsAt DateTime? @map("starts_at")
+  endsAt   DateTime? @map("ends_at")
+  date     DateTime? @db.Date
+
+  title   String?
+  details Json?      // jsonb for extra fields
+
+  // Standardized fields (query-friendly)
+  fiscalYear    Int? @map("fiscal_year")
+  fiscalQuarter Int? @map("fiscal_quarter")
+
+  epsEst       Decimal? @db.Decimal(18, 6) @map("eps_est")
+  epsActual    Decimal? @db.Decimal(18, 6) @map("eps_actual")
+  revenueEst   Decimal? @db.Decimal(24, 2) @map("revenue_est")
+  revenueActual Decimal? @db.Decimal(24, 2) @map("revenue_actual")
+
+  secFormType  String? @map("sec_form_type")   // 10-Q / 10-K
+  secFilingUrl String? @map("sec_filing_url")
+
+  providerId BigInt?  @map("provider_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  company   Company       @relation(fields: [companyId], references: [id])
+  eventType EventType     @relation(fields: [eventTypeId], references: [id])
+  provider  DataProvider? @relation(fields: [providerId], references: [id])
+
+  @@index([companyId, date])
+  @@index([eventTypeId, date])
+  @@index([startsAt])
+  @@map("company_events")
+}
+
+// =========================
+// News
+// =========================
+
+model NewsItem {
+  id          BigInt    @id @default(autoincrement())
+  title       String
+  url         String    @unique
+  sourceName  String?   @map("source_name")
+  publishedAt DateTime? @map("published_at")
+  summary     String?
+  imageUrl    String?   @map("image_url")
+
+  providerId BigInt?  @map("provider_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  provider    DataProvider? @relation(fields: [providerId], references: [id])
+  companyNews CompanyNews[]
+
+  @@index([publishedAt])
+  @@map("news_items")
+}
+
+model CompanyNews {
+  companyId BigInt @map("company_id")
+  newsId    BigInt @map("news_id")
+
+  relevanceScore Decimal? @db.Decimal(6, 3) @map("relevance_score")
+
+  company Company  @relation(fields: [companyId], references: [id])
+  news    NewsItem @relation(fields: [newsId], references: [id])
+
+  @@id([companyId, newsId])
+  @@index([newsId])
+  @@map("company_news")
+}
+
+// =========================
+// Users & onboarding
+// =========================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String?  @unique
+  emailVerified DateTime? @map("email_verified")
+  name          String?
+  image         String?
+  passwordHash  String?  @map("password_hash")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  accounts      Account[]
+  sessions      Session[]
+  profile           UserProfile?
+  sectorPreferences UserSectorPreference[]
+  watchlists        Watchlist[]
+  paperPortfolios   PaperPortfolio[]
+  lessonProgress    UserLessonProgress[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model UserProfile {
+  userId String @id @map("user_id")
+
+  // Step 1 (required)
+  displayName     String          @map("display_name")
+  experienceLevel ExperienceLevel @map("experience_level")
+  primaryGoal     PrimaryGoal     @map("primary_goal")
+
+  // Step 2 (optional)
+  riskLevel             RiskLevel? @map("risk_level")
+  simulatorStartingCash Decimal?   @db.Decimal(24, 2) @map("simulator_starting_cash")
+
+  onboardingStep        Int       @default(1) @map("onboarding_step")
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_profiles")
+}
+
+model UserSectorPreference {
+  userId   String @map("user_id")
+  sectorId BigInt @map("sector_id")
+  weight   Int    @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  sector Sector @relation(fields: [sectorId], references: [id])
+
+  @@id([userId, sectorId])
+  @@map("user_sector_preferences")
+}
+
+// =========================
+// Watchlists
+// =========================
+
+model Watchlist {
+  id          BigInt   @id @default(autoincrement())
+  userId      String   @map("user_id")
+  name        String   @default("My Watchlist")
+  visibility  Visibility @default(PRIVATE)
+  createdFrom WatchlistCreatedFrom @default(USER) @map("created_from")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User            @relation(fields: [userId], references: [id])
+  items WatchlistItem[]
+
+  @@index([userId])
+  @@map("watchlists")
+}
+
+model WatchlistItem {
+  watchlistId BigInt   @map("watchlist_id")
+  companyId   BigInt   @map("company_id")
+  addedAt     DateTime @default(now()) @map("added_at")
+
+  watchlist Watchlist @relation(fields: [watchlistId], references: [id])
+  company   Company   @relation(fields: [companyId], references: [id])
+
+  @@id([watchlistId, companyId])
+  @@index([companyId])
+  @@map("watchlist_items")
+}
+
+// =========================
+// Portfolio Simulator (paper trading)
+// =========================
+
+model PaperPortfolio {
+  id           BigInt  @id @default(autoincrement())
+  userId       String  @map("user_id")
+  name         String  @default("Paper Portfolio")
+  baseCurrency String  @default("USD") @map("base_currency")
+  startingCash Decimal @db.Decimal(24, 2) @default(100000) @map("starting_cash")
+  visibility   Visibility @default(PRIVATE)
+  isDefault    Boolean @default(true) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user            User                    @relation(fields: [userId], references: [id])
+  trades          PaperTrade[]
+  valueDailies    PortfolioValueDaily[]
+  positionDailies PortfolioPositionDaily[]
+
+  @@index([userId])
+  @@map("paper_portfolios")
+}
+
+model PaperTrade {
+  id          BigInt   @id @default(autoincrement())
+  portfolioId BigInt   @map("portfolio_id")
+  companyId   BigInt   @map("company_id")
+
+  side      TradeSide
+  tradeDate DateTime  @db.Date @map("trade_date")
+
+  quantity Decimal @db.Decimal(24, 6)
+  price    Decimal @db.Decimal(18, 6)
+  fees     Decimal @db.Decimal(24, 2) @default(0)
+  note     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  portfolio PaperPortfolio @relation(fields: [portfolioId], references: [id])
+  company   Company        @relation(fields: [companyId], references: [id])
+
+  @@index([portfolioId, tradeDate])
+  @@index([companyId])
+  @@map("paper_trades")
+}
+
+model PortfolioValueDaily {
+  portfolioId BigInt   @map("portfolio_id")
+  date        DateTime @db.Date
+
+  cashValue      Decimal @db.Decimal(24, 2) @map("cash_value")
+  positionsValue Decimal @db.Decimal(24, 2) @map("positions_value")
+  totalValue     Decimal @db.Decimal(24, 2) @map("total_value")
+  dailyReturnPct Decimal? @db.Decimal(10, 6) @map("daily_return_pct")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  portfolio PaperPortfolio @relation(fields: [portfolioId], references: [id])
+
+  @@id([portfolioId, date])
+  @@map("portfolio_value_daily")
+}
+
+model PortfolioPositionDaily {
+  portfolioId BigInt   @map("portfolio_id")
+  companyId   BigInt   @map("company_id")
+  date        DateTime @db.Date
+
+  quantity     Decimal  @db.Decimal(24, 6)
+  avgCost      Decimal? @db.Decimal(18, 6) @map("avg_cost")
+  marketPrice  Decimal? @db.Decimal(18, 6) @map("market_price")
+  marketValue  Decimal? @db.Decimal(24, 2) @map("market_value")
+  unrealizedPnl Decimal? @db.Decimal(24, 2) @map("unrealized_pnl")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  portfolio PaperPortfolio @relation(fields: [portfolioId], references: [id])
+  company   Company        @relation(fields: [companyId], references: [id])
+
+  @@id([portfolioId, companyId, date])
+  @@index([portfolioId, date])
+  @@map("portfolio_positions_daily")
+}
+
+// =========================
+// Education
+// =========================
+
+model GlossaryTerm {
+  id         BigInt  @id @default(autoincrement())
+  term       String  @unique
+  definition String
+  example    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("glossary_terms")
+}
+
+model Lesson {
+  id               BigInt  @id @default(autoincrement())
+  slug             String  @unique
+  title            String
+  contentMd        String  @map("content_md")
+  level            String? // beginner / intermediate
+  category         String? // fundamental, technical, risk-mgmt
+  sortOrder        Int     @default(0) @map("sort_order")
+  estimatedMinutes Int?    @map("estimated_minutes")
+  isPublished      Boolean @default(false) @map("is_published")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  progress UserLessonProgress[]
+
+  @@index([isPublished, category, sortOrder])
+  @@map("lessons")
+}
+
+model UserLessonProgress {
+  userId      String @map("user_id")
+  lessonId    BigInt @map("lesson_id")
+  status      String @default("NOT_STARTED") // IN_PROGRESS / COMPLETED
+  progressPct Int    @default(0) @map("progress_pct")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@id([userId, lessonId])
+  @@map("user_lesson_progress")
+}
+
+// =========================
+// Ingestion monitoring
+// =========================
+
+model IngestionRun {
+  id           BigInt    @id @default(autoincrement())
+  providerId   BigInt    @map("provider_id")
+  jobName      String    @map("job_name")
+  startedAt    DateTime? @map("started_at")
+  finishedAt   DateTime? @map("finished_at")
+  status       IngestionStatus
+  rowsUpserted Int?      @map("rows_upserted")
+  notes        String?
+
+  provider DataProvider     @relation(fields: [providerId], references: [id])
+  errors   IngestionError[]
+
+  @@index([providerId, jobName])
+  @@map("ingestion_runs")
+}
+
+model IngestionError {
+  id           BigInt   @id @default(autoincrement())
+  runId        BigInt   @map("run_id")
+  companyId    BigInt?  @map("company_id")
+  errorMessage String   @map("error_message")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  run     IngestionRun @relation(fields: [runId], references: [id])
+  company Company?     @relation(fields: [companyId], references: [id])
+
+  @@index([runId])
+  @@map("ingestion_errors")
+}
