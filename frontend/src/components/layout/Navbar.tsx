@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Search, Menu, X, TrendingUp, BookOpen, Briefcase, LogIn, LogOut, User } from 'lucide-react';
+import { Search, Menu, X, TrendingUp, BookOpen, Briefcase, LogIn, LogOut, User, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -146,6 +146,22 @@ export default function Navbar() {
                                                 {session.user.email}
                                             </p>
                                         </div>
+                                        <Link
+                                            href="/settings"
+                                            onClick={() => setShowUserMenu(false)}
+                                            style={{
+                                                width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+                                                padding: '8px 12px', borderRadius: '8px',
+                                                background: 'none', textDecoration: 'none',
+                                                color: 'var(--text-secondary)',
+                                                fontSize: '0.8rem', fontWeight: 500,
+                                                transition: 'background 0.2s',
+                                            }}
+                                            onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                                            onMouseOut={e => (e.currentTarget.style.background = 'none')}
+                                        >
+                                            <Settings size={16} /> ตั้งค่าบัญชี
+                                        </Link>
                                         <button
                                             onClick={handleSignOut}
                                             style={{
@@ -225,6 +241,17 @@ export default function Navbar() {
                                             {session.user.name || session.user.email}
                                         </span>
                                     </div>
+                                    <Link
+                                        href="/settings"
+                                        onClick={() => setIsOpen(false)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '8px 0', textDecoration: 'none',
+                                            color: 'var(--text-secondary)', fontSize: '0.875rem',
+                                        }}
+                                    >
+                                        <Settings size={16} /> ตั้งค่าบัญชี
+                                    </Link>
                                     <button
                                         onClick={handleSignOut}
                                         style={{

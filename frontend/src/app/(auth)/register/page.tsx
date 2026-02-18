@@ -55,7 +55,7 @@ export default function RegisterPage() {
                 // Registration succeeded but auto-login failed — redirect to login
                 window.location.href = '/login';
             } else {
-                window.location.href = '/';
+                window.location.href = '/onboarding';
             }
         } catch {
             setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
@@ -65,7 +65,7 @@ export default function RegisterPage() {
     };
 
     const handleGoogleLogin = () => {
-        signIn('google', { callbackUrl: '/' });
+        signIn('google', { callbackUrl: '/onboarding' });
     };
 
     return (

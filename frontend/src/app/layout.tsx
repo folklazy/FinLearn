@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AuthProvider from "@/components/providers/AuthProvider";
+import OnboardingGuard from "@/components/providers/OnboardingGuard";
 
 export const metadata: Metadata = {
   title: "FinLearn — เรียนรู้การลงทุนอย่างมั่นใจ",
@@ -18,11 +19,13 @@ export default function RootLayout({
     <html lang="th">
       <body>
         <AuthProvider>
-          <Navbar />
-          <main style={{ minHeight: 'calc(100vh - 64px)' }}>
-            {children}
-          </main>
-          <Footer />
+          <OnboardingGuard>
+            <Navbar />
+            <main style={{ minHeight: 'calc(100vh - 64px)' }}>
+              {children}
+            </main>
+            <Footer />
+          </OnboardingGuard>
         </AuthProvider>
       </body>
     </html>
