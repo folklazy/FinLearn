@@ -511,6 +511,11 @@ model UserProfile {
   onboardingStep        Int       @default(1) @map("onboarding_step")
   onboardingCompletedAt DateTime? @map("onboarding_completed_at")
 
+  // Preferences
+  language           String  @default("th") // th, en
+  displayCurrency    String  @default("USD") @map("display_currency") // USD, THB
+  emailNotifications Boolean @default(true) @map("email_notifications")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
