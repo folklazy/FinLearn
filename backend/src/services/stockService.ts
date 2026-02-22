@@ -96,10 +96,11 @@ export class StockService {
         // Phase 2: Technical indicators from Twelve Data
         const technicals = await twelveData.getAllTechnicals(symbol, price).catch(() => ({ ma50: 'above' as const, ma200: 'above' as const, rsi: 50, rsiSignal: 'neutral' as const, macd: 'neutral' as const, overallScore: 50 }));
 
-        // Parse 52-week range — FMP range string or Finnhub metrics
-        const rangeParts = (fmpProfile?.range || '').split('-').map(s => parseFloat(s.trim()));
-        const week52Low  = rangeParts[0] || finnhubFinancials?.['52WeekLow']  || 0;
-        const week52High = rangeParts[1] || finnhubFinancials?.['52WeekHigh'] || 0;
+        // Parse 52-week range — FMP "low-high" string or Finnhub metrics
+        const rangeStr = fmpProfile?.range || '';
+        const dashIdx = rangeStr.lastIndexOf('-');
+        const week52Low  = (dashIdx > 0 ? parseFloat(rangeStr.slice(0, dashIdx)) : NaN) || finnhubFinancials?.['52WeekLow']  || 0;
+        const week52High = (dashIdx > 0 ? parseFloat(rangeStr.slice(dashIdx + 1)) : NaN) || finnhubFinancials?.['52WeekHigh'] || 0;
 
         // Build price history — FMP first, Yahoo Finance as fallback
         let history: PricePoint[];
@@ -157,7 +158,6 @@ export class StockService {
 
         // Extract metrics — FMP (decimal) → Finnhub (percentage) → Yahoo Finance (percentage)
         // NOTE: FMP ratios are decimals, Finnhub & Yahoo are percentages
-        const hasFmpMetrics = !!fmpMetrics;
         const pe = fmpMetrics?.peRatioTTM ?? (finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null);
         const roeRaw = (fmpMetrics?.roeTTM != null ? fmpMetrics.roeTTM * 100 : null) ?? finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0;
         const profitMarginRaw = fmpMetrics?.netProfitMarginTTM ?? finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0;
