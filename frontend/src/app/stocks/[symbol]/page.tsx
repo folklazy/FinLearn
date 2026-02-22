@@ -367,9 +367,9 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     {[
                         { label: 'รายได้ต่อปี', value: keyMetrics.revenue != null ? formatLargeNumber(keyMetrics.revenue) : 'N/A' },
                         { label: 'กำไรสุทธิ', value: keyMetrics.netIncome != null ? formatLargeNumber(keyMetrics.netIncome) : 'N/A' },
-                        { label: 'อัตรากำไรสุทธิ', value: `${keyMetrics.profitMargin}%`, color: keyMetrics.profitMargin > 20 ? 'var(--success)' : 'var(--warning)' },
+                        { label: 'อัตรากำไรสุทธิ', value: keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A', color: keyMetrics.profitMargin > 20 ? 'var(--success)' : keyMetrics.profitMargin > 0 ? 'var(--warning)' : undefined },
                         { label: 'หนี้ต่อทุน (D/E)', value: `${keyMetrics.debtToEquity}%`, color: keyMetrics.debtToEquity > 150 ? 'var(--danger)' : 'var(--success)' },
-                        { label: 'ROE', value: `${keyMetrics.roe}%` },
+                        { label: 'ROE', value: keyMetrics.roe ? `${keyMetrics.roe}%` : 'N/A' },
                     ].map((item, i) => (
                         <div key={i} className="metric-card">
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>{item.label}</div>
@@ -678,7 +678,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 <td style={{ padding: '12px 16px', fontWeight: 700 }}>{profile.symbol} ⭐</td>
                                 <td style={{ padding: '12px 16px' }}>{formatLargeNumber(profile.marketCap)}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.pe?.toFixed(1) ?? 'N/A'}</td>
-                                <td style={{ padding: '12px 16px' }}>{keyMetrics.profitMargin}%</td>
+                                <td style={{ padding: '12px 16px' }}>{keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A'}</td>
                                 <td style={{ padding: '12px 16px' }} className={getPriceColor(keyMetrics.revenueGrowth)}>{formatPercent(keyMetrics.revenueGrowth)}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.dividendYield ? `${keyMetrics.dividendYield}%` : '—'}</td>
                             </tr>
