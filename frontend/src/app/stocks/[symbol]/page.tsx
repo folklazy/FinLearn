@@ -341,7 +341,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 <span className="tooltip-content">ราคาหุ้น ÷ กำไรต่อหุ้น ยิ่งต่ำยิ่งถูก</span>
                             </span>
                         </div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{keyMetrics.pe?.toFixed(1) ?? 'N/A'}</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{keyMetrics.pe ?? 'N/A'}</div>
                         {keyMetrics.peIndustryAvg && (
                             <div style={{ fontSize: '0.7rem', color: keyMetrics.pe && keyMetrics.pe > keyMetrics.peIndustryAvg ? 'var(--warning)' : 'var(--success)' }}>
                                 เฉลี่ยอุตสาหกรรม: {keyMetrics.peIndustryAvg}
@@ -350,7 +350,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
                     <div className="metric-card">
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>P/B Ratio</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{keyMetrics.pb?.toFixed(1) ?? 'N/A'}</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{keyMetrics.pb ?? 'N/A'}</div>
                     </div>
                     <div className="metric-card">
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>เงินปันผล (Yield)</div>
@@ -677,7 +677,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(99,102,241,0.08)' }}>
                                 <td style={{ padding: '12px 16px', fontWeight: 700 }}>{profile.symbol} ⭐</td>
                                 <td style={{ padding: '12px 16px' }}>{formatLargeNumber(profile.marketCap)}</td>
-                                <td style={{ padding: '12px 16px' }}>{keyMetrics.pe?.toFixed(1) ?? 'N/A'}</td>
+                                <td style={{ padding: '12px 16px' }}>{keyMetrics.pe ?? 'N/A'}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A'}</td>
                                 <td style={{ padding: '12px 16px' }} className={getPriceColor(keyMetrics.revenueGrowth)}>{formatPercent(keyMetrics.revenueGrowth)}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.dividendYield ? `${keyMetrics.dividendYield}%` : '—'}</td>
@@ -690,7 +690,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                     <td style={{ padding: '12px 16px', fontWeight: 600 }}>{c.symbol}</td>
                                     <td style={{ padding: '12px 16px' }}>{formatLargeNumber(c.marketCap)}</td>
                                     <td style={{ padding: '12px 16px' }}>{c.pe?.toFixed(1) ?? 'N/A'}</td>
-                                    <td style={{ padding: '12px 16px' }}>{c.profitMargin}%</td>
+                                    <td style={{ padding: '12px 16px' }}>{c.profitMargin ? `${c.profitMargin}%` : 'N/A'}</td>
                                     <td style={{ padding: '12px 16px' }} className={getPriceColor(c.revenueGrowth)}>{formatPercent(c.revenueGrowth)}</td>
                                     <td style={{ padding: '12px 16px' }}>{c.dividendYield ? `${c.dividendYield}%` : '—'}</td>
                                 </tr>
