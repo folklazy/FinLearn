@@ -161,6 +161,10 @@ export async function searchStocks(query: string, limit = 10): Promise<FMPSearch
     return (await get<FMPSearchResult[]>('/search-name', { query, limit: String(limit) })) ?? [];
 }
 
+export async function searchBySymbol(query: string, limit = 10): Promise<FMPSearchResult[]> {
+    return (await get<FMPSearchResult[]>('/search', { query, limit: String(limit) })) ?? [];
+}
+
 // ── Batch profiles (for listing pages) ──
 // FMP /stable/profile does NOT support comma-separated symbols, so we fetch individually in parallel
 export async function getBatchProfiles(symbols: string[]): Promise<FMPProfile[]> {

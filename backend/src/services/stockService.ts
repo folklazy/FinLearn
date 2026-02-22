@@ -305,7 +305,8 @@ export class StockService {
     }
 
     /**
-     * Search stocks — blends S&P 500 local list + FMP API, sorted by relevance
+     * Search stocks — blends S&P 500 local list + FMP name search + FMP symbol search + Finnhub search
+     * All sources run in parallel for speed; results are merged, deduped, and ranked
      */
     async searchStocks(query: string): Promise<SearchResult[]> {
         const q = query.trim().toLowerCase();
@@ -319,13 +320,12 @@ export class StockService {
             if (sym.startsWith(q)) return 85;
             if (nm.startsWith(q)) return 70;
             if (sym.includes(q)) return 50;
-            if (nm.includes(q)) return 30;
-            // word-boundary match in name
             if (nm.split(/\s+/).some(w => w.startsWith(q))) return 40;
+            if (nm.includes(q)) return 30;
             return 0;
         };
 
-        // ── Local S&P 500 search ──
+        // ── Local S&P 500 search (instant, no API call) ──
         const localResults: SearchResult[] = SP500_CONSTITUENTS
             .filter(s => score(s.symbol, s.name) > 0)
             .map(s => ({
@@ -336,41 +336,53 @@ export class StockService {
                 logo: `https://financialmodelingprep.com/image-stock/${s.symbol}.png`,
             }));
 
-        // ── FMP API search (runs in parallel with local) ──
-        let apiResults: SearchResult[] = [];
-        try {
-            const results = await fmp.searchStocks(query, 25);
-            apiResults = results.map(r => ({
-                symbol: r.symbol,
-                name: r.name,
-                sector: '',
-                exchange: r.exchangeShortName || r.stockExchange || '',
-                logo: `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
-            }));
-        } catch (err) {
-            console.warn('[StockService] Search API error:', (err as Error).message);
-        }
+        // ── Three API sources in parallel ──
+        const [fmpNameResults, fmpSymResults, finnhubResults] = await Promise.all([
+            fmp.searchStocks(query, 15).catch(() => []),
+            fmp.searchBySymbol(query, 15).catch(() => []),
+            finnhub.searchSymbols(query).catch(() => []),
+        ]);
 
-        // ── Merge: FMP first (has exchange detail), then fill with local ──
+        // Normalize FMP results
+        const fromFmp = [...fmpNameResults, ...fmpSymResults].map(r => ({
+            symbol: r.symbol,
+            name: r.name,
+            sector: '',
+            exchange: r.exchangeShortName || r.stockExchange || '',
+            logo: `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
+        }));
+
+        // Normalize Finnhub results
+        const fromFinnhub: SearchResult[] = finnhubResults.map(r => ({
+            symbol: r.symbol,
+            name: r.description,
+            sector: '',
+            exchange: '',
+            logo: `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
+        }));
+
+        // ── Merge all sources (dedup by symbol) ──
         const seen = new Set<string>();
         const merged: SearchResult[] = [];
-        for (const r of [...apiResults, ...localResults]) {
-            if (!seen.has(r.symbol)) {
-                seen.add(r.symbol);
-                // Enrich exchange from local if API didn't have sector
-                if (!r.sector) {
-                    const local = localResults.find(l => l.symbol === r.symbol);
-                    if (local) { r.sector = local.sector; r.exchange = local.exchange; }
-                }
-                merged.push(r);
+        const sp500Map = new Map(SP500_CONSTITUENTS.map(s => [s.symbol, s]));
+
+        for (const r of [...fromFmp, ...fromFinnhub, ...localResults]) {
+            const sym = r.symbol.toUpperCase();
+            if (seen.has(sym)) continue;
+            seen.add(sym);
+            // Enrich with S&P 500 data if available
+            const local = sp500Map.get(sym);
+            if (local) {
+                if (!r.sector) r.sector = local.sector;
+                if (!r.exchange) r.exchange = 'NASDAQ';
             }
+            merged.push(r);
         }
 
         // ── Sort by relevance (S&P 500 stocks get +10 boost) ──
-        const sp500Symbols = new Set(SP500_CONSTITUENTS.map(s => s.symbol));
         merged.sort((a, b) => {
-            const sa = score(a.symbol, a.name) + (sp500Symbols.has(a.symbol) ? 10 : 0);
-            const sb = score(b.symbol, b.name) + (sp500Symbols.has(b.symbol) ? 10 : 0);
+            const sa = score(a.symbol, a.name) + (sp500Map.has(a.symbol) ? 10 : 0);
+            const sb = score(b.symbol, b.name) + (sp500Map.has(b.symbol) ? 10 : 0);
             return sb - sa;
         });
 

@@ -123,6 +123,19 @@ export async function getBasicFinancials(symbol: string): Promise<FinnhubBasicFi
     return data?.metric ?? null;
 }
 
+// ── Symbol Search ──
+export interface FinnhubSearchResult {
+    description: string; // company name
+    displaySymbol: string;
+    symbol: string;
+    type: string;
+}
+
+export async function searchSymbols(query: string): Promise<FinnhubSearchResult[]> {
+    const data = await get<{ count: number; result: FinnhubSearchResult[] }>('/search', { q: query });
+    return (data?.result ?? []).filter(r => r.type === 'Common Stock').slice(0, 15);
+}
+
 // ── News Sentiment ──
 export function classifySentiment(headline: string): 'positive' | 'negative' | 'neutral' {
     const lower = headline.toLowerCase();

@@ -100,7 +100,10 @@ export const fmp = {
         cachedArray('fmp', 'history', symbol, () => rawFmp.getHistoricalPrices(symbol, days), symbol),
 
     searchStocks: (query: string, limit = 10) =>
-        cachedArray('fmp', 'search', query.toLowerCase(), () => rawFmp.searchStocks(query, limit)),
+        cachedArray('fmp', 'search', `name:${query.toLowerCase()}`, () => rawFmp.searchStocks(query, limit)),
+
+    searchBySymbol: (query: string, limit = 10) =>
+        cachedArray('fmp', 'search', `sym:${query.toLowerCase()}`, () => rawFmp.searchBySymbol(query, limit)),
 
     // Batch profiles: each individual profile is cached separately via getProfile
     getBatchProfiles: async (symbols: string[]) => {
@@ -135,6 +138,9 @@ export const finnhub = {
 
     getEarningsCalendar: (symbol: string) =>
         cachedArray('finnhub', 'financials', `earnings:${symbol}`, () => rawFinnhub.getEarningsCalendar(symbol), symbol),
+
+    searchSymbols: (query: string) =>
+        cachedArray('finnhub', 'search', query.toLowerCase(), () => rawFinnhub.searchSymbols(query)),
 
     classifySentiment: rawFinnhub.classifySentiment,
 };
