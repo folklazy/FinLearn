@@ -234,10 +234,10 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                     {[
                         { label: 'มูลค่าตลาด', value: formatLargeNumber(profile.marketCap), note: profile.marketCapLabel },
-                        { label: 'CEO', value: profile.ceo },
-                        { label: 'พนักงาน', value: profile.employees.toLocaleString() + ' คน' },
-                        { label: 'ก่อตั้ง', value: profile.founded },
-                        { label: 'สำนักงานใหญ่', value: profile.headquarters },
+                        { label: 'CEO', value: profile.ceo && profile.ceo !== 'N/A' ? profile.ceo : 'ไม่มีข้อมูล' },
+                        { label: 'พนักงาน', value: profile.employees > 0 ? profile.employees.toLocaleString() + ' คน' : 'ไม่มีข้อมูล' },
+                        { label: 'ก่อตั้ง', value: profile.founded && profile.founded !== 'N/A' ? profile.founded : 'ไม่มีข้อมูล' },
+                        { label: 'สำนักงานใหญ่', value: profile.headquarters || 'ไม่มีข้อมูล' },
                     ].map((item, i) => (
                         <div key={i} className="metric-card">
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>{item.label}</div>
@@ -279,7 +279,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </ResponsiveContainer>
                 ) : (
                     <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลกราฟราคาไม่พร้อมใช้งาน (ต้องการ FMP Premium)</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลกราฟราคาไม่พร้อมใช้งานสำหรับหุ้นนี้</p>
                     </div>
                 )}
 
@@ -365,8 +365,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--success)', marginBottom: '12px' }}>💪 ความแข็งแกร่ง</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                     {[
-                        { label: 'รายได้ต่อปี', value: formatLargeNumber(keyMetrics.revenue) },
-                        { label: 'กำไรสุทธิ', value: formatLargeNumber(keyMetrics.netIncome) },
+                        { label: 'รายได้ต่อปี', value: keyMetrics.revenue != null ? formatLargeNumber(keyMetrics.revenue) : 'N/A' },
+                        { label: 'กำไรสุทธิ', value: keyMetrics.netIncome != null ? formatLargeNumber(keyMetrics.netIncome) : 'N/A' },
                         { label: 'อัตรากำไรสุทธิ', value: `${keyMetrics.profitMargin}%`, color: keyMetrics.profitMargin > 20 ? 'var(--success)' : 'var(--warning)' },
                         { label: 'หนี้ต่อทุน (D/E)', value: `${keyMetrics.debtToEquity}%`, color: keyMetrics.debtToEquity > 150 ? 'var(--danger)' : 'var(--success)' },
                         { label: 'ROE', value: `${keyMetrics.roe}%` },
@@ -421,7 +421,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
                 ) : (
                     <div style={{ padding: '24px', background: 'var(--bg-secondary)', borderRadius: '12px', textAlign: 'center' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลการเติบโตไม่พร้อมใช้งาน (ต้องการ FMP Premium)</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลการเติบโตไม่พร้อมใช้งานสำหรับหุ้นนี้</p>
                     </div>
                 )}
             </section>

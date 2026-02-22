@@ -140,22 +140,28 @@ export class StockService {
         }
 
         // Extract metrics
+        // NOTE: FMP returns ratios as decimals (0.15 = 15%), Finnhub returns as percentages (15.0 = 15%)
+        const hasFmpMetrics = !!fmpMetrics;
         const pe = fmpMetrics?.peRatioTTM ?? (finnhubFinancials?.peNormalizedAnnual ?? null);
-        const roe = fmpMetrics?.roeTTM ?? (finnhubFinancials?.roeTTM ?? 0);
-        const profitMargin = fmpMetrics?.netProfitMarginTTM ?? (finnhubFinancials?.netProfitMarginTTM ?? 0);
-        const divYield = fmpMetrics?.dividendYieldTTM ?? (finnhubFinancials?.dividendYieldIndicatedAnnual ?? 0);
+        const roeRaw = hasFmpMetrics ? (fmpMetrics!.roeTTM * 100) : (finnhubFinancials?.roeTTM ?? 0);
+        const profitMarginRaw = hasFmpMetrics ? fmpMetrics!.netProfitMarginTTM : (finnhubFinancials?.netProfitMarginTTM ?? 0);
+        const divYieldRaw = hasFmpMetrics ? (fmpMetrics!.dividendYieldTTM * 100) : (finnhubFinancials?.dividendYieldIndicatedAnnual ?? 0);
         const debtToEquity = fmpMetrics?.debtToEquityTTM ?? (finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? 0);
         const currentRatio = fmpMetrics?.currentRatioTTM ?? (finnhubFinancials?.currentRatioQuarterly ?? 0);
         const pb = fmpMetrics?.priceToBookRatioTTM ?? (finnhubFinancials?.pbAnnual ?? null);
         const eps = fmpIncome[0]?.epsdiluted ?? 0;
-        const epsGrowth = fmpMetrics?.epsGrowth ?? (finnhubFinancials?.epsGrowth5Y ?? 0);
-        const revenueGrowth = fmpMetrics?.revenueGrowth ?? (finnhubFinancials?.revenueGrowth5Y ?? 0);
+        const epsGrowthRaw = hasFmpMetrics ? (fmpMetrics!.epsGrowth * 100) : (finnhubFinancials?.epsGrowth5Y ?? 0);
+        const revenueGrowthRaw = hasFmpMetrics ? (fmpMetrics!.revenueGrowth * 100) : (finnhubFinancials?.revenueGrowth5Y ?? 0);
 
-        // Calculate scores
+        // Finnhub 10-day avg volume (in millions) as fallback
+        const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];
+        const volumeFallback = finnhubAvgVol ? Math.round(finnhubAvgVol * 1e6) : 0;
+
+        // Calculate scores (all values are now in percentage form)
         const valueScore = pe ? Math.max(1, Math.min(5, 5 - (pe - 15) / 10)) : 3;
-        const growthScore = Math.max(1, Math.min(5, 2.5 + revenueGrowth / 10));
-        const strengthScore = Math.max(1, Math.min(5, 2 + profitMargin / 10));
-        const dividendScore = Math.max(1, Math.min(5, 1 + divYield * 20));
+        const growthScore = Math.max(1, Math.min(5, 2.5 + revenueGrowthRaw / 10));
+        const strengthScore = Math.max(1, Math.min(5, 2 + profitMarginRaw / 10));
+        const dividendScore = Math.max(1, Math.min(5, 1 + divYieldRaw / 5));
         const riskScore = Math.max(1, Math.min(5, 4 - debtToEquity / 100));
         const overall = parseFloat(((valueScore + growthScore + strengthScore + dividendScore + riskScore) / 5).toFixed(1));
 
@@ -189,8 +195,8 @@ export class StockService {
                 high: finnhubQuote?.h ?? price,
                 low: finnhubQuote?.l ?? price,
                 open: finnhubQuote?.o ?? price,
-                volume: fmpProfile?.volume ?? 0,
-                avgVolume: fmpProfile?.averageVolume ?? 0,
+                volume: fmpProfile?.volume || volumeFallback,
+                avgVolume: fmpProfile?.averageVolume || volumeFallback,
                 week52High,
                 week52Low,
                 history,
@@ -199,17 +205,17 @@ export class StockService {
                 pe,
                 peIndustryAvg: pe ? parseFloat((pe * 0.9).toFixed(1)) : null,
                 pb,
-                dividendYield: divYield > 0 ? parseFloat((divYield * 100).toFixed(2)) : null,
+                dividendYield: divYieldRaw > 0 ? parseFloat(divYieldRaw.toFixed(2)) : null,
                 dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null),
-                revenue: fmpIncome[0]?.revenue ?? 0,
-                revenueGrowth: parseFloat((revenueGrowth * 100).toFixed(1)),
-                netIncome: fmpIncome[0]?.netIncome ?? 0,
-                profitMargin: parseFloat(profitMargin.toFixed(2)),
+                revenue: fmpIncome[0]?.revenue ?? null,
+                revenueGrowth: parseFloat(revenueGrowthRaw.toFixed(1)),
+                netIncome: fmpIncome[0]?.netIncome ?? null,
+                profitMargin: parseFloat(profitMarginRaw.toFixed(2)),
                 debtToEquity: parseFloat(debtToEquity.toFixed(1)),
                 currentRatio: parseFloat(currentRatio.toFixed(2)),
-                roe: parseFloat((roe * 100).toFixed(1)),
+                roe: parseFloat(roeRaw.toFixed(1)),
                 eps,
-                epsGrowth: parseFloat((epsGrowth * 100).toFixed(1)),
+                epsGrowth: parseFloat(epsGrowthRaw.toFixed(1)),
                 revenueHistory,
                 epsHistory,
             },
@@ -243,7 +249,7 @@ export class StockService {
             signals: {
                 technical: technicals,
                 fundamental: {
-                    earningsGrowth: epsGrowth > 0 ? 'positive' : epsGrowth < 0 ? 'negative' : 'flat',
+                    earningsGrowth: epsGrowthRaw > 0 ? 'positive' : epsGrowthRaw < 0 ? 'negative' : 'flat',
                     peVsAvg: pe ? (pe < 20 ? 'undervalued' : pe > 30 ? 'overvalued' : 'fair') : 'fair',
                     cashPosition: currentRatio > 1.5 ? 'strong' : currentRatio > 1 ? 'moderate' : 'weak',
                     debtLevel: debtToEquity < 50 ? 'low' : debtToEquity < 150 ? 'moderate' : 'high',
@@ -266,7 +272,7 @@ export class StockService {
                     risk: parseFloat(riskScore.toFixed(1)),
                 },
             },
-            beginnerTips: this.generateTips(overall, pe, divYield, debtToEquity, profitMargin),
+            beginnerTips: this.generateTips(overall, pe, divYieldRaw, debtToEquity, profitMarginRaw),
         };
 
         return data;

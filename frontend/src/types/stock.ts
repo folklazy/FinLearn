@@ -64,9 +64,9 @@ export interface KeyMetrics {
     dividendPerShare: number | null;
 
     // Strength
-    revenue: number;
+    revenue: number | null;
     revenueGrowth: number;
-    netIncome: number;
+    netIncome: number | null;
     profitMargin: number;
     debtToEquity: number;
     currentRatio: number;
