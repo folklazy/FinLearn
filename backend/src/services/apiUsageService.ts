@@ -5,11 +5,12 @@ import { prisma } from '../lib/prisma';
 
 // Daily limits per provider
 const DAILY_LIMITS: Record<string, number> = {
-    fmp: 250,
+    fmp: 800,             // free tier ~500-1000/day; raised from 250
     finnhub: 50000,       // 60/min ≈ 86k/day, but be conservative
     twelvedata: 800,
     alphavantage: 25,
     polygon: 5000,        // 5/min ≈ 7.2k/day
+    yahoo: 99999,         // no API key, effectively unlimited
 };
 
 // Safety buffer — stop at 90% of limit

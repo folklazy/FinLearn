@@ -36,7 +36,7 @@ export class StockService {
                 return data;
             }
         } catch (err) {
-            console.warn(`[StockService] API error for ${sym}:`, (err as Error).message);
+            console.log(`[StockService] ERROR for ${sym}:`, (err as Error).message, (err as Error).stack?.split('\n')[1]);
         }
 
         // 3. Fallback to mock
@@ -56,20 +56,20 @@ export class StockService {
         // Phase 1: Parallel fetch from all providers
         const [fmpProfile, finnhubProfile, yahooProfile, finnhubQuote, fmpMetrics, fmpIncome, fmpBalance, fmpCash, fmpHistory, finnhubNews, finnhubPeers, finnhubFinancials, yahooMetrics, yahooFinancials] =
             await Promise.all([
-                fmp.getProfile(symbol),
-                finnhub.getProfile(symbol),
-                yahoo.getProfile(symbol),
-                finnhub.getQuote(symbol),
-                fmp.getKeyMetrics(symbol),
-                fmp.getIncomeStatements(symbol, 5),
-                fmp.getBalanceSheet(symbol),
-                fmp.getCashFlow(symbol),
-                fmp.getHistoricalPrices(symbol, 365),
-                finnhub.getNews(symbol, 30),
-                finnhub.getPeers(symbol),
-                finnhub.getBasicFinancials(symbol),
-                yahoo.getKeyMetrics(symbol),
-                yahoo.getFinancials(symbol),
+                fmp.getProfile(symbol).catch(() => null),
+                finnhub.getProfile(symbol).catch(() => null),
+                yahoo.getProfile(symbol).catch(() => null),
+                finnhub.getQuote(symbol).catch(() => null),
+                fmp.getKeyMetrics(symbol).catch(() => null),
+                fmp.getIncomeStatements(symbol, 5).catch(() => []),
+                fmp.getBalanceSheet(symbol).catch(() => null),
+                fmp.getCashFlow(symbol).catch(() => null),
+                fmp.getHistoricalPrices(symbol, 365).catch(() => []),
+                finnhub.getNews(symbol, 30).catch(() => []),
+                finnhub.getPeers(symbol).catch(() => []),
+                finnhub.getBasicFinancials(symbol).catch(() => null),
+                yahoo.getKeyMetrics(symbol).catch(() => null),
+                yahoo.getFinancials(symbol).catch(() => null),
             ]);
 
         // Need at least one profile source to build the page
@@ -94,7 +94,7 @@ export class StockService {
         const changePercent = finnhubQuote?.dp ?? fmpProfile?.changePercentage ?? 0;
 
         // Phase 2: Technical indicators from Twelve Data
-        const technicals = await twelveData.getAllTechnicals(symbol, price);
+        const technicals = await twelveData.getAllTechnicals(symbol, price).catch(() => ({ ma50: 'above' as const, ma200: 'above' as const, rsi: 50, rsiSignal: 'neutral' as const, macd: 'neutral' as const, overallScore: 50 }));
 
         // Parse 52-week range — FMP range string or Finnhub metrics
         const rangeParts = (fmpProfile?.range || '').split('-').map(s => parseFloat(s.trim()));
@@ -138,7 +138,7 @@ export class StockService {
         const competitors: CompetitorData[] = [];
         const peerSymbols = (finnhubPeers || []).filter(p => p !== symbol).slice(0, 4);
         if (peerSymbols.length > 0) {
-            const peerProfiles = await Promise.all(peerSymbols.map(p => fmp.getProfile(p)));
+            const peerProfiles = await Promise.all(peerSymbols.map(p => fmp.getProfile(p).catch(() => null)));
             for (let i = 0; i < peerSymbols.length; i++) {
                 const pp = peerProfiles[i];
                 if (pp) {
@@ -159,15 +159,15 @@ export class StockService {
         // NOTE: FMP ratios are decimals, Finnhub & Yahoo are percentages
         const hasFmpMetrics = !!fmpMetrics;
         const pe = fmpMetrics?.peRatioTTM ?? (finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null);
-        const roeRaw = hasFmpMetrics ? (fmpMetrics!.roeTTM * 100) : (finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0);
-        const profitMarginRaw = hasFmpMetrics ? fmpMetrics!.netProfitMarginTTM : (finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0);
-        const divYieldRaw = hasFmpMetrics ? (fmpMetrics!.dividendYieldTTM * 100) : (finnhubFinancials?.dividendYieldIndicatedAnnual ?? yahooMetrics?.dividendYield ?? 0);
+        const roeRaw = hasFmpMetrics ? ((fmpMetrics!.roeTTM ?? 0) * 100) : (finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0);
+        const profitMarginRaw = hasFmpMetrics ? (fmpMetrics!.netProfitMarginTTM ?? 0) : (finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0);
+        const divYieldRaw = hasFmpMetrics ? ((fmpMetrics!.dividendYieldTTM ?? 0) * 100) : (finnhubFinancials?.dividendYieldIndicatedAnnual ?? yahooMetrics?.dividendYield ?? 0);
         const debtToEquity = fmpMetrics?.debtToEquityTTM ?? (finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? 0);
         const currentRatio = fmpMetrics?.currentRatioTTM ?? (finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? 0);
         const pb = fmpMetrics?.priceToBookRatioTTM ?? (finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null);
         const eps = fmpIncome[0]?.epsdiluted ?? yahooMetrics?.eps ?? 0;
-        const epsGrowthRaw = hasFmpMetrics ? (fmpMetrics!.epsGrowth * 100) : (finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? 0);
-        const revenueGrowthRaw = hasFmpMetrics ? (fmpMetrics!.revenueGrowth * 100) : (finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? 0);
+        const epsGrowthRaw = hasFmpMetrics ? ((fmpMetrics!.epsGrowth ?? 0) * 100) : (finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? 0);
+        const revenueGrowthRaw = hasFmpMetrics ? ((fmpMetrics!.revenueGrowth ?? 0) * 100) : (finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? 0);
 
         // Volume fallback: Finnhub → Yahoo
         const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];

@@ -32,15 +32,21 @@ async function cached<T>(
     }
 
     // 3. Fetch from API
-    const data = await fetcher();
+    let data: T | null = null;
+    try {
+        data = await fetcher();
+    } catch {
+        return null;
+    }
 
-    // 4. Track usage
-    await apiUsageService.recordCall(provider);
+    // 4. Track usage (fire-and-forget — never block the response)
+    apiUsageService.recordCall(provider).catch(() => {});
 
-    // 5. Cache if successful
+    // 5. Cache if successful (fire-and-forget)
     if (data !== null) {
-        await cacheService.set(provider, dataType, identifier, data, symbol);
-        console.log(`[Cache] MISS → stored ${provider}:${dataType}:${identifier}`);
+        cacheService.set(provider, dataType, identifier, data, symbol)
+            .then(() => console.log(`[Cache] MISS → stored ${provider}:${dataType}:${identifier}`))
+            .catch(() => {});
     }
 
     return data;
@@ -66,12 +72,19 @@ async function cachedArray<T>(
         return [];
     }
 
-    const data = await fetcher();
-    await apiUsageService.recordCall(provider);
+    let data: T[] = [];
+    try {
+        data = await fetcher();
+    } catch {
+        return [];
+    }
+
+    apiUsageService.recordCall(provider).catch(() => {});
 
     if (data.length > 0) {
-        await cacheService.set(provider, dataType, identifier, data, symbol);
-        console.log(`[Cache] MISS → stored ${provider}:${dataType}:${identifier} (${data.length} items)`);
+        cacheService.set(provider, dataType, identifier, data, symbol)
+            .then(() => console.log(`[Cache] MISS → stored ${provider}:${dataType}:${identifier} (${data.length} items)`))
+            .catch(() => {});
     }
 
     return data;
