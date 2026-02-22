@@ -7,6 +7,7 @@ import path from 'path';
 
 import stockRoutes from './routes/stocks';
 import healthRoutes from './routes/health';
+import lessonRoutes from './routes/lessons';
 
 // Load environment variables from monorepo root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -26,6 +27,7 @@ app.use(express.json());
 // ===== Routes =====
 app.use('/api/health', healthRoutes);
 app.use('/api/stocks', stockRoutes);
+app.use('/api/lessons', lessonRoutes);
 
 // ===== Error handling =====
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -45,6 +47,8 @@ app.listen(PORT, () => {
   🔗 Health:     http://localhost:${PORT}/api/health
   📊 Stocks:     http://localhost:${PORT}/api/stocks/popular
   🔍 Search:     http://localhost:${PORT}/api/stocks/search?q=apple
+  📖 Lessons:    http://localhost:${PORT}/api/lessons
+  📋 S&P 500:    http://localhost:${PORT}/api/stocks/sp500
   ━━━━━━━━━━━━━━━━━━━━━
   `);
 });

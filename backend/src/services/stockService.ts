@@ -2,6 +2,7 @@ import { mockStocks, mockSearchResults, getPopularStocks as getMockPopular } fro
 import { StockData, SearchResult, PricePoint, NewsItem, CompetitorData } from '../types/stock';
 import { fmp, finnhub, twelveData } from './cachedProviders';
 import { cacheService } from './cacheService';
+import { SP500_CONSTITUENTS, SP500_SECTORS } from '../data/sp500';
 
 function marketCapLabel(cap: number): string {
     if (cap >= 200e9) return '🏢 บริษัทขนาดใหญ่มาก (Mega Cap)';
@@ -294,7 +295,7 @@ export class StockService {
      */
     async searchStocks(query: string): Promise<SearchResult[]> {
         try {
-            const results = await fmp.searchStocks(query, 10);
+            const results = await fmp.searchStocks(query, 20);
             if (results.length > 0) {
                 return results.map(r => ({
                     symbol: r.symbol,
@@ -318,40 +319,111 @@ export class StockService {
     }
 
     /**
-     * Get popular/featured stocks — uses mock list but enriches with live prices
+     * Get popular/featured stocks — top 20 S&P 500 by market cap with live prices
      */
-    async getPopularStocks(): Promise<StockData[]> {
-        const mockPopular = getMockPopular();
+    async getPopularStocks(): Promise<SimplifiedStock[]> {
+        // Top 20 S&P 500 by market cap (hardcoded list, fetched from API)
+        const TOP_SYMBOLS = [
+            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B', 'LLY', 'V',
+            'JPM', 'UNH', 'AVGO', 'XOM', 'MA', 'JNJ', 'PG', 'COST', 'HD', 'NFLX',
+        ];
 
-        // Try to update prices from Finnhub (fast, 60 calls/min)
         try {
-            const updated = await Promise.all(
-                mockPopular.map(async (stock) => {
-                    const quote = await finnhub.getQuote(stock.symbol);
-                    if (quote && quote.c > 0) {
-                        return {
-                            ...stock,
-                            price: {
-                                ...stock.price,
-                                current: quote.c,
-                                change: quote.d,
-                                changePercent: quote.dp,
-                                high: quote.h,
-                                low: quote.l,
-                                open: quote.o,
-                                previousClose: quote.pc,
-                            },
-                        };
-                    }
-                    return stock;
-                })
-            );
-            return updated;
+            // Batch fetch profiles (1 API call for all 20)
+            const profiles = await fmp.getBatchProfiles(TOP_SYMBOLS);
+            if (profiles.length > 0) {
+                return profiles
+                    .filter(p => p.price > 0)
+                    .sort((a, b) => b.marketCap - a.marketCap)
+                    .map(p => ({
+                        symbol: p.symbol,
+                        name: p.companyName,
+                        logo: p.image,
+                        sector: p.sector,
+                        price: p.price,
+                        change: p.change,
+                        changePercent: p.changePercentage,
+                        marketCap: p.marketCap,
+                    }));
+            }
         } catch (err) {
-            console.warn('[StockService] Popular stocks live price error:', (err as Error).message);
-            return mockPopular;
+            console.warn('[StockService] Popular stocks API error:', (err as Error).message);
         }
+
+        // Fallback to mock
+        return getMockPopular().map(s => ({
+            symbol: s.symbol,
+            name: s.profile.name,
+            logo: s.profile.logo,
+            sector: s.profile.sector,
+            price: s.price.current,
+            change: s.price.change,
+            changePercent: s.price.changePercent,
+            marketCap: s.profile.marketCap,
+        }));
     }
+
+    /**
+     * Get full S&P 500 list with live price data, paginated
+     */
+    async getSP500List(page = 1, limit = 50, sector?: string): Promise<{ stocks: SimplifiedStock[]; total: number; sectors: string[] }> {
+        // Filter by sector if provided
+        let filtered = SP500_CONSTITUENTS;
+        if (sector) {
+            filtered = SP500_CONSTITUENTS.filter(c => c.sector.toLowerCase() === sector.toLowerCase());
+        }
+
+        const total = filtered.length;
+
+        // Paginate
+        const start = (page - 1) * limit;
+        const pageItems = filtered.slice(start, start + limit);
+        const pageSymbols = pageItems.map(c => c.symbol);
+
+        // Fetch profiles for this page (each cached individually for 24h)
+        const profiles = await fmp.getBatchProfiles(pageSymbols);
+
+        const stocks: SimplifiedStock[] = pageItems.map(item => {
+            const profile = profiles.find(p => p.symbol === item.symbol);
+            if (profile) {
+                return {
+                    symbol: profile.symbol,
+                    name: profile.companyName,
+                    logo: profile.image,
+                    sector: profile.sector || item.sector,
+                    price: profile.price,
+                    change: profile.change,
+                    changePercent: profile.changePercentage,
+                    marketCap: profile.marketCap,
+                };
+            }
+            // Fallback: return basic info without price
+            return {
+                symbol: item.symbol,
+                name: item.name,
+                logo: '',
+                sector: item.sector,
+                price: 0,
+                change: 0,
+                changePercent: 0,
+                marketCap: 0,
+            };
+        });
+
+        return { stocks, total, sectors: SP500_SECTORS };
+    }
+}
+
+// Simplified stock data for listing pages
+export interface SimplifiedStock {
+    symbol: string;
+    name: string;
+    logo: string;
+    sector: string;
+    price: number;
+    change: number;
+    changePercent: number;
+    marketCap: number;
 }
 
 export const stockService = new StockService();

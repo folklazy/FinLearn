@@ -16,4 +16,11 @@ export const api = {
     getStock: (symbol: string) => fetchAPI<any>(`/api/stocks/${symbol}`),
     searchStocks: (q: string) => fetchAPI<any[]>(`/api/stocks/search?q=${encodeURIComponent(q)}`),
     getPopularStocks: () => fetchAPI<any[]>('/api/stocks/popular'),
+    getSP500: (page = 1, limit = 50, sector?: string) => {
+        let url = `/api/stocks/sp500?page=${page}&limit=${limit}`;
+        if (sector) url += `&sector=${encodeURIComponent(sector)}`;
+        return fetchAPI<{ stocks: any[]; total: number; sectors: string[] }>(url);
+    },
+    getLessons: () => fetchAPI<{ categories: any[]; lessons: any[] }>('/api/lessons'),
+    getLesson: (id: string) => fetchAPI<any>(`/api/lessons/${id}`),
 };

@@ -9,7 +9,7 @@ import { useSession, signOut } from 'next-auth/react';
 const NAV_LINKS = [
     { href: '/', label: 'หน้าหลัก' },
     { href: '/stocks', label: 'หุ้น' },
-    { href: '#', label: 'บทเรียน' },
+    { href: '/learn', label: 'บทเรียน' },
 ];
 
 export default function Navbar() {

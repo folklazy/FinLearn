@@ -101,6 +101,16 @@ export const fmp = {
 
     searchStocks: (query: string, limit = 10) =>
         cachedArray('fmp', 'search', query.toLowerCase(), () => rawFmp.searchStocks(query, limit)),
+
+    // Batch profiles: each individual profile is cached separately via getProfile
+    getBatchProfiles: async (symbols: string[]) => {
+        const results = await Promise.allSettled(
+            symbols.map(s => cached('fmp', 'profile', s, () => rawFmp.getProfile(s), s))
+        );
+        return results
+            .filter((r): r is PromiseFulfilledResult<rawFmp.FMPProfile | null> => r.status === 'fulfilled' && r.value !== null)
+            .map(r => r.value!);
+    },
 };
 
 // ═══════════════════════════════════
