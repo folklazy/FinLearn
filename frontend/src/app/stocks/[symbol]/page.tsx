@@ -236,7 +236,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         { label: 'มูลค่าตลาด', value: formatLargeNumber(profile.marketCap), note: profile.marketCapLabel },
                         { label: 'CEO', value: profile.ceo && profile.ceo !== 'N/A' ? profile.ceo : 'ไม่มีข้อมูล' },
                         { label: 'พนักงาน', value: profile.employees > 0 ? profile.employees.toLocaleString() + ' คน' : 'ไม่มีข้อมูล' },
-                        { label: 'ก่อตั้ง', value: profile.founded && profile.founded !== 'N/A' ? profile.founded : 'ไม่มีข้อมูล' },
+                        { label: 'ก่อตั้ง', value: profile.founded && profile.founded !== 'N/A' ? profile.founded.slice(0, 4) : 'ไม่มีข้อมูล' },
                         { label: 'สำนักงานใหญ่', value: profile.headquarters || 'ไม่มีข้อมูล' },
                     ].map((item, i) => (
                         <div key={i} className="metric-card">
