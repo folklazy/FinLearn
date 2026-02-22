@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Search, Menu, X, TrendingUp, BookOpen, Briefcase, LogIn, LogOut, User, Settings } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 
 export default function Navbar() {
@@ -11,7 +11,14 @@ export default function Navbar() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showUserMenu, setShowUserMenu] = useState(false);
     const router = useRouter();
+    const pathname = usePathname();
     const { data: session, status } = useSession();
+
+    const navLinks = [
+        { href: '/', label: 'หน้าหลัก', icon: TrendingUp },
+        { href: '/stocks', label: 'หุ้นทั้งหมด', icon: Briefcase },
+        { href: '#', label: 'บทเรียน', icon: BookOpen },
+    ];
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,23 +60,24 @@ export default function Navbar() {
                     </Link>
 
                     {/* Desktop Nav */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}
-                        className="hidden-mobile">
-                        <Link href="/" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'color 0.2s' }}
-                            onMouseOver={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-                            onMouseOut={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
-                            <TrendingUp size={16} /> หน้าหลัก
-                        </Link>
-                        <Link href="/stocks" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'color 0.2s' }}
-                            onMouseOver={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-                            onMouseOut={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
-                            <Briefcase size={16} /> หุ้นทั้งหมด
-                        </Link>
-                        <Link href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', transition: 'color 0.2s' }}
-                            onMouseOver={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-                            onMouseOut={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
-                            <BookOpen size={16} /> บทเรียน
-                        </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} className="hidden-mobile">
+                        {navLinks.map(({ href, label, icon: Icon }) => {
+                            const isActive = href !== '#' && (href === '/' ? pathname === '/' : pathname.startsWith(href));
+                            return (
+                                <Link key={href} href={href} style={{
+                                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    textDecoration: 'none', fontSize: '0.855rem', fontWeight: isActive ? 600 : 500,
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    padding: '6px 12px', borderRadius: '9px', transition: 'all 0.15s',
+                                    background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+                                }}
+                                    onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                                    onMouseOut={e => { e.currentTarget.style.background = isActive ? 'rgba(99,102,241,0.1)' : 'transparent'; e.currentTarget.style.color = isActive ? 'var(--text-primary)' : 'var(--text-secondary)'; }}
+                                >
+                                    <Icon size={15} /> {label}
+                                </Link>
+                            );
+                        })}
                     </div>
 
                     {/* Search + Auth */}
@@ -223,9 +231,14 @@ export default function Navbar() {
                                 style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }}
                             />
                         </form>
-                        <Link href="/" onClick={() => setIsOpen(false)} style={{ color: 'var(--text-secondary)', textDecoration: 'none', padding: '8px 0' }}>หน้าหลัก</Link>
-                        <Link href="/stocks" onClick={() => setIsOpen(false)} style={{ color: 'var(--text-secondary)', textDecoration: 'none', padding: '8px 0' }}>หุ้นทั้งหมด</Link>
-                        <Link href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none', padding: '8px 0' }}>บทเรียน</Link>
+                        {navLinks.map(({ href, label, icon: Icon }) => {
+                            const isActive = href !== '#' && (href === '/' ? pathname === '/' : pathname.startsWith(href));
+                            return (
+                                <Link key={href} href={href} onClick={() => setIsOpen(false)} style={{ color: isActive ? 'var(--primary-light)' : 'var(--text-secondary)', textDecoration: 'none', padding: '8px 4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: isActive ? 600 : 400 }}>
+                                    <Icon size={15} /> {label}
+                                </Link>
+                            );
+                        })}
 
                         {/* Mobile Auth */}
                         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '4px' }}>
