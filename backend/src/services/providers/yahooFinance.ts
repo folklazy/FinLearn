@@ -91,12 +91,12 @@ export interface YFKeyMetrics {
     revenue: number | null;
     revenueGrowth: number;       // already percentage e.g. 8.5 = 8.5%
     netIncome: number | null;
-    profitMargin: number;        // already percentage e.g. 25.3 = 25.3%
+    profitMargin: number | null; // already percentage e.g. 25.3 = 25.3%
     debtToEquity: number;
     currentRatio: number;
-    roe: number;                 // already percentage e.g. 22.3 = 22.3%
+    roe: number | null;          // already percentage e.g. 22.3 = 22.3%
     eps: number;
-    epsGrowth: number;           // already percentage
+    epsGrowth: number | null;    // already percentage
     revenueHistory: { year: string; value: number }[];
     epsHistory: { year: string; value: number }[];
 }
@@ -140,12 +140,12 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             revenue: fd?.totalRevenue ?? (is?.[0]?.totalRevenue ?? null),
             revenueGrowth: fd?.revenueGrowth ? fd.revenueGrowth * 100 : 0,
             netIncome: fd?.netIncomeToCommon ?? (is?.[0]?.netIncome ?? null),
-            profitMargin: fd?.profitMargins ? fd.profitMargins * 100 : 0,
+            profitMargin: fd?.profitMargins != null ? fd.profitMargins * 100 : null,
             debtToEquity: fd?.debtToEquity ?? 0,
             currentRatio: fd?.currentRatio ?? 0,
-            roe: fd?.returnOnEquity ? fd.returnOnEquity * 100 : 0,
+            roe: fd?.returnOnEquity != null ? fd.returnOnEquity * 100 : null,
             eps: ks?.trailingEps ?? 0,
-            epsGrowth: fd?.earningsGrowth ? fd.earningsGrowth * 100 : 0,
+            epsGrowth: fd?.earningsGrowth != null ? fd.earningsGrowth * 100 : null,
             revenueHistory,
             epsHistory,
         };
