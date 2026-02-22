@@ -30,8 +30,8 @@ export class StockService {
         try {
             const data = await this.fetchFromAPIs(sym);
             if (data) {
-                // Cache the full assembled StockData for 5 min
-                await cacheService.set('stockdata', 'quote', sym, data, sym);
+                // Cache the full assembled StockData (TTL = quote = 2 min)
+                await cacheService.set('stockdata', 'full', sym, data, sym);
                 console.log(`[StockService] ✅ Live data for ${sym}`);
                 return data;
             }

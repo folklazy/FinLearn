@@ -5,10 +5,10 @@ import { api } from '@/lib/api';
 import { StockData } from '@/types/stock';
 import { formatCurrency, formatPercent, formatLargeNumber, formatVolume, formatDate, getPriceColor, getSignalColor } from '@/lib/utils';
 import {
-    Heart, ShoppingCart, Building2, TrendingUp, TrendingDown, DollarSign,
+    Heart, ShoppingCart, Building2, DollarSign,
     BarChart3, Newspaper, Activity, Users, Star, Lightbulb, AlertTriangle,
     ExternalLink, Calendar, ArrowUpRight, ArrowDownRight, Info,
-    ChevronRight, BookOpen,
+    ChevronRight, BookOpen, ListOrdered,
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
@@ -50,41 +50,66 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
     const { profile, price, keyMetrics, financials, news, events, signals, competitors, scores, beginnerTips } = data;
 
+    // ── Data availability flags ──
+    const hasHistory = price.history && price.history.length > 0;
+    const hasRevenueHistory = keyMetrics.revenueHistory && keyMetrics.revenueHistory.length > 0;
+    const hasEpsHistory = keyMetrics.epsHistory && keyMetrics.epsHistory.length > 0;
+    const hasIncomeData = financials.incomeStatement.revenue > 0;
+    const hasBalanceData = financials.balanceSheet.totalAssets > 0;
+    const hasCashFlow = financials.cashFlow.operating !== 0 || financials.cashFlow.investing !== 0;
+    const hasFinancials = hasIncomeData || hasBalanceData || hasCashFlow;
+    const hasNews = news && news.length > 0;
+    const hasSignals = signals && signals.technical;
+    const hasCompetitors = competitors && competitors.length > 0;
+
+    // ── TOC sections ──
+    const tocSections = [
+        { id: 'overview', label: 'ภาพรวมบริษัท', icon: '🏢', always: true },
+        { id: 'price-chart', label: 'กราฟราคา', icon: '📈', always: hasHistory },
+        { id: 'key-metrics', label: 'ตัวเลขสำคัญ', icon: '💰', always: true },
+        { id: 'financials', label: 'งบการเงิน', icon: '📊', always: hasFinancials },
+        { id: 'news-events', label: 'ข่าวสาร', icon: '📰', always: hasNews },
+        { id: 'signals', label: 'สัญญาณซื้อ-ขาย', icon: '⚡', always: hasSignals },
+        { id: 'competitors', label: 'คู่แข่ง', icon: '👥', always: hasCompetitors },
+        { id: 'scores', label: 'คะแนน', icon: '⭐', always: true },
+        { id: 'tips', label: 'คำแนะนำ', icon: '💡', always: true },
+    ].filter(s => s.always);
+
     // Chart Colors
     const COLORS = ['#6366f1', '#8b5cf6', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4'];
 
     // Revenue history chart data
-    const revenueChartData = keyMetrics.revenueHistory.map(r => ({
+    const revenueChartData = hasRevenueHistory ? keyMetrics.revenueHistory.map(r => ({
         year: r.year,
         revenue: r.value / 1e9,
-    }));
+    })) : [];
 
     // EPS chart data
-    const epsChartData = keyMetrics.epsHistory.map(e => ({
+    const epsChartData = hasEpsHistory ? keyMetrics.epsHistory.map(e => ({
         year: e.year,
         eps: e.value,
-    }));
+    })) : [];
 
     // Income Statement waterfall
-    const incomeData = [
+    const incomeData = hasIncomeData ? [
         { name: 'รายได้', value: financials.incomeStatement.revenue / 1e9, fill: '#6366f1' },
         { name: 'ต้นทุน', value: -financials.incomeStatement.costOfRevenue / 1e9, fill: '#ef4444' },
         { name: 'ค่าใช้จ่าย', value: -financials.incomeStatement.operatingExpenses / 1e9, fill: '#f59e0b' },
         { name: 'กำไรสุทธิ', value: financials.incomeStatement.netIncome / 1e9, fill: '#22c55e' },
-    ];
+    ] : [];
 
     // Balance sheet pie
-    const balanceData = [
+    const balanceData = hasBalanceData ? [
         { name: 'สินทรัพย์หมุนเวียน', value: financials.balanceSheet.currentAssets / 1e9 },
         { name: 'สินทรัพย์ไม่หมุนเวียน', value: financials.balanceSheet.nonCurrentAssets / 1e9 },
-    ];
+    ] : [];
 
     // Cash flow
-    const cashFlowData = [
+    const cashFlowData = hasCashFlow ? [
         { name: 'ดำเนินงาน', value: financials.cashFlow.operating / 1e9, fill: '#22c55e' },
         { name: 'ลงทุน', value: financials.cashFlow.investing / 1e9, fill: '#f59e0b' },
         { name: 'จัดหาเงิน', value: financials.cashFlow.financing / 1e9, fill: '#ef4444' },
-    ];
+    ] : [];
 
     // Radar chart for scores
     const radarData = [
@@ -147,8 +172,32 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <button className="btn btn-success"><ShoppingCart size={16} /> ทดลองซื้อในพอร์ตจำลอง</button>
             </section>
 
+            {/* ===== TABLE OF CONTENTS ===== */}
+            <nav className="glass-card animate-fade-in-up" style={{ padding: '16px 20px', animationDelay: '0.08s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <ListOrdered size={16} style={{ color: 'var(--primary-light)' }} />
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>สารบัญ</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {tocSections.map(s => (
+                        <a key={s.id} href={`#${s.id}`}
+                            style={{
+                                padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 500,
+                                background: 'var(--bg-secondary)', color: 'var(--text-secondary)',
+                                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px',
+                                transition: 'all 0.2s', border: '1px solid transparent',
+                            }}
+                            onMouseOver={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary-light)'; }}
+                            onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                        >
+                            <span>{s.icon}</span> {s.label}
+                        </a>
+                    ))}
+                </div>
+            </nav>
+
             {/* ===== 3. COMPANY OVERVIEW ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.1s' }}>
+            <section id="overview" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.1s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><Building2 size={20} /> ภาพรวมบริษัท</h2>
                 <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', marginBottom: '20px' }}>
                     {profile.description}
@@ -171,7 +220,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </section>
 
             {/* ===== 4. PRICE CHART + 52 WEEK RANGE ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.15s' }}>
+            <section id="price-chart" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.15s', scrollMarginTop: '80px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}><BarChart3 size={20} /> กราฟราคา</h2>
                     <div style={{ display: 'flex', gap: '6px' }}>
@@ -189,15 +238,21 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         ))}
                     </div>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={getPriceHistory()}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => v.slice(5)} />
-                        <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} domain={['auto', 'auto']} />
-                        <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                        <Line type="monotone" dataKey="close" stroke="var(--primary)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                </ResponsiveContainer>
+                {hasHistory ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={getPriceHistory()}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => v.slice(5)} />
+                            <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} domain={['auto', 'auto']} />
+                            <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+                            <Line type="monotone" dataKey="close" stroke="var(--primary)" strokeWidth={2} dot={false} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลกราฟราคาไม่พร้อมใช้งาน (ต้องการ FMP Premium)</p>
+                    </div>
+                )}
 
                 {/* 52-week Range */}
                 <div style={{ marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
@@ -243,7 +298,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </section>
 
             {/* ===== 5. KEY METRICS ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.2s' }}>
+            <section id="key-metrics" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.2s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><DollarSign size={20} /> ตัวเลขสำคัญ</h2>
 
                 {/* Value Metrics */}
@@ -296,39 +351,59 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                 {/* Growth */}
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '12px' }}>📈 การเติบโต</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>รายได้ 5 ปี (พันล้าน $)</div>
-                        <ResponsiveContainer width="100%" height={180}>
-                            <BarChart data={revenueChartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                                <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                                <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                                <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'white' }} />
-                                <Bar dataKey="revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                {(hasRevenueHistory || hasEpsHistory) ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>รายได้ 5 ปี (พันล้าน $)</div>
+                            {revenueChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <BarChart data={revenueChartData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
+                                        <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
+                                        <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'white' }} />
+                                        <Bar dataKey="revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', borderRadius: '10px' }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>ไม่มีข้อมูลรายได้</p>
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>กำไรต่อหุ้น (EPS) 5 ปี</div>
+                            {epsChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <LineChart data={epsChartData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
+                                        <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
+                                        <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'white' }} />
+                                        <Line type="monotone" dataKey="eps" stroke="var(--success)" strokeWidth={2} dot={{ fill: 'var(--success)' }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', borderRadius: '10px' }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>ไม่มีข้อมูล EPS</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>กำไรต่อหุ้น (EPS) 5 ปี</div>
-                        <ResponsiveContainer width="100%" height={180}>
-                            <LineChart data={epsChartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                                <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                                <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                                <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'white' }} />
-                                <Line type="monotone" dataKey="eps" stroke="var(--success)" strokeWidth={2} dot={{ fill: 'var(--success)' }} />
-                            </LineChart>
-                        </ResponsiveContainer>
+                ) : (
+                    <div style={{ padding: '24px', background: 'var(--bg-secondary)', borderRadius: '12px', textAlign: 'center' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลการเติบโตไม่พร้อมใช้งาน (ต้องการ FMP Premium)</p>
                     </div>
-                </div>
+                )}
             </section>
 
             {/* ===== 6. FINANCIAL CHARTS ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.25s' }}>
+            {hasFinancials && (
+            <section id="financials" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.25s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><BarChart3 size={20} /> งบการเงินแบบง่าย</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
                     {/* Income Statement */}
+                    {incomeData.length > 0 && (
                     <div>
                         <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
                             📊 งบกำไรขาดทุน (พันล้าน $)
@@ -345,23 +420,27 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                    )}
 
                     {/* Balance Sheet */}
+                    {balanceData.length > 0 && (
                     <div>
                         <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
                             🥧 สินทรัพย์ (พันล้าน $)
                         </h3>
                         <ResponsiveContainer width="100%" height={200}>
                             <PieChart>
-                                <Pie data={balanceData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={(props: any) => `${props.name ?? ''} ${((props.percent ?? 0) * 100).toFixed(0)}%`}>
+                                <Pie data={balanceData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}>
                                     {balanceData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                 </Pie>
                                 <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'white' }} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
+                    )}
 
                     {/* Cash Flow */}
+                    {cashFlowData.length > 0 && (
                     <div>
                         <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
                             💵 กระแสเงินสด (พันล้าน $)
@@ -378,11 +457,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                    )}
                 </div>
             </section>
+            )}
 
             {/* ===== 7. NEWS & EVENTS ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.3s' }}>
+            {hasNews && (
+            <section id="news-events" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.3s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><Newspaper size={20} /> ข่าวสารและเหตุการณ์</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                     {/* News */}
@@ -390,16 +472,24 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>📰 ข่าวล่าสุด</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {news.map(n => (
-                                <div key={n.id} style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '10px', borderLeft: `3px solid ${n.sentiment === 'positive' ? 'var(--success)' : n.sentiment === 'negative' ? 'var(--danger)' : 'var(--text-muted)'}` }}>
-                                    <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>{n.title}</div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '6px' }}>{n.summary}</p>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{n.source} · {formatDate(n.date)}</span>
-                                        <span className={`badge ${n.sentiment === 'positive' ? 'badge-success' : n.sentiment === 'negative' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.6rem' }}>
-                                            {n.sentiment === 'positive' ? '📈 เชิงบวก' : n.sentiment === 'negative' ? '📉 เชิงลบ' : '➡️ กลาง'}
-                                        </span>
+                                <a key={n.id} href={n.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <div style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '10px', borderLeft: `3px solid ${n.sentiment === 'positive' ? 'var(--success)' : n.sentiment === 'negative' ? 'var(--danger)' : 'var(--text-muted)'}`, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                                        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
+                                        onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+                                    >
+                                        <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>{n.title}</div>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '6px' }}>{n.summary}</p>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {n.source} · {formatDate(n.date)}
+                                                <ExternalLink size={10} />
+                                            </span>
+                                            <span className={`badge ${n.sentiment === 'positive' ? 'badge-success' : n.sentiment === 'negative' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.6rem' }}>
+                                                {n.sentiment === 'positive' ? '📈 เชิงบวก' : n.sentiment === 'negative' ? '📉 เชิงลบ' : '➡️ กลาง'}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
+                                </a>
                             ))}
                         </div>
                     </div>
@@ -430,9 +520,10 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ===== 8. TRADING SIGNALS ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.35s' }}>
+            <section id="signals" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.35s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><Activity size={20} /> สัญญาณซื้อ-ขาย</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
                     {/* Technical */}
@@ -540,7 +631,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </section>
 
             {/* ===== 9. COMPETITOR COMPARISON ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.4s' }}>
+            {hasCompetitors && (
+            <section id="competitors" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.4s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><Users size={20} /> เปรียบเทียบคู่แข่ง</h2>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
@@ -578,9 +670,10 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </table>
                 </div>
             </section>
+            )}
 
             {/* ===== 10. SCORE RATING ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.45s' }}>
+            <section id="scores" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.45s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><Star size={20} /> ระบบให้คะแนน</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'center' }}>
                     <div style={{ textAlign: 'center' }}>
@@ -607,7 +700,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </section>
 
             {/* ===== 11. BEGINNER TIPS ===== */}
-            <section className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.5s' }}>
+            <section id="tips" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.5s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><Lightbulb size={20} /> คำแนะนำสำหรับมือใหม่</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                     {/* Good For */}
