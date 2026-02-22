@@ -731,3 +731,40 @@ model IngestionError {
   @@index([runId])
   @@map("ingestion_errors")
 }
+
+// =========================
+// API Cache (persistent, TTL-based)
+// =========================
+
+model ApiCache {
+  key       String   @id                          // e.g. "fmp:profile:AAPL" or "finnhub:news:TSLA"
+  provider  String                                // fmp, finnhub, twelvedata, alphavantage, polygon
+  dataType  String   @map("data_type")            // profile, quote, financials, history, news, technicals, search, metrics
+  symbol    String?                               // stock symbol (nullable for non-symbol queries)
+  data      Json                                  // cached JSON response
+  expiresAt DateTime @map("expires_at")           // when this cache entry becomes stale
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([provider, dataType])
+  @@index([symbol])
+  @@index([expiresAt])
+  @@map("api_cache")
+}
+
+// =========================
+// API Usage Tracking (daily counters per provider)
+// =========================
+
+model ApiUsageDaily {
+  provider  String   @map("provider")             // fmp, finnhub, twelvedata, alphavantage, polygon
+  date      DateTime @db.Date                     // day of usage
+  callCount Int      @default(0) @map("call_count")
+  dailyLimit Int     @map("daily_limit")          // configured limit for this provider
+  lastCallAt DateTime? @map("last_call_at")       // last call timestamp
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([provider, date])
+  @@map("api_usage_daily")
+}

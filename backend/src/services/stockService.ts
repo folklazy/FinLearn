@@ -1,22 +1,7 @@
 import { mockStocks, mockSearchResults, getPopularStocks as getMockPopular } from '../data/mockData';
 import { StockData, SearchResult, PricePoint, NewsItem, CompetitorData } from '../types/stock';
-import * as fmp from './providers/fmp';
-import * as finnhub from './providers/finnhub';
-import * as twelveData from './providers/twelveData';
-
-// Simple in-memory cache (symbol -> { data, ts })
-const cache = new Map<string, { data: StockData; ts: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-function getCached(symbol: string): StockData | null {
-    const entry = cache.get(symbol);
-    if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
-    return null;
-}
-
-function setCache(symbol: string, data: StockData) {
-    cache.set(symbol, { data, ts: Date.now() });
-}
+import { fmp, finnhub, twelveData } from './cachedProviders';
+import { cacheService } from './cacheService';
 
 function marketCapLabel(cap: number): string {
     if (cap >= 200e9) return '🏢 บริษัทขนาดใหญ่มาก (Mega Cap)';
@@ -33,10 +18,10 @@ export class StockService {
     async getStockData(symbol: string): Promise<StockData | null> {
         const sym = symbol.toUpperCase();
 
-        // 1. Check cache
-        const cached = getCached(sym);
+        // 1. Check PostgreSQL cache for assembled StockData
+        const cached = await cacheService.get<StockData>('stockdata', 'full', sym);
         if (cached) {
-            console.log(`[StockService] Cache hit for ${sym}`);
+            console.log(`[StockService] ✅ Cache hit for ${sym}`);
             return cached;
         }
 
@@ -44,7 +29,8 @@ export class StockService {
         try {
             const data = await this.fetchFromAPIs(sym);
             if (data) {
-                setCache(sym, data);
+                // Cache the full assembled StockData for 5 min
+                await cacheService.set('stockdata', 'quote', sym, data, sym);
                 console.log(`[StockService] ✅ Live data for ${sym}`);
                 return data;
             }
