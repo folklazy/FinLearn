@@ -139,7 +139,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             dividendPerShare: sd?.dividendRate ?? null,
             revenue: fd?.totalRevenue ?? (is?.[0]?.totalRevenue ?? null),
             revenueGrowth: fd?.revenueGrowth ? fd.revenueGrowth * 100 : 0,
-            netIncome: fd?.netIncomeToCommon ?? null,
+            netIncome: fd?.netIncomeToCommon ?? (is?.[0]?.netIncome ?? null),
             profitMargin: fd?.profitMargins ? fd.profitMargins * 100 : 0,
             debtToEquity: fd?.debtToEquity ?? 0,
             currentRatio: fd?.currentRatio ?? 0,
@@ -200,7 +200,7 @@ export async function getFinancials(symbol: string): Promise<YFFinancials | null
                 grossProfit: is?.grossProfit ?? 0,
                 operatingExpenses: is?.totalOperatingExpenses ?? 0,
                 operatingIncome: is?.operatingIncome ?? is?.ebit ?? 0,
-                netIncome: is?.netIncome ?? 0,
+                netIncome: is?.netIncome ?? null,
             },
             balanceSheet: {
                 totalAssets: bs?.totalAssets ?? 0,

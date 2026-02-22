@@ -225,7 +225,7 @@ export class StockService {
                 dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null),
                 revenue: fmpIncome[0]?.revenue ?? yahooMetrics?.revenue ?? null,
                 revenueGrowth: parseFloat(revenueGrowthRaw.toFixed(1)),
-                netIncome: fmpIncome[0]?.netIncome ?? yahooMetrics?.netIncome ?? null,
+                netIncome: fmpIncome[0]?.netIncome ?? yahooMetrics?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? null,
                 profitMargin: parseFloat(profitMarginRaw.toFixed(2)),
                 debtToEquity: parseFloat(debtToEquity.toFixed(1)),
                 currentRatio: parseFloat(currentRatio.toFixed(2)),
