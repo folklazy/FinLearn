@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { Mail, Lock, Eye, EyeOff, TrendingUp } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -42,33 +42,22 @@ export default function LoginPage() {
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 24px' }}>
-            {/* Background blobs */}
             <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none' }}>
-                <div style={{ position: 'absolute', top: '20%', left: '15%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
-                <div style={{ position: 'absolute', bottom: '20%', right: '15%', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
+                <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '400px', background: 'radial-gradient(ellipse, rgba(124,108,240,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
             </div>
 
-            <div style={{ width: '100%', maxWidth: '420px' }}>
-                {/* Logo */}
+            <div style={{ width: '100%', maxWidth: '400px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <TrendingUp size={20} color="white" />
-                        </div>
-                        <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                            Fin<span className="gradient-text">Learn</span>
-                        </span>
+                    <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '9px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: 'white' }}>F</div>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 750, letterSpacing: '-0.02em' }}>Fin<span className="gradient-text">Learn</span></span>
                     </Link>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '24px', marginBottom: '6px' }}>
-                        ยินดีต้อนรับกลับ
-                    </h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>เข้าสู่ระบบเพื่อเริ่มเรียนรู้การลงทุน</p>
+                    <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '28px', marginBottom: '6px' }}>ยินดีต้อนรับกลับ</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>เข้าสู่ระบบเพื่อเริ่มเรียนรู้การลงทุน</p>
                 </div>
 
-                {/* Card */}
-                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '32px', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
-                    {/* Google */}
-                    <button onClick={handleGoogleLogin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '11px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}
+                <div className="card-solid" style={{ padding: '32px', borderRadius: 'var(--radius-xl)' }}>
+                    <button onClick={handleGoogleLogin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '11px 16px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', transition: 'border-color 0.2s var(--ease)', fontFamily: 'inherit' }}
                         onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--border-light)')}
                         onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                     >
@@ -81,42 +70,40 @@ export default function LoginPage() {
                         เข้าสู่ระบบด้วย Google
                     </button>
 
-                    {/* Divider */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '22px 0' }}>
                         <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>หรือ</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>หรือ</span>
                         <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
                     </div>
 
-                    {/* Form */}
                     <form onSubmit={handleCredentialLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         {error && (
-                            <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '0.825rem', textAlign: 'center' }}>
+                            <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-bg)', border: '1px solid rgba(251,113,133,0.2)', color: 'var(--danger)', fontSize: '0.82rem', textAlign: 'center' }}>
                                 {error}
                             </div>
                         )}
                         <div style={{ position: 'relative' }}>
-                            <Mail size={16} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                            <Mail size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                             <input type="email" placeholder="อีเมล" value={email} onChange={e => setEmail(e.target.value)} required
                                 className="input" style={{ paddingLeft: '40px' }} />
                         </div>
                         <div style={{ position: 'relative' }}>
-                            <Lock size={16} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                            <Lock size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                             <input type={showPassword ? 'text' : 'password'} placeholder="รหัสผ่าน" value={password} onChange={e => setPassword(e.target.value)} required
                                 className="input" style={{ paddingLeft: '40px', paddingRight: '42px' }} />
                             <button type="button" onClick={() => setShowPassword(!showPassword)}
                                 style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}>
-                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                             </button>
                         </div>
-                        <button type="submit" disabled={loading} className="btn btn-primary" style={{ justifyContent: 'center', padding: '12px', marginTop: '4px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
+                        <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '2px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
                             {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
                         </button>
                     </form>
 
-                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.825rem', marginTop: '20px' }}>
+                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '22px' }}>
                         ยังไม่มีบัญชี?{' '}
-                        <Link href="/register" style={{ color: 'var(--primary-light)', fontWeight: 600, textDecoration: 'none' }}>สมัครสมาชิก</Link>
+                        <Link href="/register" style={{ color: 'var(--primary-light)', fontWeight: 600 }}>สมัครสมาชิก</Link>
                     </p>
                 </div>
             </div>

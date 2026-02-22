@@ -1,307 +1,219 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Search, Menu, X, TrendingUp, BookOpen, Briefcase, LogIn, LogOut, User, Settings } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Menu, X, LogIn, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 
+const NAV_LINKS = [
+    { href: '/', label: 'หน้าหลัก' },
+    { href: '/stocks', label: 'หุ้น' },
+    { href: '#', label: 'บทเรียน' },
+];
+
 export default function Navbar() {
-    const [isOpen, setIsOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [showUserMenu, setShowUserMenu] = useState(false);
+    const [userMenu, setUserMenu] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
     const { data: session, status } = useSession();
+    const menuRef = useRef<HTMLDivElement>(null);
 
-    const navLinks = [
-        { href: '/', label: 'หน้าหลัก', icon: TrendingUp },
-        { href: '/stocks', label: 'หุ้นทั้งหมด', icon: Briefcase },
-        { href: '#', label: 'บทเรียน', icon: BookOpen },
-    ];
+    // Close user menu on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) setUserMenu(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (searchQuery.trim()) {
             router.push(`/stocks?q=${encodeURIComponent(searchQuery)}`);
             setSearchQuery('');
+            setMobileOpen(false);
         }
     };
 
-    const handleSignOut = () => {
-        signOut({ callbackUrl: '/' });
-        setShowUserMenu(false);
-    };
+    const isActive = (href: string) => href !== '#' && (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
     return (
         <nav style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 100,
-            background: 'rgba(10, 14, 26, 0.85)',
-            backdropFilter: 'blur(20px)',
+            position: 'sticky', top: 0, zIndex: 100,
+            background: 'rgba(14,15,20,0.82)',
+            backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
             borderBottom: '1px solid var(--border)',
         }}>
-            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
-                    {/* Logo */}
-                    <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '60px' }}>
+
+                    {/* ── Logo ── */}
+                    <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
                         <div style={{
-                            width: '36px', height: '36px', borderRadius: '10px',
+                            width: '32px', height: '32px', borderRadius: '9px',
                             background: 'var(--gradient-primary)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '18px', fontWeight: 900, color: 'white',
-                        }}>
-                            F
-                        </div>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            fontSize: '15px', fontWeight: 800, color: 'white',
+                        }}>F</div>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 750, letterSpacing: '-0.02em' }}>
                             Fin<span className="gradient-text">Learn</span>
                         </span>
                     </Link>
 
-                    {/* Desktop Nav */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} className="hidden-mobile">
-                        {navLinks.map(({ href, label, icon: Icon }) => {
-                            const isActive = href !== '#' && (href === '/' ? pathname === '/' : pathname.startsWith(href));
-                            return (
-                                <Link key={href} href={href} style={{
-                                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                    textDecoration: 'none', fontSize: '0.855rem', fontWeight: isActive ? 600 : 500,
-                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                    padding: '6px 12px', borderRadius: '9px', transition: 'all 0.15s',
-                                    background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                }}
-                                    onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                                    onMouseOut={e => { e.currentTarget.style.background = isActive ? 'rgba(99,102,241,0.1)' : 'transparent'; e.currentTarget.style.color = isActive ? 'var(--text-primary)' : 'var(--text-secondary)'; }}
-                                >
-                                    <Icon size={15} /> {label}
-                                </Link>
-                            );
-                        })}
+                    {/* ── Desktop links ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} className="hidden-mobile">
+                        {NAV_LINKS.map(link => (
+                            <Link key={link.href} href={link.href} style={{
+                                padding: '7px 14px', borderRadius: '8px', fontSize: '0.84rem',
+                                fontWeight: isActive(link.href) ? 600 : 450,
+                                color: isActive(link.href) ? 'var(--text-primary)' : 'var(--text-muted)',
+                                background: isActive(link.href) ? 'rgba(124,108,240,0.08)' : 'transparent',
+                                transition: 'all 0.2s var(--ease)',
+                            }}
+                                onMouseOver={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}}
+                                onMouseOut={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}}
+                            >{link.label}</Link>
+                        ))}
                     </div>
 
-                    {/* Search + Auth */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} className="hidden-mobile">
+                    {/* ── Right side ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="hidden-mobile">
                         {/* Search */}
                         <form onSubmit={handleSearch} style={{ position: 'relative' }}>
-                            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="ค้นหาหุ้น... (เช่น AAPL)"
-                                style={{
-                                    width: '220px',
-                                    padding: '8px 12px 8px 36px',
-                                    borderRadius: '10px',
-                                    border: '1px solid var(--border)',
-                                    background: 'var(--bg-secondary)',
-                                    color: 'var(--text-primary)',
-                                    fontSize: '0.875rem',
-                                    outline: 'none',
-                                    transition: 'border-color 0.2s, width 0.3s',
-                                }}
-                                onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.width = '280px'; }}
-                                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.width = '220px'; }}
+                            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="ค้นหาหุ้น..."
+                                className="input"
+                                style={{ width: '180px', padding: '7px 12px 7px 34px', fontSize: '0.82rem', borderRadius: '9px', background: 'var(--bg-secondary)' }}
+                                onFocus={e => { e.currentTarget.style.width = '240px'; }}
+                                onBlur={e => { e.currentTarget.style.width = '180px'; }}
                             />
                         </form>
 
-                        {/* Auth Buttons */}
+                        {/* Auth */}
                         {status === 'loading' ? (
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-tertiary)', animation: 'pulse 2s infinite' }} />
+                            <div className="skeleton" style={{ width: '80px', height: '34px', borderRadius: '9px' }} />
                         ) : session?.user ? (
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    onClick={() => setShowUserMenu(!showUserMenu)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '8px',
-                                        background: 'none', border: '1px solid var(--border)',
-                                        borderRadius: '10px', padding: '6px 12px',
-                                        color: 'var(--text-primary)', cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                    }}
-                                    onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--primary)')}
+                            <div ref={menuRef} style={{ position: 'relative' }}>
+                                <button onClick={() => setUserMenu(!userMenu)} style={{
+                                    display: 'flex', alignItems: 'center', gap: '7px',
+                                    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                    borderRadius: '9px', padding: '5px 10px 5px 6px',
+                                    color: 'var(--text-primary)', cursor: 'pointer',
+                                    transition: 'border-color 0.2s var(--ease)', fontFamily: 'inherit',
+                                }}
+                                    onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--border-light)')}
                                     onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                                 >
                                     {session.user.image ? (
-                                        <img
-                                            src={session.user.image}
-                                            alt=""
-                                            style={{ width: '24px', height: '24px', borderRadius: '50%' }}
-                                        />
+                                        <img src={session.user.image} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
                                     ) : (
-                                        <User size={18} />
+                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <User size={13} color="white" />
+                                        </div>
                                     )}
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 500, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {session.user.name || session.user.email}
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 500, maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {session.user.name || 'User'}
                                     </span>
+                                    <ChevronDown size={13} style={{ color: 'var(--text-muted)', transition: 'transform 0.2s', transform: userMenu ? 'rotate(180deg)' : 'none' }} />
                                 </button>
 
-                                {/* Dropdown */}
-                                {showUserMenu && (
-                                    <div style={{
-                                        position: 'absolute', right: 0, top: '100%', marginTop: '8px',
-                                        minWidth: '200px', background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border)', borderRadius: '12px',
-                                        padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                                        zIndex: 1000,
+                                {userMenu && (
+                                    <div className="animate-scale-in" style={{
+                                        position: 'absolute', right: 0, top: 'calc(100% + 6px)',
+                                        minWidth: '200px', background: 'var(--bg-elevated)',
+                                        border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                                        padding: '6px', boxShadow: 'var(--shadow-lg)', zIndex: 1000,
                                     }}>
-                                        <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
-                                            <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                                {session.user.name}
-                                            </p>
-                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                                {session.user.email}
-                                            </p>
+                                        <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
+                                            <p style={{ fontSize: '0.82rem', fontWeight: 600 }}>{session.user.name}</p>
+                                            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>{session.user.email}</p>
                                         </div>
-                                        <Link
-                                            href="/settings"
-                                            onClick={() => setShowUserMenu(false)}
-                                            style={{
-                                                width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                                                padding: '8px 12px', borderRadius: '8px',
-                                                background: 'none', textDecoration: 'none',
-                                                color: 'var(--text-secondary)',
-                                                fontSize: '0.8rem', fontWeight: 500,
-                                                transition: 'background 0.2s',
-                                            }}
-                                            onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                                            onMouseOut={e => (e.currentTarget.style.background = 'none')}
-                                        >
-                                            <Settings size={16} /> ตั้งค่าบัญชี
-                                        </Link>
-                                        <button
-                                            onClick={handleSignOut}
-                                            style={{
-                                                width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                                                padding: '8px 12px', borderRadius: '8px',
-                                                background: 'none', border: 'none',
-                                                color: '#ef4444', cursor: 'pointer',
-                                                fontSize: '0.8rem', fontWeight: 500,
-                                                transition: 'background 0.2s',
-                                            }}
-                                            onMouseOver={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)')}
-                                            onMouseOut={e => (e.currentTarget.style.background = 'none')}
-                                        >
-                                            <LogOut size={16} /> ออกจากระบบ
-                                        </button>
+                                        <Link href="/settings" onClick={() => setUserMenu(false)} style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '8px 12px', borderRadius: '8px',
+                                            color: 'var(--text-secondary)', fontSize: '0.82rem',
+                                            transition: 'all 0.15s',
+                                        }}
+                                            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                                            onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                                        ><Settings size={15} /> ตั้งค่าบัญชี</Link>
+                                        <button onClick={() => { signOut({ callbackUrl: '/' }); setUserMenu(false); }} style={{
+                                            width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '8px 12px', borderRadius: '8px',
+                                            background: 'none', border: 'none', fontFamily: 'inherit',
+                                            color: 'var(--danger)', cursor: 'pointer', fontSize: '0.82rem',
+                                            transition: 'background 0.15s',
+                                        }}
+                                            onMouseOver={e => (e.currentTarget.style.background = 'var(--danger-bg)')}
+                                            onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
+                                        ><LogOut size={15} /> ออกจากระบบ</button>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <Link
-                                href="/login"
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                    padding: '8px 16px', borderRadius: '10px',
-                                    background: 'var(--gradient-primary)',
-                                    color: 'white', textDecoration: 'none',
-                                    fontSize: '0.8rem', fontWeight: 600,
-                                    transition: 'all 0.2s',
-                                }}
-                                onMouseOver={e => (e.currentTarget.style.opacity = '0.9')}
-                                onMouseOut={e => (e.currentTarget.style.opacity = '1')}
-                            >
-                                <LogIn size={16} /> เข้าสู่ระบบ
+                            <Link href="/login" className="btn btn-primary" style={{ padding: '7px 18px', fontSize: '0.82rem', gap: '6px' }}>
+                                <LogIn size={14} /> เข้าสู่ระบบ
                             </Link>
                         )}
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
-                        className="show-mobile"
-                    >
-                        {isOpen ? <X size={24} /> : <Menu size={24} />}
+                    {/* ── Mobile toggle ── */}
+                    <button onClick={() => setMobileOpen(!mobileOpen)} className="show-mobile"
+                        style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '4px' }}>
+                        {mobileOpen ? <X size={22} /> : <Menu size={22} />}
                     </button>
                 </div>
 
-                {/* Mobile Menu */}
-                {isOpen && (
-                    <div style={{
-                        padding: '16px 0',
-                        borderTop: '1px solid var(--border)',
-                        display: 'flex', flexDirection: 'column', gap: '12px',
-                    }}>
-                        <form onSubmit={handleSearch} style={{ position: 'relative' }}>
-                            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                {/* ── Mobile menu ── */}
+                {mobileOpen && (
+                    <div style={{ padding: '12px 0 16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <form onSubmit={handleSearch} style={{ position: 'relative', marginBottom: '4px' }}>
+                            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="ค้นหาหุ้น..."
-                                style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }}
-                            />
+                                placeholder="ค้นหาหุ้น..." className="input"
+                                style={{ paddingLeft: '34px', fontSize: '0.85rem', background: 'var(--bg-secondary)' }} />
                         </form>
-                        {navLinks.map(({ href, label, icon: Icon }) => {
-                            const isActive = href !== '#' && (href === '/' ? pathname === '/' : pathname.startsWith(href));
-                            return (
-                                <Link key={href} href={href} onClick={() => setIsOpen(false)} style={{ color: isActive ? 'var(--primary-light)' : 'var(--text-secondary)', textDecoration: 'none', padding: '8px 4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: isActive ? 600 : 400 }}>
-                                    <Icon size={15} /> {label}
-                                </Link>
-                            );
-                        })}
-
-                        {/* Mobile Auth */}
-                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '4px' }}>
+                        {NAV_LINKS.map(link => (
+                            <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
+                                style={{
+                                    padding: '10px 8px', borderRadius: '8px', fontSize: '0.88rem',
+                                    fontWeight: isActive(link.href) ? 600 : 400,
+                                    color: isActive(link.href) ? 'var(--primary-light)' : 'var(--text-secondary)',
+                                }}>{link.label}</Link>
+                        ))}
+                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '4px' }}>
                             {session?.user ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 8px' }}>
                                         {session.user.image ? (
                                             <img src={session.user.image} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
-                                        ) : (
-                                            <User size={20} style={{ color: 'var(--text-muted)' }} />
-                                        )}
-                                        <span style={{ color: 'var(--text-primary)', fontSize: '0.875rem', fontWeight: 500 }}>
-                                            {session.user.name || session.user.email}
-                                        </span>
+                                        ) : <User size={18} style={{ color: 'var(--text-muted)' }} />}
+                                        <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{session.user.name || session.user.email}</span>
                                     </div>
-                                    <Link
-                                        href="/settings"
-                                        onClick={() => setIsOpen(false)}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '8px',
-                                            padding: '8px 0', textDecoration: 'none',
-                                            color: 'var(--text-secondary)', fontSize: '0.875rem',
-                                        }}
-                                    >
-                                        <Settings size={16} /> ตั้งค่าบัญชี
+                                    <Link href="/settings" onClick={() => setMobileOpen(false)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 8px', color: 'var(--text-secondary)', fontSize: '0.88rem', borderRadius: '8px' }}>
+                                        <Settings size={15} /> ตั้งค่าบัญชี
                                     </Link>
-                                    <button
-                                        onClick={handleSignOut}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '8px',
-                                            padding: '8px 0', background: 'none', border: 'none',
-                                            color: '#ef4444', cursor: 'pointer', fontSize: '0.875rem',
-                                        }}
-                                    >
-                                        <LogOut size={16} /> ออกจากระบบ
+                                    <button onClick={() => { signOut({ callbackUrl: '/' }); setMobileOpen(false); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 8px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.88rem', fontFamily: 'inherit' }}>
+                                        <LogOut size={15} /> ออกจากระบบ
                                     </button>
                                 </div>
                             ) : (
-                                <Link
-                                    href="/login"
-                                    onClick={() => setIsOpen(false)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                        padding: '10px', borderRadius: '10px',
-                                        background: 'var(--gradient-primary)',
-                                        color: 'white', textDecoration: 'none',
-                                        fontSize: '0.875rem', fontWeight: 600,
-                                    }}
-                                >
-                                    <LogIn size={16} /> เข้าสู่ระบบ
+                                <Link href="/login" onClick={() => setMobileOpen(false)} className="btn btn-primary"
+                                    style={{ width: '100%', justifyContent: 'center', gap: '6px' }}>
+                                    <LogIn size={15} /> เข้าสู่ระบบ
                                 </Link>
                             )}
                         </div>
                     </div>
                 )}
             </div>
-
-            <style jsx global>{`
-        @media (max-width: 768px) {
-          .hidden-mobile { display: none !important; }
-          .show-mobile { display: block !important; }
-        }
-      `}</style>
         </nav>
     );
 }
