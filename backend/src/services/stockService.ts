@@ -53,10 +53,11 @@ export class StockService {
      * Strategy: FMP profile (free, has price) + Finnhub quote/news/peers + FMP financials + TwelveData technicals
      */
     private async fetchFromAPIs(symbol: string): Promise<StockData | null> {
-        // Phase 1: Parallel fetch core data
-        const [fmpProfile, finnhubQuote, fmpMetrics, fmpIncome, fmpBalance, fmpCash, fmpHistory, finnhubNews, finnhubPeers, finnhubFinancials] =
+        // Phase 1: Parallel fetch core data (Finnhub profile as fallback when FMP is unavailable)
+        const [fmpProfile, finnhubProfile, finnhubQuote, fmpMetrics, fmpIncome, fmpBalance, fmpCash, fmpHistory, finnhubNews, finnhubPeers, finnhubFinancials] =
             await Promise.all([
                 fmp.getProfile(symbol),
+                finnhub.getProfile(symbol),
                 finnhub.getQuote(symbol),
                 fmp.getKeyMetrics(symbol),
                 fmp.getIncomeStatements(symbol, 5),
@@ -68,21 +69,34 @@ export class StockService {
                 finnhub.getBasicFinancials(symbol),
             ]);
 
-        // Must have at least FMP profile
-        if (!fmpProfile) return null;
+        // Need at least one profile source (FMP or Finnhub) to build the page
+        if (!fmpProfile && !finnhubProfile) return null;
 
-        // Use Finnhub quote for real-time price, fallback to FMP profile
-        const price = finnhubQuote?.c ?? fmpProfile.price;
-        const change = finnhubQuote?.d ?? fmpProfile.change;
-        const changePercent = finnhubQuote?.dp ?? fmpProfile.changePercentage;
+        // Merge profile fields — FMP preferred, Finnhub as fallback
+        const profileName      = fmpProfile?.companyName        || finnhubProfile?.name             || symbol;
+        const profileLogo      = fmpProfile?.image              || finnhubProfile?.logo             || `https://financialmodelingprep.com/image-stock/${symbol}.png`;
+        const profileSector    = fmpProfile?.sector             || finnhubProfile?.finnhubIndustry  || 'Other';
+        const profileIndustry  = fmpProfile?.industry           || finnhubProfile?.finnhubIndustry  || 'Unknown';
+        const profileMarketCap = fmpProfile?.marketCap          || (finnhubProfile?.marketCapitalization ? finnhubProfile.marketCapitalization * 1e6 : 0);
+        const profileWebsite   = fmpProfile?.website            || finnhubProfile?.weburl           || '';
+        const profileEmployees = parseInt(fmpProfile?.fullTimeEmployees || '0') || 0;
+        const profileIpo       = fmpProfile?.ipoDate            || finnhubProfile?.ipo              || 'N/A';
+        const profileHQ        = fmpProfile ? [fmpProfile.city, fmpProfile.state, fmpProfile.country].filter(Boolean).join(', ') : (finnhubProfile?.country || '');
+        const profileCeo       = fmpProfile?.ceo                || 'N/A';
+        const profileDesc      = fmpProfile?.description?.slice(0, 300) || `${profileName} เป็นบริษัทในกลุ่ม ${profileSector}`;
+
+        // Use Finnhub quote for real-time price, fallback to FMP profile, then 0
+        const price = finnhubQuote?.c ?? fmpProfile?.price ?? 0;
+        const change = finnhubQuote?.d ?? fmpProfile?.change ?? 0;
+        const changePercent = finnhubQuote?.dp ?? fmpProfile?.changePercentage ?? 0;
 
         // Phase 2: Technical indicators from Twelve Data
         const technicals = await twelveData.getAllTechnicals(symbol, price);
 
-        // Parse 52-week range from FMP profile
-        const rangeParts = (fmpProfile.range || '').split('-').map(s => parseFloat(s.trim()));
-        const week52Low = rangeParts[0] || 0;
-        const week52High = rangeParts[1] || 0;
+        // Parse 52-week range — FMP range string or Finnhub metrics
+        const rangeParts = (fmpProfile?.range || '').split('-').map(s => parseFloat(s.trim()));
+        const week52Low  = rangeParts[0] || finnhubFinancials?.['52WeekLow']  || 0;
+        const week52High = rangeParts[1] || finnhubFinancials?.['52WeekHigh'] || 0;
 
         // Build price history
         const history: PricePoint[] = fmpHistory.map(h => ({
@@ -152,20 +166,20 @@ export class StockService {
         const data: StockData = {
             symbol,
             profile: {
-                name: fmpProfile.companyName,
+                name: profileName,
                 symbol,
-                logo: fmpProfile.image || `https://logo.clearbit.com/${symbol.toLowerCase()}.com`,
-                description: `${fmpProfile.companyName} เป็นบริษัทในกลุ่ม ${fmpProfile.sector} อุตสาหกรรม ${fmpProfile.industry}`,
-                descriptionEn: fmpProfile.description?.slice(0, 300) || '',
-                sector: fmpProfile.sector || 'Other',
-                industry: fmpProfile.industry || 'Unknown',
-                marketCap: fmpProfile.marketCap,
-                marketCapLabel: marketCapLabel(fmpProfile.marketCap),
-                employees: parseInt(fmpProfile.fullTimeEmployees) || 0,
-                founded: fmpProfile.ipoDate || 'N/A',
-                headquarters: [fmpProfile.city, fmpProfile.state, fmpProfile.country].filter(Boolean).join(', '),
-                website: fmpProfile.website || '',
-                ceo: fmpProfile.ceo || 'N/A',
+                logo: profileLogo,
+                description: `${profileName} เป็นบริษัทในกลุ่ม ${profileSector} อุตสาหกรรม ${profileIndustry}`,
+                descriptionEn: profileDesc,
+                sector: profileSector,
+                industry: profileIndustry,
+                marketCap: profileMarketCap,
+                marketCapLabel: marketCapLabel(profileMarketCap),
+                employees: profileEmployees,
+                founded: profileIpo,
+                headquarters: profileHQ,
+                website: profileWebsite,
+                ceo: profileCeo,
             },
             price: {
                 current: price,
@@ -175,8 +189,8 @@ export class StockService {
                 high: finnhubQuote?.h ?? price,
                 low: finnhubQuote?.l ?? price,
                 open: finnhubQuote?.o ?? price,
-                volume: fmpProfile.volume,
-                avgVolume: fmpProfile.averageVolume,
+                volume: fmpProfile?.volume ?? 0,
+                avgVolume: fmpProfile?.averageVolume ?? 0,
                 week52High,
                 week52Low,
                 history,
@@ -186,7 +200,7 @@ export class StockService {
                 peIndustryAvg: pe ? parseFloat((pe * 0.9).toFixed(1)) : null,
                 pb,
                 dividendYield: divYield > 0 ? parseFloat((divYield * 100).toFixed(2)) : null,
-                dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile.lastDividend || null),
+                dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null),
                 revenue: fmpIncome[0]?.revenue ?? 0,
                 revenueGrowth: parseFloat((revenueGrowth * 100).toFixed(1)),
                 netIncome: fmpIncome[0]?.netIncome ?? 0,

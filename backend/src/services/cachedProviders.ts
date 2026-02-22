@@ -118,12 +118,11 @@ export const fmp = {
 // ═══════════════════════════════════
 
 export const finnhub = {
-    // Quotes have very short TTL (2 min) - defined in cacheService
-    getQuote: (symbol: string) =>
-        cached('finnhub', 'quote', symbol, () => rawFinnhub.getQuote(symbol), symbol),
-
     getProfile: (symbol: string) =>
         cached('finnhub', 'profile', symbol, () => rawFinnhub.getProfile(symbol), symbol),
+
+    getQuote: (symbol: string) =>
+        cached('finnhub', 'quote', symbol, () => rawFinnhub.getQuote(symbol), symbol),
 
     getNews: (symbol: string, daysBack = 30) =>
         cachedArray('finnhub', 'news', symbol, () => rawFinnhub.getNews(symbol, daysBack), symbol),
