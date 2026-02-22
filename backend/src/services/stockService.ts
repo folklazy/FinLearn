@@ -1,6 +1,6 @@
 import { mockStocks, mockSearchResults, getPopularStocks as getMockPopular } from '../data/mockData';
 import { StockData, SearchResult, PricePoint, NewsItem, CompetitorData } from '../types/stock';
-import { fmp, finnhub, twelveData } from './cachedProviders';
+import { fmp, finnhub, twelveData, yahoo } from './cachedProviders';
 import { cacheService } from './cacheService';
 import { SP500_CONSTITUENTS, SP500_SECTORS } from '../data/sp500';
 
@@ -53,11 +53,12 @@ export class StockService {
      * Strategy: FMP profile (free, has price) + Finnhub quote/news/peers + FMP financials + TwelveData technicals
      */
     private async fetchFromAPIs(symbol: string): Promise<StockData | null> {
-        // Phase 1: Parallel fetch core data (Finnhub profile as fallback when FMP is unavailable)
-        const [fmpProfile, finnhubProfile, finnhubQuote, fmpMetrics, fmpIncome, fmpBalance, fmpCash, fmpHistory, finnhubNews, finnhubPeers, finnhubFinancials] =
+        // Phase 1: Parallel fetch from all providers
+        const [fmpProfile, finnhubProfile, yahooProfile, finnhubQuote, fmpMetrics, fmpIncome, fmpBalance, fmpCash, fmpHistory, finnhubNews, finnhubPeers, finnhubFinancials, yahooMetrics, yahooFinancials] =
             await Promise.all([
                 fmp.getProfile(symbol),
                 finnhub.getProfile(symbol),
+                yahoo.getProfile(symbol),
                 finnhub.getQuote(symbol),
                 fmp.getKeyMetrics(symbol),
                 fmp.getIncomeStatements(symbol, 5),
@@ -67,23 +68,25 @@ export class StockService {
                 finnhub.getNews(symbol, 30),
                 finnhub.getPeers(symbol),
                 finnhub.getBasicFinancials(symbol),
+                yahoo.getKeyMetrics(symbol),
+                yahoo.getFinancials(symbol),
             ]);
 
-        // Need at least one profile source (FMP or Finnhub) to build the page
-        if (!fmpProfile && !finnhubProfile) return null;
+        // Need at least one profile source to build the page
+        if (!fmpProfile && !finnhubProfile && !yahooProfile) return null;
 
-        // Merge profile fields — FMP preferred, Finnhub as fallback
-        const profileName      = fmpProfile?.companyName        || finnhubProfile?.name             || symbol;
+        // Merge profile — FMP → Finnhub → Yahoo fallback chain
+        const profileName      = fmpProfile?.companyName        || finnhubProfile?.name             || yahooProfile?.name             || symbol;
         const profileLogo      = fmpProfile?.image              || finnhubProfile?.logo             || `https://financialmodelingprep.com/image-stock/${symbol}.png`;
-        const profileSector    = fmpProfile?.sector             || finnhubProfile?.finnhubIndustry  || 'Other';
-        const profileIndustry  = fmpProfile?.industry           || finnhubProfile?.finnhubIndustry  || 'Unknown';
-        const profileMarketCap = fmpProfile?.marketCap          || (finnhubProfile?.marketCapitalization ? finnhubProfile.marketCapitalization * 1e6 : 0);
-        const profileWebsite   = fmpProfile?.website            || finnhubProfile?.weburl           || '';
-        const profileEmployees = parseInt(fmpProfile?.fullTimeEmployees || '0') || 0;
+        const profileSector    = fmpProfile?.sector             || finnhubProfile?.finnhubIndustry  || yahooProfile?.sector           || 'Other';
+        const profileIndustry  = fmpProfile?.industry           || finnhubProfile?.finnhubIndustry  || yahooProfile?.industry         || 'Unknown';
+        const profileMarketCap = fmpProfile?.marketCap          || (finnhubProfile?.marketCapitalization ? finnhubProfile.marketCapitalization * 1e6 : 0) || yahooProfile?.marketCap || 0;
+        const profileWebsite   = fmpProfile?.website            || finnhubProfile?.weburl           || yahooProfile?.website          || '';
+        const profileEmployees = parseInt(fmpProfile?.fullTimeEmployees || '0') || yahooProfile?.employees || 0;
         const profileIpo       = fmpProfile?.ipoDate            || finnhubProfile?.ipo              || 'N/A';
-        const profileHQ        = fmpProfile ? [fmpProfile.city, fmpProfile.state, fmpProfile.country].filter(Boolean).join(', ') : (finnhubProfile?.country || '');
-        const profileCeo       = fmpProfile?.ceo                || 'N/A';
-        const profileDesc      = fmpProfile?.description?.slice(0, 300) || `${profileName} เป็นบริษัทในกลุ่ม ${profileSector}`;
+        const profileHQ        = fmpProfile ? [fmpProfile.city, fmpProfile.state, fmpProfile.country].filter(Boolean).join(', ') : (finnhubProfile?.country || yahooProfile?.headquarters || '');
+        const profileCeo       = fmpProfile?.ceo                || yahooProfile?.ceo                || 'N/A';
+        const profileDesc      = fmpProfile?.description?.slice(0, 300) || yahooProfile?.description || `${profileName} เป็นบริษัทในกลุ่ม ${profileSector}`;
 
         // Use Finnhub quote for real-time price, fallback to FMP profile, then 0
         const price = finnhubQuote?.c ?? fmpProfile?.price ?? 0;
@@ -98,10 +101,19 @@ export class StockService {
         const week52Low  = rangeParts[0] || finnhubFinancials?.['52WeekLow']  || 0;
         const week52High = rangeParts[1] || finnhubFinancials?.['52WeekHigh'] || 0;
 
-        // Build price history
-        const history: PricePoint[] = fmpHistory.map(h => ({
-            date: h.date, open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume,
-        })).reverse(); // FMP returns newest first
+        // Build price history — FMP first, Yahoo Finance as fallback
+        let history: PricePoint[];
+        if (fmpHistory.length > 0) {
+            history = fmpHistory.map(h => ({
+                date: h.date, open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume,
+            })).reverse();
+        } else {
+            const yhist = await yahoo.getHistoricalPrices(symbol, 365);
+            history = yhist.map(h => ({
+                date: h.date, open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume,
+            }));
+            console.log(`[StockService] Using Yahoo history for ${symbol}: ${history.length} points`);
+        }
 
         // Build news
         const news: NewsItem[] = finnhubNews.slice(0, 5).map((n, i) => ({
@@ -114,9 +126,13 @@ export class StockService {
             sentiment: finnhub.classifySentiment(n.headline),
         }));
 
-        // Build revenue/EPS history from income statements
-        const revenueHistory = fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.revenue })).reverse();
-        const epsHistory = fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.epsdiluted || s.eps })).reverse();
+        // Build revenue/EPS history — FMP first, Yahoo Finance as fallback
+        const revenueHistory = fmpIncome.length > 0
+            ? fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.revenue })).reverse()
+            : (yahooMetrics?.revenueHistory ?? []);
+        const epsHistory = fmpIncome.length > 0
+            ? fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.epsdiluted || s.eps })).reverse()
+            : (yahooMetrics?.epsHistory ?? []);
 
         // Build competitors from Finnhub peers + FMP profile data
         const competitors: CompetitorData[] = [];
@@ -139,21 +155,21 @@ export class StockService {
             }
         }
 
-        // Extract metrics
-        // NOTE: FMP returns ratios as decimals (0.15 = 15%), Finnhub returns as percentages (15.0 = 15%)
+        // Extract metrics — FMP (decimal) → Finnhub (percentage) → Yahoo Finance (percentage)
+        // NOTE: FMP ratios are decimals, Finnhub & Yahoo are percentages
         const hasFmpMetrics = !!fmpMetrics;
-        const pe = fmpMetrics?.peRatioTTM ?? (finnhubFinancials?.peNormalizedAnnual ?? null);
-        const roeRaw = hasFmpMetrics ? (fmpMetrics!.roeTTM * 100) : (finnhubFinancials?.roeTTM ?? 0);
-        const profitMarginRaw = hasFmpMetrics ? fmpMetrics!.netProfitMarginTTM : (finnhubFinancials?.netProfitMarginTTM ?? 0);
-        const divYieldRaw = hasFmpMetrics ? (fmpMetrics!.dividendYieldTTM * 100) : (finnhubFinancials?.dividendYieldIndicatedAnnual ?? 0);
-        const debtToEquity = fmpMetrics?.debtToEquityTTM ?? (finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? 0);
-        const currentRatio = fmpMetrics?.currentRatioTTM ?? (finnhubFinancials?.currentRatioQuarterly ?? 0);
-        const pb = fmpMetrics?.priceToBookRatioTTM ?? (finnhubFinancials?.pbAnnual ?? null);
-        const eps = fmpIncome[0]?.epsdiluted ?? 0;
-        const epsGrowthRaw = hasFmpMetrics ? (fmpMetrics!.epsGrowth * 100) : (finnhubFinancials?.epsGrowth5Y ?? 0);
-        const revenueGrowthRaw = hasFmpMetrics ? (fmpMetrics!.revenueGrowth * 100) : (finnhubFinancials?.revenueGrowth5Y ?? 0);
+        const pe = fmpMetrics?.peRatioTTM ?? (finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null);
+        const roeRaw = hasFmpMetrics ? (fmpMetrics!.roeTTM * 100) : (finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0);
+        const profitMarginRaw = hasFmpMetrics ? fmpMetrics!.netProfitMarginTTM : (finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0);
+        const divYieldRaw = hasFmpMetrics ? (fmpMetrics!.dividendYieldTTM * 100) : (finnhubFinancials?.dividendYieldIndicatedAnnual ?? yahooMetrics?.dividendYield ?? 0);
+        const debtToEquity = fmpMetrics?.debtToEquityTTM ?? (finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? 0);
+        const currentRatio = fmpMetrics?.currentRatioTTM ?? (finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? 0);
+        const pb = fmpMetrics?.priceToBookRatioTTM ?? (finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null);
+        const eps = fmpIncome[0]?.epsdiluted ?? yahooMetrics?.eps ?? 0;
+        const epsGrowthRaw = hasFmpMetrics ? (fmpMetrics!.epsGrowth * 100) : (finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? 0);
+        const revenueGrowthRaw = hasFmpMetrics ? (fmpMetrics!.revenueGrowth * 100) : (finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? 0);
 
-        // Finnhub 10-day avg volume (in millions) as fallback
+        // Volume fallback: Finnhub → Yahoo
         const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];
         const volumeFallback = finnhubAvgVol ? Math.round(finnhubAvgVol * 1e6) : 0;
 
@@ -207,9 +223,9 @@ export class StockService {
                 pb,
                 dividendYield: divYieldRaw > 0 ? parseFloat(divYieldRaw.toFixed(2)) : null,
                 dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null),
-                revenue: fmpIncome[0]?.revenue ?? null,
+                revenue: fmpIncome[0]?.revenue ?? yahooMetrics?.revenue ?? null,
                 revenueGrowth: parseFloat(revenueGrowthRaw.toFixed(1)),
-                netIncome: fmpIncome[0]?.netIncome ?? null,
+                netIncome: fmpIncome[0]?.netIncome ?? yahooMetrics?.netIncome ?? null,
                 profitMargin: parseFloat(profitMarginRaw.toFixed(2)),
                 debtToEquity: parseFloat(debtToEquity.toFixed(1)),
                 currentRatio: parseFloat(currentRatio.toFixed(2)),
@@ -221,27 +237,27 @@ export class StockService {
             },
             financials: {
                 incomeStatement: {
-                    revenue: fmpIncome[0]?.revenue ?? 0,
-                    costOfRevenue: fmpIncome[0]?.costOfRevenue ?? 0,
-                    grossProfit: fmpIncome[0]?.grossProfit ?? 0,
-                    operatingExpenses: fmpIncome[0]?.operatingExpenses ?? 0,
-                    operatingIncome: fmpIncome[0]?.operatingIncome ?? 0,
-                    netIncome: fmpIncome[0]?.netIncome ?? 0,
+                    revenue: fmpIncome[0]?.revenue ?? yahooFinancials?.incomeStatement.revenue ?? 0,
+                    costOfRevenue: fmpIncome[0]?.costOfRevenue ?? yahooFinancials?.incomeStatement.costOfRevenue ?? 0,
+                    grossProfit: fmpIncome[0]?.grossProfit ?? yahooFinancials?.incomeStatement.grossProfit ?? 0,
+                    operatingExpenses: fmpIncome[0]?.operatingExpenses ?? yahooFinancials?.incomeStatement.operatingExpenses ?? 0,
+                    operatingIncome: fmpIncome[0]?.operatingIncome ?? yahooFinancials?.incomeStatement.operatingIncome ?? 0,
+                    netIncome: fmpIncome[0]?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? 0,
                 },
                 balanceSheet: {
-                    totalAssets: fmpBalance?.totalAssets ?? 0,
-                    currentAssets: fmpBalance?.totalCurrentAssets ?? 0,
-                    nonCurrentAssets: fmpBalance?.totalNonCurrentAssets ?? 0,
-                    totalLiabilities: fmpBalance?.totalLiabilities ?? 0,
-                    currentLiabilities: fmpBalance?.totalCurrentLiabilities ?? 0,
-                    nonCurrentLiabilities: fmpBalance?.totalNonCurrentLiabilities ?? 0,
-                    totalEquity: fmpBalance?.totalStockholdersEquity ?? 0,
+                    totalAssets: fmpBalance?.totalAssets ?? yahooFinancials?.balanceSheet.totalAssets ?? 0,
+                    currentAssets: fmpBalance?.totalCurrentAssets ?? yahooFinancials?.balanceSheet.currentAssets ?? 0,
+                    nonCurrentAssets: fmpBalance?.totalNonCurrentAssets ?? yahooFinancials?.balanceSheet.nonCurrentAssets ?? 0,
+                    totalLiabilities: fmpBalance?.totalLiabilities ?? yahooFinancials?.balanceSheet.totalLiabilities ?? 0,
+                    currentLiabilities: fmpBalance?.totalCurrentLiabilities ?? yahooFinancials?.balanceSheet.currentLiabilities ?? 0,
+                    nonCurrentLiabilities: fmpBalance?.totalNonCurrentLiabilities ?? yahooFinancials?.balanceSheet.nonCurrentLiabilities ?? 0,
+                    totalEquity: fmpBalance?.totalStockholdersEquity ?? yahooFinancials?.balanceSheet.totalEquity ?? 0,
                 },
                 cashFlow: {
-                    operating: fmpCash?.operatingCashFlow ?? 0,
-                    investing: fmpCash?.netCashUsedForInvestingActivites ?? 0,
-                    financing: fmpCash?.netCashUsedProvidedByFinancingActivities ?? 0,
-                    netCashFlow: fmpCash?.netChangeInCash ?? 0,
+                    operating: fmpCash?.operatingCashFlow ?? yahooFinancials?.cashFlow.operating ?? 0,
+                    investing: fmpCash?.netCashUsedForInvestingActivites ?? yahooFinancials?.cashFlow.investing ?? 0,
+                    financing: fmpCash?.netCashUsedProvidedByFinancingActivities ?? yahooFinancials?.cashFlow.financing ?? 0,
+                    netCashFlow: fmpCash?.netChangeInCash ?? yahooFinancials?.cashFlow.netCashFlow ?? 0,
                 },
             },
             news,

@@ -7,6 +7,7 @@ import { apiUsageService } from './apiUsageService';
 import * as rawFmp from './providers/fmp';
 import * as rawFinnhub from './providers/finnhub';
 import * as rawTwelveData from './providers/twelveData';
+import * as rawYahoo from './providers/yahooFinance';
 
 // ── Generic cached fetch wrapper ──
 async function cached<T>(
@@ -174,4 +175,22 @@ export const twelveData = {
 
     getTimeSeries: (symbol: string, outputsize = 365) =>
         cachedArray('twelvedata', 'history', symbol, () => rawTwelveData.getTimeSeries(symbol, outputsize), symbol),
+};
+
+// ═══════════════════════════════════
+// Yahoo Finance (cached) — no API key, no rate limit
+// ═══════════════════════════════════
+
+export const yahoo = {
+    getHistoricalPrices: (symbol: string, days = 365) =>
+        cachedArray('yahoo', 'history', symbol, () => rawYahoo.getHistoricalPrices(symbol, days), symbol),
+
+    getProfile: (symbol: string) =>
+        cached('yahoo', 'profile', symbol, () => rawYahoo.getProfile(symbol), symbol),
+
+    getKeyMetrics: (symbol: string) =>
+        cached('yahoo', 'metrics', symbol, () => rawYahoo.getKeyMetrics(symbol), symbol),
+
+    getFinancials: (symbol: string) =>
+        cached('yahoo', 'financials', symbol, () => rawYahoo.getFinancials(symbol), symbol),
 };
