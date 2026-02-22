@@ -218,9 +218,9 @@ export class StockService {
                 history,
             },
             keyMetrics: {
-                pe,
+                pe: pe ? parseFloat(pe.toFixed(1)) : null,
                 peIndustryAvg: pe ? parseFloat((pe * 0.9).toFixed(1)) : null,
-                pb,
+                pb: pb ? parseFloat(pb.toFixed(1)) : null,
                 dividendYield: divYieldRaw > 0 ? parseFloat(divYieldRaw.toFixed(2)) : null,
                 dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null),
                 revenue: fmpIncome[0]?.revenue ?? yahooMetrics?.revenue ?? null,
