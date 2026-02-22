@@ -8,7 +8,7 @@ import {
     Heart, ShoppingCart, Building2, DollarSign,
     BarChart3, Newspaper, Activity, Users, Star, Lightbulb, AlertTriangle,
     ExternalLink, Calendar, ArrowUpRight, ArrowDownRight, Info,
-    ChevronRight, BookOpen, ListOrdered,
+    ChevronRight, BookOpen,
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
@@ -21,6 +21,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [data, setData] = useState<StockData | null>(null);
     const [loading, setLoading] = useState(true);
     const [priceRange, setPriceRange] = useState('1Y');
+    const [activeSection, setActiveSection] = useState('overview');
 
     useEffect(() => {
         api.getStock(symbol)
@@ -28,6 +29,20 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             .catch(err => console.error('Failed to load stock:', err))
             .finally(() => setLoading(false));
     }, [symbol]);
+
+    // Scroll spy — highlight TOC section when in viewport
+    useEffect(() => {
+        if (!data) return;
+        const ids = ['overview', 'price-chart', 'key-metrics', 'financials', 'news-events', 'signals', 'competitors', 'scores', 'tips'];
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) setActiveSection(entry.target.id); });
+            },
+            { threshold: 0, rootMargin: '-80px 0px -65% 0px' }
+        );
+        ids.forEach(id => { const el = document.getElementById(id); if (el) observer.observe(el); });
+        return () => observer.disconnect();
+    }, [data]);
 
     if (loading) {
         return (
@@ -137,7 +152,44 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const week52Percent = ((price.current - price.week52Low) / (price.week52High - price.week52Low)) * 100;
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 24px 48px', display: 'flex', gap: '0', alignItems: 'flex-start' }}>
+
+            {/* ── STICKY VERTICAL TOC SIDEBAR ── */}
+            <aside className="hidden-mobile" style={{
+                width: '210px', flexShrink: 0, position: 'sticky', top: '68px',
+                maxHeight: 'calc(100vh - 88px)', overflowY: 'auto', paddingRight: '8px',
+                borderRight: '1px solid var(--border)', marginRight: '24px',
+            }}>
+                {/* Stock name header */}
+                <div style={{ padding: '12px 14px 14px', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>{profile.sector}</div>
+                </div>
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                    {tocSections.map((s, i) => (
+                        <a key={s.id} href={`#${s.id}`}
+                            onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                padding: '7px 10px 7px 12px',
+                                borderLeft: `2px solid ${activeSection === s.id ? '#f59e0b' : 'transparent'}`,
+                                background: activeSection === s.id ? 'rgba(245,158,11,0.06)' : 'transparent',
+                                color: activeSection === s.id ? '#f59e0b' : 'var(--text-muted)',
+                                fontSize: '0.78rem', fontWeight: activeSection === s.id ? 700 : 400,
+                                cursor: 'pointer', textDecoration: 'none', transition: 'all 0.18s',
+                            }}
+                            onMouseOver={e => { if (activeSection !== s.id) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; } }}
+                            onMouseOut={e => { if (activeSection !== s.id) { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; } }}
+                        >
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', minWidth: '14px', textAlign: 'right' }}>{i + 1}</span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.label}</span>
+                        </a>
+                    ))}
+                </nav>
+            </aside>
+
+            {/* ── MAIN CONTENT ── */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             {/* ===== 1. HEADER ===== */}
             <section className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
@@ -172,29 +224,6 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <button className="btn btn-success"><ShoppingCart size={16} /> ทดลองซื้อในพอร์ตจำลอง</button>
             </section>
 
-            {/* ===== TABLE OF CONTENTS ===== */}
-            <nav className="glass-card animate-fade-in-up" style={{ padding: '16px 20px', animationDelay: '0.08s' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <ListOrdered size={16} style={{ color: 'var(--primary-light)' }} />
-                    <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>สารบัญ</span>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {tocSections.map(s => (
-                        <a key={s.id} href={`#${s.id}`}
-                            style={{
-                                padding: '6px 12px', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 500,
-                                background: 'var(--bg-secondary)', color: 'var(--text-secondary)',
-                                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px',
-                                transition: 'all 0.2s', border: '1px solid transparent',
-                            }}
-                            onMouseOver={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary-light)'; }}
-                            onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                        >
-                            <span>{s.icon}</span> {s.label}
-                        </a>
-                    ))}
-                </div>
-            </nav>
 
             {/* ===== 3. COMPANY OVERVIEW ===== */}
             <section id="overview" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.1s', scrollMarginTop: '80px' }}>
@@ -752,6 +781,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     ข้อมูลนี้เป็นไปเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำในการลงทุน ราคาหุ้นอาจมีความล่าช้า กรุณาปรึกษาผู้เชี่ยวชาญก่อนการลงทุนจริง
                 </p>
             </section>
+            </div>
         </div>
     );
 }

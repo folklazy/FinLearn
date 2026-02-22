@@ -178,4 +178,5 @@ export interface SearchResult {
     name: string;
     sector: string;
     exchange: string;
+    logo?: string;
 }

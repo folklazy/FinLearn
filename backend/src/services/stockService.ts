@@ -291,31 +291,83 @@ export class StockService {
     }
 
     /**
-     * Search stocks — tries FMP API, falls back to mock
+     * Search stocks — blends S&P 500 local list + FMP API, sorted by relevance
      */
     async searchStocks(query: string): Promise<SearchResult[]> {
+        const q = query.trim().toLowerCase();
+        if (!q) return [];
+
+        // ── Score helper: higher = more relevant ──
+        const score = (symbol: string, name: string): number => {
+            const sym = symbol.toLowerCase();
+            const nm = name.toLowerCase();
+            if (sym === q) return 100;
+            if (sym.startsWith(q)) return 85;
+            if (nm.startsWith(q)) return 70;
+            if (sym.includes(q)) return 50;
+            if (nm.includes(q)) return 30;
+            // word-boundary match in name
+            if (nm.split(/\s+/).some(w => w.startsWith(q))) return 40;
+            return 0;
+        };
+
+        // ── Local S&P 500 search ──
+        const localResults: SearchResult[] = SP500_CONSTITUENTS
+            .filter(s => score(s.symbol, s.name) > 0)
+            .map(s => ({
+                symbol: s.symbol,
+                name: s.name,
+                sector: s.sector,
+                exchange: 'NASDAQ',
+                logo: `https://financialmodelingprep.com/image-stock/${s.symbol}.png`,
+            }));
+
+        // ── FMP API search (runs in parallel with local) ──
+        let apiResults: SearchResult[] = [];
         try {
-            const results = await fmp.searchStocks(query, 20);
-            if (results.length > 0) {
-                return results.map(r => ({
-                    symbol: r.symbol,
-                    name: r.name,
-                    sector: '',
-                    exchange: r.exchangeShortName,
-                }));
-            }
+            const results = await fmp.searchStocks(query, 25);
+            apiResults = results.map(r => ({
+                symbol: r.symbol,
+                name: r.name,
+                sector: '',
+                exchange: r.exchangeShortName || r.stockExchange || '',
+                logo: `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
+            }));
         } catch (err) {
             console.warn('[StockService] Search API error:', (err as Error).message);
         }
 
-        // Fallback to mock
-        const lowerQuery = query.toLowerCase();
-        return mockSearchResults.filter(
-            (s) =>
-                s.symbol.toLowerCase().includes(lowerQuery) ||
-                s.name.toLowerCase().includes(lowerQuery) ||
-                s.sector.toLowerCase().includes(lowerQuery)
-        );
+        // ── Merge: FMP first (has exchange detail), then fill with local ──
+        const seen = new Set<string>();
+        const merged: SearchResult[] = [];
+        for (const r of [...apiResults, ...localResults]) {
+            if (!seen.has(r.symbol)) {
+                seen.add(r.symbol);
+                // Enrich exchange from local if API didn't have sector
+                if (!r.sector) {
+                    const local = localResults.find(l => l.symbol === r.symbol);
+                    if (local) { r.sector = local.sector; r.exchange = local.exchange; }
+                }
+                merged.push(r);
+            }
+        }
+
+        // ── Sort by relevance (S&P 500 stocks get +10 boost) ──
+        const sp500Symbols = new Set(SP500_CONSTITUENTS.map(s => s.symbol));
+        merged.sort((a, b) => {
+            const sa = score(a.symbol, a.name) + (sp500Symbols.has(a.symbol) ? 10 : 0);
+            const sb = score(b.symbol, b.name) + (sp500Symbols.has(b.symbol) ? 10 : 0);
+            return sb - sa;
+        });
+
+        // ── Fallback to mock if nothing found ──
+        if (merged.length === 0) {
+            return mockSearchResults
+                .filter(s => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q))
+                .map(s => ({ ...s, logo: `https://financialmodelingprep.com/image-stock/${s.symbol}.png` }));
+        }
+
+        return merged.slice(0, 15);
     }
 
     /**

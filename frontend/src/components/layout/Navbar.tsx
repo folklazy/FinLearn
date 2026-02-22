@@ -5,6 +5,15 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, X, LogIn, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { api } from '@/lib/api';
+
+interface SearchResult {
+    symbol: string;
+    name: string;
+    sector: string;
+    exchange: string;
+    logo?: string;
+}
 
 const NAV_LINKS = [
     { href: '/', label: 'หน้าหลัก' },
@@ -15,28 +24,77 @@ const NAV_LINKS = [
 export default function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const [userMenu, setUserMenu] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
     const { data: session, status } = useSession();
     const menuRef = useRef<HTMLDivElement>(null);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Close user menu on outside click
+    // Debounced live search
+    useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
+        debounceRef.current = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const results = await api.searchStocks(searchQuery) as SearchResult[];
+                setSearchResults(results || []);
+                setShowDropdown(true);
+                setActiveIndex(-1);
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 280);
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    }, [searchQuery]);
+
+    // Close dropdown on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) setUserMenu(false);
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) setShowDropdown(false);
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    const navigateToStock = (symbol: string) => {
+        router.push(`/stocks/${symbol}`);
+        setSearchQuery('');
+        setShowDropdown(false);
+        setActiveIndex(-1);
+        setMobileOpen(false);
+    };
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        if (searchQuery.trim()) {
+        if (activeIndex >= 0 && searchResults[activeIndex]) {
+            navigateToStock(searchResults[activeIndex].symbol);
+        } else if (searchQuery.trim()) {
             router.push(`/stocks?q=${encodeURIComponent(searchQuery)}`);
             setSearchQuery('');
+            setShowDropdown(false);
             setMobileOpen(false);
         }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!showDropdown || searchResults.length === 0) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => Math.min(p + 1, searchResults.length - 1)); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => Math.max(p - 1, -1)); }
+        else if (e.key === 'Escape') { setShowDropdown(false); setActiveIndex(-1); }
     };
 
     const isActive = (href: string) => href !== '#' && (href === '/' ? pathname === '/' : pathname.startsWith(href));
@@ -83,16 +141,81 @@ export default function Navbar() {
                     {/* ── Right side ── */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="hidden-mobile">
                         {/* Search */}
-                        <form onSubmit={handleSearch} style={{ position: 'relative' }}>
-                            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="ค้นหาหุ้น..."
-                                className="input"
-                                style={{ width: '180px', padding: '7px 12px 7px 34px', fontSize: '0.82rem', borderRadius: '9px', background: 'var(--bg-secondary)' }}
-                                onFocus={e => { e.currentTarget.style.width = '240px'; }}
-                                onBlur={e => { e.currentTarget.style.width = '180px'; }}
-                            />
-                        </form>
+                        <div ref={searchContainerRef} style={{ position: 'relative' }}>
+                            <form onSubmit={handleSearch} style={{ position: 'relative' }}>
+                                {searchLoading ? (
+                                    <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', border: '2px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                ) : (
+                                    <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                                )}
+                                <input type="text" value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    onFocus={() => { if (searchResults.length > 0) setShowDropdown(true); }}
+                                    placeholder="ค้นหาหุ้น..."
+                                    className="input"
+                                    style={{ width: '200px', padding: '7px 12px 7px 34px', fontSize: '0.82rem', borderRadius: '9px', background: 'var(--bg-secondary)', transition: 'width 0.2s' }}
+                                />
+                            </form>
+
+                            {/* Search Dropdown */}
+                            {showDropdown && searchResults.length > 0 && (
+                                <div className="animate-scale-in" style={{
+                                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                                    minWidth: '340px', background: 'var(--bg-elevated)',
+                                    border: '1px solid var(--border)', borderRadius: '12px',
+                                    boxShadow: '0 16px 48px rgba(0,0,0,0.4)', zIndex: 9999, overflow: 'hidden',
+                                }}>
+                                    <div style={{ padding: '6px 12px 4px', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
+                                        ผลการค้นหา — {searchResults.length} รายการ
+                                    </div>
+                                    {searchResults.slice(0, 8).map((result, idx) => (
+                                        <button key={result.symbol}
+                                            onClick={() => navigateToStock(result.symbol)}
+                                            onMouseEnter={() => setActiveIndex(idx)}
+                                            style={{
+                                                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                                                padding: '10px 14px', background: idx === activeIndex ? 'rgba(99,102,241,0.1)' : 'transparent',
+                                                border: 'none', cursor: 'pointer', color: 'var(--text-primary)',
+                                                textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.1s',
+                                                borderBottom: idx < Math.min(searchResults.length, 8) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                            }}
+                                        >
+                                            {/* Logo */}
+                                            <div style={{ width: '34px', height: '34px', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-secondary)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <img src={result.logo || `https://financialmodelingprep.com/image-stock/${result.symbol}.png`}
+                                                    alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                        e.currentTarget.parentElement!.innerHTML = `<span style="font-size:0.75rem;font-weight:700;color:var(--primary-light)">${result.symbol.slice(0, 3)}</span>`;
+                                                    }}
+                                                />
+                                            </div>
+                                            {/* Name + exchange */}
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {result.name}
+                                                </div>
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                    {result.exchange ? `${result.exchange}:${result.symbol}` : result.symbol}
+                                                </div>
+                                            </div>
+                                            {/* Sector */}
+                                            {result.sector && (
+                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0, maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {result.sector}
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                    {searchResults.length > 8 && (
+                                        <div style={{ padding: '8px 14px', fontSize: '0.72rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                                            + {searchResults.length - 8} รายการเพิ่มเติม · กด Enter เพื่อดูทั้งหมด
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         {/* Auth */}
                         {status === 'loading' ? (
