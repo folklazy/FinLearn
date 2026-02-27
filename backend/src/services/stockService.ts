@@ -135,17 +135,24 @@ export class StockService {
             ? fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.epsdiluted || s.eps })).reverse()
             : (yahooMetrics?.epsHistory ?? []);
 
-        // Build competitors — FMP (primary) + Yahoo Finance (fallback when FMP rate-limited)
+        // Build competitors — same-sector/industry filtering, FMP + Yahoo fallback
         const competitors: CompetitorData[] = [];
-        const peerSymbols = (finnhubPeers || []).filter(p => p !== symbol).slice(0, 4);
-        if (peerSymbols.length > 0) {
+        // Take up to 10 candidates, drop non-US (symbols with '.') early
+        const peerCandidates = (finnhubPeers || [])
+            .filter(p => p !== symbol && !p.includes('.'))
+            .slice(0, 10);
+
+        if (peerCandidates.length > 0) {
             const [peerFmpProfiles, peerFmpMetrics, peerYahooProfiles, peerYahooMetrics] = await Promise.all([
-                Promise.all(peerSymbols.map(p => fmp.getProfile(p).catch(() => null))),
-                Promise.all(peerSymbols.map(p => fmp.getKeyMetrics(p).catch(() => null))),
-                Promise.all(peerSymbols.map(p => yahoo.getProfile(p).catch(() => null))),
-                Promise.all(peerSymbols.map(p => yahoo.getKeyMetrics(p).catch(() => null))),
+                Promise.all(peerCandidates.map(p => fmp.getProfile(p).catch(() => null))),
+                Promise.all(peerCandidates.map(p => fmp.getKeyMetrics(p).catch(() => null))),
+                Promise.all(peerCandidates.map(p => yahoo.getProfile(p).catch(() => null))),
+                Promise.all(peerCandidates.map(p => yahoo.getKeyMetrics(p).catch(() => null))),
             ]);
-            for (let i = 0; i < peerSymbols.length; i++) {
+
+            const candidates: (CompetitorData & { _sector: string })[] = [];
+
+            for (let i = 0; i < peerCandidates.length; i++) {
                 const pp = peerFmpProfiles[i];
                 const pm = peerFmpMetrics[i];
                 const yp = peerYahooProfiles[i];
@@ -153,7 +160,10 @@ export class StockService {
 
                 const peerName = pp?.companyName || yp?.name;
                 const peerMarketCap = pp?.marketCap || yp?.marketCap || 0;
-                if (!peerName) continue; // skip if no name from any source
+                if (!peerName) continue;
+
+                const peerSector = pp?.sector || yp?.sector || '';
+                const peerIndustry = pp?.industry || yp?.industry || '';
 
                 const peerRevGrowth = pm?.revenueGrowth != null
                     ? pm.revenueGrowth * 100
@@ -161,18 +171,33 @@ export class StockService {
                 const peerDivYield = pp?.lastDividend && pp?.price
                     ? parseFloat(((pp.lastDividend / pp.price) * 100).toFixed(2))
                     : (ym?.dividendYield ?? null);
-
                 const rawPe = pm?.peRatioTTM ?? ym?.pe ?? null;
                 const rawMargin = pm?.netProfitMarginTTM ?? ym?.profitMargin ?? 0;
-                competitors.push({
-                    symbol: peerSymbols[i],
+
+                candidates.push({
+                    symbol: peerCandidates[i],
                     name: peerName,
                     marketCap: peerMarketCap,
                     pe: rawPe ? parseFloat(rawPe.toFixed(1)) : null,
                     profitMargin: parseFloat((rawMargin ?? 0).toFixed(2)),
                     revenueGrowth: parseFloat((peerRevGrowth ?? 0).toFixed(1)),
                     dividendYield: peerDivYield,
-                });
+                    _sector: peerSector,
+                    _industry: peerIndustry,
+                } as any);
+            }
+
+            // Prefer same-industry → same-sector → any; sort each tier by market cap desc
+            const sameSector = candidates.filter(c => (c as any)._sector && (c as any)._sector === profileSector);
+            const rest = candidates.filter(c => !sameSector.includes(c));
+            const sorted = [
+                ...sameSector.sort((a, b) => b.marketCap - a.marketCap),
+                ...rest.sort((a, b) => b.marketCap - a.marketCap),
+            ];
+
+            for (const c of sorted.slice(0, 4)) {
+                const { _sector, _industry, ...comp } = c as any;
+                competitors.push(comp);
             }
         }
 
