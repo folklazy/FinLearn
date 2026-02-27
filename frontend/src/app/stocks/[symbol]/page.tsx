@@ -11,7 +11,7 @@ import {
     ChevronRight, BookOpen,
 } from 'lucide-react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
+    AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
     ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line,
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts';
@@ -161,6 +161,21 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
     const week52Percent = ((price.current - price.week52Low) / (price.week52High - price.week52Low)) * 100;
 
+    // Chart color — green if period is up, red if down
+    const chartData = hasHistory ? getPriceHistory() : [];
+    const chartIsUp = chartData.length >= 2 ? (chartData[chartData.length - 1]?.close ?? 0) >= (chartData[0]?.close ?? 0) : true;
+    const chartColor = chartIsUp ? '#22c55e' : '#ef4444';
+    const chartGradId = chartIsUp ? 'gradUp' : 'gradDown';
+    const xTickFmt = (v: string) => {
+        if (!v) return '';
+        if (priceRange === '5Y' || priceRange === 'All') return v.slice(0, 4);
+        if (priceRange === '6M' || priceRange === 'YTD' || priceRange === '1Y') {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return months[parseInt(v.slice(5, 7)) - 1] ?? v.slice(5);
+        }
+        return v.slice(5); // MM-DD for short ranges
+    };
+
     return (
         <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 24px 48px', display: 'flex', gap: '0', alignItems: 'flex-start' }}>
 
@@ -278,14 +293,32 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
                 </div>
                 {hasHistory ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={getPriceHistory()}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => v.slice(5)} />
-                            <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} domain={['auto', 'auto']} />
-                            <RTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                            <Line type="monotone" dataKey="close" stroke="var(--primary)" strokeWidth={2} dot={false} />
-                        </LineChart>
+                    <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={chartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id={chartGradId} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={chartColor} stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.4} strokeDasharray="0" />
+                            <XAxis
+                                dataKey="date"
+                                tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                                tickFormatter={xTickFmt}
+                                tickLine={false}
+                                axisLine={false}
+                                interval="preserveStartEnd"
+                                tickCount={6}
+                            />
+                            <YAxis hide domain={['auto', 'auto']} />
+                            <RTooltip
+                                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-primary)' }}
+                                formatter={(val: unknown) => [`$${Number(val).toFixed(2)}`, 'ราคา']}
+                                labelFormatter={(label) => `${label}`}
+                            />
+                            <Area type="monotone" dataKey="close" stroke={chartColor} strokeWidth={2} fill={`url(#${chartGradId})`} dot={false} activeDot={{ r: 4, fill: chartColor, strokeWidth: 0 }} />
+                        </AreaChart>
                     </ResponsiveContainer>
                 ) : (
                     <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
