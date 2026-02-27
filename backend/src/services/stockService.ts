@@ -135,22 +135,27 @@ export class StockService {
             ? fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.epsdiluted || s.eps })).reverse()
             : (yahooMetrics?.epsHistory ?? []);
 
-        // Build competitors from Finnhub peers + FMP profile data
+        // Build competitors from Finnhub peers + FMP profile + FMP key metrics
         const competitors: CompetitorData[] = [];
         const peerSymbols = (finnhubPeers || []).filter(p => p !== symbol).slice(0, 4);
         if (peerSymbols.length > 0) {
-            const peerProfiles = await Promise.all(peerSymbols.map(p => fmp.getProfile(p).catch(() => null)));
+            const [peerProfiles, peerMetrics] = await Promise.all([
+                Promise.all(peerSymbols.map(p => fmp.getProfile(p).catch(() => null))),
+                Promise.all(peerSymbols.map(p => fmp.getKeyMetrics(p).catch(() => null))),
+            ]);
             for (let i = 0; i < peerSymbols.length; i++) {
                 const pp = peerProfiles[i];
+                const pm = peerMetrics[i];
                 if (pp) {
+                    const peerRevGrowth = pm?.revenueGrowth != null ? pm.revenueGrowth * 100 : 0;
                     competitors.push({
                         symbol: peerSymbols[i],
                         name: pp.companyName,
                         marketCap: pp.marketCap,
-                        pe: null,
-                        profitMargin: 0,
-                        revenueGrowth: 0,
-                        dividendYield: pp.lastDividend > 0 && pp.price > 0 ? (pp.lastDividend / pp.price) * 100 : null,
+                        pe: pm?.peRatioTTM ? parseFloat(pm.peRatioTTM.toFixed(1)) : null,
+                        profitMargin: pm?.netProfitMarginTTM ? parseFloat(pm.netProfitMarginTTM.toFixed(2)) : 0,
+                        revenueGrowth: parseFloat(peerRevGrowth.toFixed(1)),
+                        dividendYield: pp.lastDividend > 0 && pp.price > 0 ? parseFloat(((pp.lastDividend / pp.price) * 100).toFixed(2)) : null,
                     });
                 }
             }
