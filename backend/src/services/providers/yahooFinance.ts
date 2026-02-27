@@ -104,12 +104,13 @@ export interface YFKeyMetrics {
 export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null> {
     try {
         const result: any = await yahooFinance.quoteSummary(symbol, {
-            modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory'],
+            modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory', 'incomeStatementHistoryQuarterly'],
         });
         const fd = result?.financialData;
         const ks = result?.defaultKeyStatistics;
         const sd = result?.summaryDetail;
-        const is: any[] | undefined = result?.incomeStatementHistory?.incomeStatementHistory;
+        const is: any[] | undefined = result?.incomeStatementHistory?.incomeStatementHistory
+            ?? result?.incomeStatementHistoryQuarterly?.incomeStatementHistory;
 
         if (!fd && !ks && !sd) return null;
 
@@ -205,11 +206,18 @@ export interface YFFinancials {
 export async function getFinancials(symbol: string): Promise<YFFinancials | null> {
     try {
         const result: any = await yahooFinance.quoteSummary(symbol, {
-            modules: ['incomeStatementHistory', 'balanceSheetHistory', 'cashflowStatementHistory'],
+            modules: [
+                'incomeStatementHistory', 'incomeStatementHistoryQuarterly',
+                'balanceSheetHistory', 'balanceSheetHistoryQuarterly',
+                'cashflowStatementHistory', 'cashflowStatementHistoryQuarterly',
+            ],
         });
-        const is = result?.incomeStatementHistory?.incomeStatementHistory?.[0];
-        const bs = result?.balanceSheetHistory?.balanceSheetStatements?.[0];
-        const cf = result?.cashflowStatementHistory?.cashflowStatements?.[0];
+        const is = result?.incomeStatementHistory?.incomeStatementHistory?.[0]
+            ?? result?.incomeStatementHistoryQuarterly?.incomeStatementHistory?.[0];
+        const bs = result?.balanceSheetHistory?.balanceSheetStatements?.[0]
+            ?? result?.balanceSheetHistoryQuarterly?.balanceSheetStatements?.[0];
+        const cf = result?.cashflowStatementHistory?.cashflowStatements?.[0]
+            ?? result?.cashflowStatementHistoryQuarterly?.cashflowStatements?.[0];
 
         if (!is && !bs && !cf) return null;
 
