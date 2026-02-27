@@ -68,7 +68,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     // ── Data availability flags ──
     const hasHistory = price.history && price.history.length > 0;
     const hasRevenueHistory = keyMetrics.revenueHistory && keyMetrics.revenueHistory.length > 0;
-    const hasEpsHistory = keyMetrics.epsHistory && keyMetrics.epsHistory.length > 0;
+    const hasEpsHistory = keyMetrics.epsHistory && keyMetrics.epsHistory.length > 0 && keyMetrics.epsHistory.some(e => e.value !== 0);
     const hasIncomeData = financials.incomeStatement.revenue > 0;
     const hasBalanceData = financials.balanceSheet.totalAssets > 0;
     const hasCashFlow = financials.cashFlow.operating !== 0 || financials.cashFlow.investing !== 0;
@@ -105,13 +105,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         eps: e.value,
     })) : [];
 
-    // Income Statement waterfall
+    // Income Statement waterfall — only include items with real data
     const incomeData = hasIncomeData ? [
         { name: 'รายได้', value: financials.incomeStatement.revenue / 1e9, fill: '#6366f1' },
-        { name: 'ต้นทุน', value: -financials.incomeStatement.costOfRevenue / 1e9, fill: '#ef4444' },
-        { name: 'ค่าใช้จ่าย', value: -financials.incomeStatement.operatingExpenses / 1e9, fill: '#f59e0b' },
-        { name: 'กำไรสุทธิ', value: financials.incomeStatement.netIncome / 1e9, fill: '#22c55e' },
-    ] : [];
+        financials.incomeStatement.grossProfit > 0 ? { name: 'กำไรขั้นต้น', value: financials.incomeStatement.grossProfit / 1e9, fill: '#8b5cf6' } : null,
+        financials.incomeStatement.costOfRevenue > 0 ? { name: 'ต้นทุน', value: -financials.incomeStatement.costOfRevenue / 1e9, fill: '#ef4444' } : null,
+        financials.incomeStatement.operatingExpenses > 0 ? { name: 'ค่าใช้จ่าย', value: -financials.incomeStatement.operatingExpenses / 1e9, fill: '#f59e0b' } : null,
+        financials.incomeStatement.netIncome != null ? { name: 'กำไรสุทธิ', value: financials.incomeStatement.netIncome / 1e9, fill: '#22c55e' } : null,
+    ].filter(Boolean) as { name: string; value: number; fill: string }[] : [];
 
     // Balance sheet pie
     const balanceData = hasBalanceData ? [
@@ -368,7 +369,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         { label: 'รายได้ต่อปี', value: keyMetrics.revenue != null ? formatLargeNumber(keyMetrics.revenue) : 'N/A' },
                         { label: 'กำไรสุทธิ', value: keyMetrics.netIncome != null ? formatLargeNumber(keyMetrics.netIncome) : 'N/A' },
                         { label: 'อัตรากำไรสุทธิ', value: keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A', color: keyMetrics.profitMargin > 20 ? 'var(--success)' : keyMetrics.profitMargin > 0 ? 'var(--warning)' : undefined },
-                        { label: 'หนี้ต่อทุน (D/E)', value: `${keyMetrics.debtToEquity}%`, color: keyMetrics.debtToEquity > 150 ? 'var(--danger)' : 'var(--success)' },
+                        { label: 'หนี้ต่อทุน (D/E)', value: keyMetrics.debtToEquity ? `${keyMetrics.debtToEquity}%` : 'N/A', color: keyMetrics.debtToEquity > 150 ? 'var(--danger)' : keyMetrics.debtToEquity > 0 ? 'var(--success)' : undefined },
+                        { label: 'Current Ratio', value: keyMetrics.currentRatio > 0 ? `${keyMetrics.currentRatio}x` : 'N/A', color: keyMetrics.currentRatio >= 1.5 ? 'var(--success)' : keyMetrics.currentRatio >= 1 ? 'var(--warning)' : keyMetrics.currentRatio > 0 ? 'var(--danger)' : undefined },
                         { label: 'ROE', value: keyMetrics.roe ? `${keyMetrics.roe}%` : 'N/A' },
                     ].map((item, i) => (
                         <div key={i} className="metric-card">
@@ -679,7 +681,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 <td style={{ padding: '12px 16px' }}>{formatLargeNumber(profile.marketCap)}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.pe ?? 'N/A'}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A'}</td>
-                                <td style={{ padding: '12px 16px' }} className={getPriceColor(keyMetrics.revenueGrowth)}>{formatPercent(keyMetrics.revenueGrowth)}</td>
+                                <td style={{ padding: '12px 16px' }} className={keyMetrics.revenueGrowth ? getPriceColor(keyMetrics.revenueGrowth) : ''}>{keyMetrics.revenueGrowth ? formatPercent(keyMetrics.revenueGrowth) : 'N/A'}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.dividendYield ? `${keyMetrics.dividendYield}%` : '—'}</td>
                             </tr>
                             {/* Competitors */}
@@ -691,7 +693,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                     <td style={{ padding: '12px 16px' }}>{formatLargeNumber(c.marketCap)}</td>
                                     <td style={{ padding: '12px 16px' }}>{c.pe?.toFixed(1) ?? 'N/A'}</td>
                                     <td style={{ padding: '12px 16px' }}>{c.profitMargin ? `${c.profitMargin}%` : 'N/A'}</td>
-                                    <td style={{ padding: '12px 16px' }} className={getPriceColor(c.revenueGrowth)}>{formatPercent(c.revenueGrowth)}</td>
+                                    <td style={{ padding: '12px 16px' }} className={c.revenueGrowth ? getPriceColor(c.revenueGrowth) : ''}>{c.revenueGrowth ? formatPercent(c.revenueGrowth) : 'N/A'}</td>
                                     <td style={{ padding: '12px 16px' }}>{c.dividendYield ? `${c.dividendYield}%` : '—'}</td>
                                 </tr>
                             ))}
