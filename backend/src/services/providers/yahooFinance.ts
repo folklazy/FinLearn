@@ -164,16 +164,16 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             })).filter((s: any) => s.year).reverse();
         }
 
-        // Revenue growth — from financialData or computed from financials history
+        // Revenue growth — prefer annual comparison (stable) over quarterly YoY from financialData
         let revenueGrowth: number | null = null;
-        if (fd?.revenueGrowth != null) {
-            revenueGrowth = fd.revenueGrowth * 100;
-        } else if (finRows.length >= 2) {
+        if (finRows.length >= 2) {
             const r0 = finRows[finRows.length - 1]?.totalRevenue;
             const r1 = finRows[finRows.length - 2]?.totalRevenue;
             if (r0 && r1) revenueGrowth = ((r0 - r1) / Math.abs(r1)) * 100;
         } else if (is && is.length >= 2 && is[1]?.totalRevenue) {
             revenueGrowth = ((is[0].totalRevenue - is[1].totalRevenue) / Math.abs(is[1].totalRevenue)) * 100;
+        } else if (fd?.revenueGrowth != null) {
+            revenueGrowth = fd.revenueGrowth * 100;
         }
 
         // EPS growth — from financialData or computed from EPS history
@@ -196,7 +196,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
 
         const rawDivYield = (sd as any)?.trailingAnnualDividendYield ?? sd?.dividendYield ?? null;
         return {
-            pe: sd?.trailingPE ?? (fd?.currentPrice && fd?.trailingEps ? fd.currentPrice / fd.trailingEps : null) ?? (ks?.forwardPE ?? null),
+            pe: (sd?.trailingPE ?? (fd?.currentPrice && fd?.trailingEps && fd.trailingEps > 0 ? fd.currentPrice / fd.trailingEps : null)) ?? null,
             pb: ks?.priceToBook ?? null,
             dividendYield: rawDivYield != null && rawDivYield > 0 ? parseFloat((rawDivYield * 100).toFixed(2)) : null,
             dividendPerShare: sd?.dividendRate ?? null,

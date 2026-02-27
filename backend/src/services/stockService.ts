@@ -213,7 +213,7 @@ export class StockService {
             }
         }
 
-        // Compute growth from FMP income history as final fallback
+        // Compute growth from FMP income history
         const fmpRevGrowth = fmpIncome.length >= 2 && fmpIncome[1]?.revenue
             ? ((fmpIncome[0].revenue - fmpIncome[1].revenue) / Math.abs(fmpIncome[1].revenue)) * 100
             : null;
@@ -221,9 +221,29 @@ export class StockService {
             ? ((fmpIncome[0].epsdiluted - fmpIncome[1].epsdiluted) / Math.abs(fmpIncome[1].epsdiluted)) * 100
             : null;
 
+        // Compute growth from Yahoo annual history (stable fallback when FMP income unavailable)
+        const yahooRevHist = yahooMetrics?.revenueHistory ?? [];
+        const yahooRevGrowth = yahooRevHist.length >= 2
+            ? (() => {
+                const sorted = [...yahooRevHist].sort((a, b) => a.year.localeCompare(b.year));
+                const r0 = sorted[sorted.length - 1]?.value;
+                const r1 = sorted[sorted.length - 2]?.value;
+                return r0 && r1 ? ((r0 - r1) / Math.abs(r1)) * 100 : null;
+            })()
+            : null;
+        const yahooEpsHist = yahooMetrics?.epsHistory ?? [];
+        const yahooEpsGrowth = yahooEpsHist.length >= 2
+            ? (() => {
+                const sorted = [...yahooEpsHist].sort((a, b) => a.year.localeCompare(b.year));
+                const e0 = sorted[sorted.length - 1]?.value;
+                const e1 = sorted[sorted.length - 2]?.value;
+                return e0 != null && e1 != null && e1 !== 0 ? ((e0 - e1) / Math.abs(e1)) * 100 : null;
+            })()
+            : null;
+
         // Extract metrics — FMP (decimal) → Finnhub (percentage) → Yahoo Finance (percentage)
         // NOTE: FMP ratios are decimals, Finnhub & Yahoo are percentages
-        const pe = fmpMetrics?.peRatioTTM ?? finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null;
+        const peRaw = fmpMetrics?.peRatioTTM ?? finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null;
         const roeRaw = (fmpMetrics?.roeTTM != null ? fmpMetrics.roeTTM * 100 : null) ?? finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0;
         const profitMarginRaw = fmpMetrics?.netProfitMarginTTM ?? finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0;
         // Resolve dividendPerShare first so we can compute yield from it (most accurate)  
@@ -241,9 +261,12 @@ export class StockService {
         const currentRatio = fmpMetrics?.currentRatioTTM ?? finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? null;
         const pb = fmpMetrics?.priceToBookRatioTTM ?? finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null;
         const eps = fmpIncome[0]?.epsdiluted ?? yahooMetrics?.eps ?? 0;
-        // Prefer annual income-statement comparison (stable) over Finnhub 5Y CAGR and Yahoo quarterly YoY
-        const epsGrowthRaw = (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? fmpEpsGrowth ?? finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? 0;
-        const revenueGrowthRaw = (fmpMetrics?.revenueGrowth != null ? fmpMetrics.revenueGrowth * 100 : null) ?? fmpRevGrowth ?? finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? 0;
+        // PE is meaningless for negative-earnings companies; also reject negative or absurdly large PE
+        const pe = eps > 0 && peRaw != null && peRaw > 0 && peRaw < 500 ? peRaw : null;
+        // Annual income-statement comparison (fmpRevGrowth/fmpEpsGrowth) is most reliable:
+        // avoids TTM distortions from one-time items and stale comparison periods
+        const epsGrowthRaw = fmpEpsGrowth ?? yahooEpsGrowth ?? (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? finnhubFinancials?.epsGrowth5Y ?? 0;
+        const revenueGrowthRaw = fmpRevGrowth ?? yahooRevGrowth ?? (fmpMetrics?.revenueGrowth != null ? fmpMetrics.revenueGrowth * 100 : null) ?? finnhubFinancials?.revenueGrowth5Y ?? 0;
 
         // Volume fallback: Finnhub → Yahoo
         const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];
