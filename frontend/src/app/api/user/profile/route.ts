@@ -16,7 +16,7 @@ export async function GET() {
             email: true,
             name: true,
             image: true,
-            passwordHash: false,
+            passwordHash: true,
             profile: true,
             sectorPreferences: {
                 include: { sector: true },
@@ -28,7 +28,8 @@ export async function GET() {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    const { passwordHash, ...userWithoutHash } = user;
+    return NextResponse.json({ user: { ...userWithoutHash, hasPassword: !!passwordHash } });
 }
 
 // PUT /api/user/profile — อัปเดต profile
@@ -38,6 +39,7 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = session.user.id as string;
     const body = await req.json();
     const {
         name,
@@ -57,7 +59,7 @@ export async function PUT(req: NextRequest) {
     // Update user basic info
     if (name !== undefined || image !== undefined) {
         await prisma.user.update({
-            where: { id: session.user.id },
+            where: { id: userId },
             data: {
                 ...(name !== undefined && { name }),
                 ...(image !== undefined && { image }),
@@ -85,28 +87,26 @@ export async function PUT(req: NextRequest) {
     if (Object.keys(profileData).length > 0) {
         // Check required fields for create
         const existing = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
+            where: { userId },
         });
 
         if (existing) {
             await prisma.userProfile.update({
-                where: { userId: session.user.id },
+                where: { userId },
                 data: profileData,
             });
         } else {
-            // Creating new profile — require mandatory fields
-            if (!profileData.displayName || !profileData.experienceLevel || !profileData.primaryGoal) {
-                return NextResponse.json(
-                    { error: 'displayName, experienceLevel, primaryGoal are required' },
-                    { status: 400 },
-                );
-            }
+            // Creating new profile — use defaults for required fields if not provided
+            const nameUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { name: true },
+            });
             await prisma.userProfile.create({
                 data: {
-                    userId: session.user.id,
-                    displayName: profileData.displayName as string,
-                    experienceLevel: profileData.experienceLevel as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
-                    primaryGoal: profileData.primaryGoal as 'LEARN_BASICS' | 'VALUE' | 'GROWTH' | 'DIVIDEND' | 'TRADING_EDU',
+                    userId,
+                    displayName: (profileData.displayName as string) || nameUser?.name || 'ผู้ใช้',
+                    experienceLevel: (profileData.experienceLevel as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED') || 'BEGINNER',
+                    primaryGoal: (profileData.primaryGoal as 'LEARN_BASICS' | 'VALUE' | 'GROWTH' | 'DIVIDEND' | 'TRADING_EDU') || 'LEARN_BASICS',
                     ...profileData,
                 },
             });
@@ -116,13 +116,13 @@ export async function PUT(req: NextRequest) {
     // Update sector preferences
     if (sectorIds !== undefined && Array.isArray(sectorIds)) {
         await prisma.userSectorPreference.deleteMany({
-            where: { userId: session.user.id },
+            where: { userId },
         });
 
         if (sectorIds.length > 0) {
             await prisma.userSectorPreference.createMany({
                 data: sectorIds.map((sectorId: number) => ({
-                    userId: session.user.id,
+                    userId,
                     sectorId: BigInt(sectorId),
                 })),
             });
@@ -131,12 +131,13 @@ export async function PUT(req: NextRequest) {
 
     // Return updated profile
     const updated = await prisma.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: userId },
         select: {
             id: true,
             email: true,
             name: true,
             image: true,
+            passwordHash: true,
             profile: true,
             sectorPreferences: {
                 include: { sector: true },
@@ -144,5 +145,7 @@ export async function PUT(req: NextRequest) {
         },
     });
 
-    return NextResponse.json({ user: updated });
+    if (!updated) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const { passwordHash: ph, ...updatedWithoutHash } = updated;
+    return NextResponse.json({ user: { ...updatedWithoutHash, hasPassword: !!ph } });
 }

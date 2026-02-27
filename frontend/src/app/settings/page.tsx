@@ -49,6 +49,7 @@ interface UserData {
     name: string;
     image: string | null;
     profile: UserProfile | null;
+    hasPassword?: boolean;
 }
 
 export default function SettingsPage() {
@@ -72,8 +73,8 @@ export default function SettingsPage() {
     const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Password fields
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
+    const [hasPassword, setHasPassword] = useState(true);
+    const [currentPassword, setCurrentPassword] = useState('');    const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
@@ -100,8 +101,9 @@ export default function SettingsPage() {
                 const data = await res.json();
                 const user: UserData = data.user;
                 setCurrentEmail(user.email || '');
+                setHasPassword(user.hasPassword ?? false);
+                setDisplayName(user.profile?.displayName || user.name || '');
                 if (user.profile) {
-                    setDisplayName(user.profile.displayName || '');
                     setExperienceLevel(user.profile.experienceLevel || '');
                     setPrimaryGoal(user.profile.primaryGoal || '');
                     setRiskLevel(user.profile.riskLevel || '');
@@ -450,15 +452,19 @@ export default function SettingsPage() {
                     {activeSection === 'password' && (
                         <div style={card} className="animate-fade-in">
                             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}><Lock size={20} /> เปลี่ยนรหัสผ่าน</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', marginBottom: '24px' }}>ตั้งรหัสผ่านใหม่ที่ปลอดภัย</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', marginBottom: '24px' }}>
+                                {hasPassword ? 'ตั้งรหัสผ่านใหม่ที่ปลอดภัย' : 'ตั้งรหัสผ่านสำหรับบัญชีนี้ (ล็อกอินด้วย Social ไม่ต้องใส่รหัสผ่านเดิม)'}
+                            </p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <label style={labelStyle}><Lock size={13} /> รหัสผ่านปัจจุบัน</label>
-                                    <input type={showPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="รหัสผ่านปัจจุบัน" style={{ ...inputStyle, paddingRight: '42px' }} />
-                                    <button onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '12px', bottom: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
-                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                    </button>
-                                </div>
+                                {hasPassword && (
+                                    <div style={{ position: 'relative' }}>
+                                        <label style={labelStyle}><Lock size={13} /> รหัสผ่านปัจจุบัน</label>
+                                        <input type={showPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="รหัสผ่านปัจจุบัน" style={{ ...inputStyle, paddingRight: '42px' }} />
+                                        <button onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '12px', bottom: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                )}
                                 <div>
                                     <label style={labelStyle}><Lock size={13} /> รหัสผ่านใหม่</label>
                                     <input type={showPassword ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="อย่างน้อย 6 ตัวอักษร" style={inputStyle} />
@@ -467,7 +473,12 @@ export default function SettingsPage() {
                                     <label style={labelStyle}><Lock size={13} /> ยืนยันรหัสผ่านใหม่</label>
                                     <input type={showPassword ? 'text' : 'password'} value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="ยืนยันรหัสผ่านใหม่" style={inputStyle} />
                                 </div>
-                                <button onClick={handleChangePassword} disabled={saving || !currentPassword || !newPassword || !confirmNewPassword} className="btn btn-primary" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', opacity: (!currentPassword || !newPassword || !confirmNewPassword || saving) ? 0.6 : 1 }}>
+                                <button
+                                    onClick={handleChangePassword}
+                                    disabled={saving || (hasPassword && !currentPassword) || !newPassword || !confirmNewPassword}
+                                    className="btn btn-primary"
+                                    style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', opacity: (saving || (hasPassword && !currentPassword) || !newPassword || !confirmNewPassword) ? 0.6 : 1 }}
+                                >
                                     <Save size={15} /> {saving ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่าน'}
                                 </button>
                             </div>
