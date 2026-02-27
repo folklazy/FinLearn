@@ -162,12 +162,14 @@ export class StockService {
                     ? parseFloat(((pp.lastDividend / pp.price) * 100).toFixed(2))
                     : (ym?.dividendYield ?? null);
 
+                const rawPe = pm?.peRatioTTM ?? ym?.pe ?? null;
+                const rawMargin = pm?.netProfitMarginTTM ?? ym?.profitMargin ?? 0;
                 competitors.push({
                     symbol: peerSymbols[i],
                     name: peerName,
                     marketCap: peerMarketCap,
-                    pe: pm?.peRatioTTM ? parseFloat(pm.peRatioTTM.toFixed(1)) : (ym?.pe ?? null),
-                    profitMargin: pm?.netProfitMarginTTM ? parseFloat(pm.netProfitMarginTTM.toFixed(2)) : (ym?.profitMargin ?? 0),
+                    pe: rawPe ? parseFloat(rawPe.toFixed(1)) : null,
+                    profitMargin: parseFloat((rawMargin ?? 0).toFixed(2)),
                     revenueGrowth: parseFloat((peerRevGrowth ?? 0).toFixed(1)),
                     dividendYield: peerDivYield,
                 });
