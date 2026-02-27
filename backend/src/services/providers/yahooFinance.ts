@@ -42,6 +42,7 @@ export interface YFProfile {
     description: string;
     sector: string;
     industry: string;
+    exchange: string;
     employees: number;
     headquarters: string;
     website: string;
@@ -64,11 +65,17 @@ export async function getProfile(symbol: string): Promise<YFProfile | null> {
         const officers = (ap as any)?.companyOfficers as Array<{ name: string; title?: string }> | undefined;
         const ceo = officers?.find(o => o.title?.toLowerCase().includes('ceo') || o.title?.toLowerCase().includes('chief executive'))?.name ?? 'N/A';
 
+        const rawExchange: string = (pr as any)?.exchangeName ?? (pr as any)?.exchange ?? '';
+        const exchange = rawExchange.toUpperCase().includes('NASDAQ') ? 'NASDAQ'
+            : rawExchange.toUpperCase().includes('NYSE') ? 'NYSE'
+            : rawExchange || '';
+
         return {
             name,
             description: (ap as any)?.longBusinessSummary?.slice(0, 300) ?? '',
             sector: ap?.sector ?? '',
             industry: ap?.industry ?? '',
+            exchange,
             employees: (ap as any)?.fullTimeEmployees ?? 0,
             headquarters: [ap?.city, ap?.state, ap?.country].filter(Boolean).join(', '),
             website: ap?.website ?? '',

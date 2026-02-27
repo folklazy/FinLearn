@@ -260,7 +260,7 @@ export class StockService {
                 descriptionEn: profileDesc,
                 sector: profileSector,
                 industry: profileIndustry,
-                exchange: normalizeExchange(fmpProfile?.exchange || ''),
+                exchange: normalizeExchange(fmpProfile?.exchange || yahooProfile?.exchange || ''),
                 marketCap: profileMarketCap,
                 marketCapLabel: marketCapLabel(profileMarketCap),
                 employees: profileEmployees,
