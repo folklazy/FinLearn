@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { ArrowRight, BarChart3, BookOpen, Shield, Sparkles } from 'lucide-react';
+import { ArrowRight, BarChart3, BookOpen, Shield, Sparkles, Star } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatPercent } from '@/lib/utils';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface PopularStock {
   symbol: string; name: string; logo: string; sector: string;
@@ -22,16 +24,58 @@ const FALLBACK: PopularStock[] = [
 ];
 
 export default function HomePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [stocks, setStocks] = useState<PopularStock[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isWatchlist, setIsWatchlist] = useState(false);
+  const [watchlistEmpty, setWatchlistEmpty] = useState(false);
 
   useEffect(() => {
-    api.getPopularStocks()
-      .then(data => setStocks(data))
-      .catch(() => setStocks(FALLBACK))
-      .finally(() => setLoading(false));
-  }, []);
+    if (status === 'loading') return;
+
+    if (session?.user) {
+      // Logged in: try to load watchlist
+      fetch('/api/watchlist')
+        .then(r => r.ok ? r.json() : { symbols: [] })
+        .then(async ({ symbols }: { symbols: string[] }) => {
+          if (!symbols || symbols.length === 0) {
+            setWatchlistEmpty(true);
+            return api.getPopularStocks();
+          }
+          setIsWatchlist(true);
+          // Fetch details for each symbol in parallel
+          const results = await Promise.all(
+            symbols.map(sym =>
+              fetch(`${API_BASE}/api/stocks/${sym}`)
+                .then(r => r.ok ? r.json() : null)
+                .catch(() => null)
+            )
+          );
+          return results
+            .filter(Boolean)
+            .map((d: Record<string, unknown>) => ({
+              symbol: d.ticker ?? d.symbol,
+              name: d.name ?? d.longName ?? d.ticker,
+              logo: d.logo ?? `https://logo.clearbit.com/${String(d.website ?? '').replace(/^https?:\/\//, '')}`,
+              sector: d.sector ?? '',
+              price: Number(d.price ?? d.regularMarketPrice ?? 0),
+              change: Number(d.change ?? d.regularMarketChange ?? 0),
+              changePercent: Number(d.changePercent ?? d.regularMarketChangePercent ?? 0),
+              marketCap: Number(d.marketCap ?? 0),
+              overallScore: Number(d.overallScore ?? d.score ?? 0),
+            })) as PopularStock[];
+        })
+        .then(data => setStocks(data?.length ? data : FALLBACK))
+        .catch(() => setStocks(FALLBACK))
+        .finally(() => setLoading(false));
+    } else {
+      // Not logged in: popular stocks
+      api.getPopularStocks()
+        .then(data => setStocks(data))
+        .catch(() => setStocks(FALLBACK))
+        .finally(() => setLoading(false));
+    }
+  }, [session, status]);
 
   const displayStocks = stocks.length > 0 ? stocks : FALLBACK;
 
@@ -123,11 +167,21 @@ export default function HomePage() {
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
             <div>
-              <p style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--primary-light)', marginBottom: '8px' }}>Popular Stocks</p>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>หุ้นยอดนิยม</h2>
+              <p style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--primary-light)', marginBottom: '8px' }}>
+                {isWatchlist ? 'My Watchlist' : 'Popular Stocks'}
+              </p>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isWatchlist ? <><Star size={20} style={{ color: 'var(--primary-light)' }} /> Watchlist ของคุณ</> : 'หุ้นยอดนิยม'}
+              </h2>
+              {watchlistEmpty && (
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Watchlist ว่างเปล่า — แสดงหุ้นยอดนิยมแทน •{' '}
+                  <Link href="/stocks" style={{ color: 'var(--primary-light)' }}>เพิ่มหุ้น</Link>
+                </p>
+              )}
             </div>
-            <Link href="/stocks" className="btn btn-ghost" style={{ gap: '6px', fontSize: '0.82rem' }}>
-              ดูทั้งหมด <ArrowRight size={14} />
+            <Link href={isWatchlist ? '/watchlist' : '/stocks'} className="btn btn-ghost" style={{ gap: '6px', fontSize: '0.82rem' }}>
+              {isWatchlist ? 'ดูพอร์ต' : 'ดูทั้งหมด'} <ArrowRight size={14} />
             </Link>
           </div>
 
