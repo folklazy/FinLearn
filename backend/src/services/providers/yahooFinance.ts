@@ -194,10 +194,11 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             }
         }
 
+        const rawDivYield = (sd as any)?.trailingAnnualDividendYield ?? sd?.dividendYield ?? null;
         return {
             pe: sd?.trailingPE ?? (fd?.currentPrice && fd?.trailingEps ? fd.currentPrice / fd.trailingEps : null) ?? (ks?.forwardPE ?? null),
             pb: ks?.priceToBook ?? null,
-            dividendYield: sd?.dividendYield ? sd.dividendYield * 100 : null,
+            dividendYield: rawDivYield != null && rawDivYield > 0 ? parseFloat((rawDivYield * 100).toFixed(2)) : null,
             dividendPerShare: sd?.dividendRate ?? null,
             revenue: fd?.totalRevenue ?? (is?.[0]?.totalRevenue ?? null),
             revenueGrowth,

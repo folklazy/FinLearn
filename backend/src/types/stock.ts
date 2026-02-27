@@ -69,8 +69,8 @@ export interface KeyMetrics {
     revenueGrowth: number;
     netIncome: number | null;
     profitMargin: number;
-    debtToEquity: number;
-    currentRatio: number;
+    debtToEquity: number | null;
+    currentRatio: number | null;
     roe: number;
 
     // Growth

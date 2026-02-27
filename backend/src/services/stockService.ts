@@ -226,9 +226,12 @@ export class StockService {
         const pe = fmpMetrics?.peRatioTTM ?? finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null;
         const roeRaw = (fmpMetrics?.roeTTM != null ? fmpMetrics.roeTTM * 100 : null) ?? finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0;
         const profitMarginRaw = fmpMetrics?.netProfitMarginTTM ?? finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0;
-        const divYieldRaw = (fmpMetrics?.dividendYieldTTM != null ? fmpMetrics.dividendYieldTTM * 100 : null) ?? finnhubFinancials?.dividendYieldIndicatedAnnual ?? yahooMetrics?.dividendYield ?? 0;
-        const debtToEquity = fmpMetrics?.debtToEquityTTM ?? finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? 0;
-        const currentRatio = fmpMetrics?.currentRatioTTM ?? finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? 0;
+        const divYieldRaw = (fmpMetrics?.dividendYieldTTM != null ? fmpMetrics.dividendYieldTTM * 100 : null)
+            || finnhubFinancials?.dividendYieldIndicatedAnnual
+            || yahooMetrics?.dividendYield
+            || 0;
+        const debtToEquity = fmpMetrics?.debtToEquityTTM ?? finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? null;
+        const currentRatio = fmpMetrics?.currentRatioTTM ?? finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? null;
         const pb = fmpMetrics?.priceToBookRatioTTM ?? finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null;
         const eps = fmpIncome[0]?.epsdiluted ?? yahooMetrics?.eps ?? 0;
         const epsGrowthRaw = (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? fmpEpsGrowth ?? 0;
@@ -243,7 +246,7 @@ export class StockService {
         const growthScore = Math.max(1, Math.min(5, 2.5 + revenueGrowthRaw / 10));
         const strengthScore = Math.max(1, Math.min(5, 2 + profitMarginRaw / 10));
         const dividendScore = Math.max(1, Math.min(5, 1 + divYieldRaw / 5));
-        const riskScore = Math.max(1, Math.min(5, 4 - debtToEquity / 100));
+        const riskScore = Math.max(1, Math.min(5, 4 - (debtToEquity ?? 50) / 100));
         const overall = parseFloat(((valueScore + growthScore + strengthScore + dividendScore + riskScore) / 5).toFixed(1));
 
         const fundScore = Math.round(
@@ -288,13 +291,13 @@ export class StockService {
                 peIndustryAvg: pe ? parseFloat((pe * 0.9).toFixed(1)) : null,
                 pb: pb ? parseFloat(pb.toFixed(1)) : null,
                 dividendYield: divYieldRaw > 0 ? parseFloat(divYieldRaw.toFixed(2)) : null,
-                dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null),
+                dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null) ?? yahooMetrics?.dividendPerShare ?? null,
                 revenue: fmpIncome[0]?.revenue ?? yahooMetrics?.revenue ?? null,
                 revenueGrowth: parseFloat(revenueGrowthRaw.toFixed(1)),
                 netIncome: fmpIncome[0]?.netIncome ?? yahooMetrics?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? null,
                 profitMargin: parseFloat(profitMarginRaw.toFixed(2)),
-                debtToEquity: parseFloat(debtToEquity.toFixed(1)),
-                currentRatio: parseFloat(currentRatio.toFixed(2)),
+                debtToEquity: debtToEquity != null ? parseFloat(debtToEquity.toFixed(1)) : null,
+                currentRatio: currentRatio != null ? parseFloat(currentRatio.toFixed(2)) : null,
                 roe: parseFloat(roeRaw.toFixed(1)),
                 eps,
                 epsGrowth: parseFloat(epsGrowthRaw.toFixed(1)),
@@ -333,8 +336,8 @@ export class StockService {
                 fundamental: {
                     earningsGrowth: epsGrowthRaw > 0 ? 'positive' : epsGrowthRaw < 0 ? 'negative' : 'flat',
                     peVsAvg: pe ? (pe < 20 ? 'undervalued' : pe > 30 ? 'overvalued' : 'fair') : 'fair',
-                    cashPosition: currentRatio > 1.5 ? 'strong' : currentRatio > 1 ? 'moderate' : 'weak',
-                    debtLevel: debtToEquity < 50 ? 'low' : debtToEquity < 150 ? 'moderate' : 'high',
+                    cashPosition: currentRatio == null ? 'moderate' : currentRatio > 1.5 ? 'strong' : currentRatio > 1 ? 'moderate' : 'weak',
+                    debtLevel: debtToEquity == null ? 'moderate' : debtToEquity < 50 ? 'low' : debtToEquity < 150 ? 'moderate' : 'high',
                     overallScore: fundScore,
                 },
                 summary: {
@@ -354,7 +357,7 @@ export class StockService {
                     risk: parseFloat(riskScore.toFixed(1)),
                 },
             },
-            beginnerTips: this.generateTips(overall, pe, divYieldRaw, debtToEquity, profitMarginRaw),
+            beginnerTips: this.generateTips(overall, pe, divYieldRaw, debtToEquity ?? 0, profitMarginRaw),
         };
 
         return data;

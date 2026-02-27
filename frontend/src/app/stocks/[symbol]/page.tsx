@@ -450,8 +450,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         { label: 'รายได้ต่อปี', value: keyMetrics.revenue != null ? formatLargeNumber(keyMetrics.revenue) : 'N/A' },
                         { label: 'กำไรสุทธิ', value: keyMetrics.netIncome != null ? formatLargeNumber(keyMetrics.netIncome) : 'N/A' },
                         { label: 'อัตรากำไรสุทธิ', value: keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A', color: keyMetrics.profitMargin > 20 ? 'var(--success)' : keyMetrics.profitMargin > 0 ? 'var(--warning)' : undefined },
-                        { label: 'หนี้ต่อทุน (D/E)', value: keyMetrics.debtToEquity ? `${keyMetrics.debtToEquity}%` : 'N/A', color: keyMetrics.debtToEquity > 150 ? 'var(--danger)' : keyMetrics.debtToEquity > 0 ? 'var(--success)' : undefined },
-                        { label: 'Current Ratio', value: keyMetrics.currentRatio > 0 ? `${keyMetrics.currentRatio}x` : 'N/A', color: keyMetrics.currentRatio >= 1.5 ? 'var(--success)' : keyMetrics.currentRatio >= 1 ? 'var(--warning)' : keyMetrics.currentRatio > 0 ? 'var(--danger)' : undefined },
+                        { label: 'หนี้ต่อทุน (D/E)', value: keyMetrics.debtToEquity != null && keyMetrics.debtToEquity > 0 ? `${keyMetrics.debtToEquity}%` : 'N/A', color: (keyMetrics.debtToEquity ?? 0) > 150 ? 'var(--danger)' : (keyMetrics.debtToEquity ?? 0) > 0 ? 'var(--success)' : undefined },
+                        { label: 'Current Ratio', value: keyMetrics.currentRatio != null && keyMetrics.currentRatio > 0 ? `${keyMetrics.currentRatio}x` : 'N/A', color: (keyMetrics.currentRatio ?? 0) >= 1.5 ? 'var(--success)' : (keyMetrics.currentRatio ?? 0) >= 1 ? 'var(--warning)' : (keyMetrics.currentRatio ?? 0) > 0 ? 'var(--danger)' : undefined },
                         { label: 'ROE', value: keyMetrics.roe ? `${keyMetrics.roe}%` : 'N/A' },
                     ].map((item, i) => (
                         <div key={i} className="metric-card">
