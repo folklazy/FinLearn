@@ -1,19 +1,85 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Mail, RefreshCw, CheckCircle } from 'lucide-react';
+import { Mail, RefreshCw, CheckCircle, ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams();
     const email = searchParams.get('email') ?? '';
-    const [resending, setResending] = useState(false);
-    const [resent, setResent] = useState(false);
+
+    const [digits, setDigits] = useState(['', '', '', '', '', '']);
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
+    const [resending, setResending] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
+
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    // Countdown timer for resend cooldown
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const t = setTimeout(() => setCooldown(c => c - 1), 1000);
+        return () => clearTimeout(t);
+    }, [cooldown]);
+
+    const otp = digits.join('');
+
+    const handleDigitChange = (index: number, value: string) => {
+        const v = value.replace(/\D/g, '').slice(-1);
+        const next = [...digits];
+        next[index] = v;
+        setDigits(next);
+        setError('');
+        if (v && index < 5) inputRefs.current[index + 1]?.focus();
+        // Auto-submit when all filled
+        if (v && next.every(d => d !== '')) {
+            handleVerify(next.join(''));
+        }
+    };
+
+    const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+        if (e.key === 'Backspace' && !digits[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        if (!pasted) return;
+        const next = [...digits];
+        for (let i = 0; i < 6; i++) next[i] = pasted[i] ?? '';
+        setDigits(next);
+        if (pasted.length === 6) handleVerify(pasted);
+        else inputRefs.current[Math.min(pasted.length, 5)]?.focus();
+    };
+
+    const handleVerify = async (code = otp) => {
+        if (code.length !== 6) { setError('กรุณากรอกรหัส 6 หลักให้ครบ'); return; }
+        if (!email) { setError('ไม่พบอีเมล กรุณาสมัครสมาชิกใหม่'); return; }
+        setLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/auth/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, otp: code }),
+            });
+            const data = await res.json();
+            if (!res.ok) { setError(data.error); setDigits(['', '', '', '', '', '']); inputRefs.current[0]?.focus(); return; }
+            setSuccess(true);
+        } catch {
+            setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleResend = async () => {
-        if (!email) return;
+        if (!email || resending || cooldown > 0) return;
         setResending(true);
         setError('');
         try {
@@ -24,7 +90,9 @@ function VerifyEmailContent() {
             });
             const data = await res.json();
             if (!res.ok) { setError(data.error); return; }
-            setResent(true);
+            setDigits(['', '', '', '', '', '']);
+            setCooldown(60);
+            inputRefs.current[0]?.focus();
         } catch {
             setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
         } finally {
@@ -45,44 +113,88 @@ function VerifyEmailContent() {
                 </Link>
 
                 <div className="card-solid" style={{ padding: '40px 36px', borderRadius: 'var(--radius-xl)' }}>
-                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'color-mix(in srgb, var(--primary) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--primary-light)' }}>
-                        <Mail size={28} />
-                    </div>
+                    {success ? (
+                        <>
+                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <CheckCircle size={32} style={{ color: 'var(--success)' }} />
+                            </div>
+                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '10px' }}>ยืนยันอีเมลสำเร็จ!</h1>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.7, marginBottom: '28px' }}>
+                                บัญชีของคุณพร้อมใช้งานแล้ว
+                            </p>
+                            <Link href="/login" className="btn btn-primary" style={{ display: 'block', padding: '12px', textAlign: 'center' }}>
+                                เข้าสู่ระบบ
+                            </Link>
+                        </>
+                    ) : (
+                        <>
+                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'color-mix(in srgb, var(--primary) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--primary-light)' }}>
+                                <Mail size={28} />
+                            </div>
 
-                    <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '10px' }}>ตรวจสอบอีเมลของคุณ</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.7, marginBottom: '8px' }}>
-                        เราส่งลิงก์ยืนยันไปยัง
-                    </p>
-                    {email && (
-                        <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '24px' }}>
-                            {email}
-                        </p>
+                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>ตรวจสอบอีเมลของคุณ</h1>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '4px' }}>
+                                เราส่งรหัส 6 หลักไปที่
+                            </p>
+                            <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '28px' }}>
+                                {email || '—'}
+                            </p>
+
+                            {/* OTP digit boxes */}
+                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }} onPaste={handlePaste}>
+                                {digits.map((d, i) => (
+                                    <input
+                                        key={i}
+                                        ref={el => { inputRefs.current[i] = el; }}
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={1}
+                                        value={d}
+                                        onChange={e => handleDigitChange(i, e.target.value)}
+                                        onKeyDown={e => handleKeyDown(i, e)}
+                                        disabled={loading}
+                                        style={{
+                                            width: '48px', height: '56px', textAlign: 'center',
+                                            fontSize: '1.5rem', fontWeight: 700,
+                                            background: 'var(--bg-elevated)',
+                                            border: `2px solid ${d ? 'var(--primary)' : error ? 'var(--danger)' : 'var(--border)'}`,
+                                            borderRadius: 'var(--radius-md)',
+                                            color: 'var(--text-primary)',
+                                            outline: 'none',
+                                            transition: 'border-color 0.15s',
+                                            fontFamily: 'inherit',
+                                        }}
+                                    />
+                                ))}
+                            </div>
+
+                            {error && (
+                                <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-bg)', border: '1px solid rgba(251,113,133,0.2)', color: 'var(--danger)', fontSize: '0.82rem', marginBottom: '16px' }}>
+                                    {error}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => handleVerify()}
+                                disabled={loading || otp.length !== 6}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'var(--gradient-primary)', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 600, cursor: (loading || otp.length !== 6) ? 'not-allowed' : 'pointer', opacity: (loading || otp.length !== 6) ? 0.6 : 1, fontFamily: 'inherit', marginBottom: '16px' }}
+                            >
+                                {loading ? 'กำลังยืนยัน...' : <><ArrowRight size={16} /> ยืนยันรหัส</>}
+                            </button>
+
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '4px' }}>
+                                ไม่ได้รับรหัส?{' '}
+                                <button onClick={handleResend} disabled={resending || cooldown > 0}
+                                    style={{ background: 'none', border: 'none', color: cooldown > 0 ? 'var(--text-muted)' : 'var(--primary-light)', fontWeight: 500, cursor: cooldown > 0 ? 'default' : 'pointer', fontSize: '0.82rem', fontFamily: 'inherit', padding: 0 }}>
+                                    {resending ? 'กำลังส่ง...' : cooldown > 0 ? `ส่งใหม่ใน ${cooldown}s` : 'ส่งรหัสใหม่'}
+                                    {!resending && cooldown <= 0 && <RefreshCw size={12} style={{ marginLeft: '4px', verticalAlign: 'middle' }} />}
+                                </button>
+                            </p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                <Link href="/login" style={{ color: 'var(--text-muted)' }}>กลับไปหน้าเข้าสู่ระบบ</Link>
+                            </p>
+                        </>
                     )}
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.7, marginBottom: '28px' }}>
-                        คลิกลิงก์ในอีเมลเพื่อยืนยันบัญชีและเริ่มใช้งาน ลิงก์มีอายุ <strong style={{ color: 'var(--text-secondary)' }}>24 ชั่วโมง</strong>
-                    </p>
-
-                    {error && (
-                        <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-bg)', border: '1px solid rgba(251,113,133,0.2)', color: 'var(--danger)', fontSize: '0.82rem', marginBottom: '16px' }}>
-                            {error}
-                        </div>
-                    )}
-
-                    {resent ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'var(--success-bg)', color: 'var(--success)', fontSize: '0.85rem', fontWeight: 500, marginBottom: '20px' }}>
-                            <CheckCircle size={16} /> ส่งอีเมลใหม่เรียบร้อยแล้ว!
-                        </div>
-                    ) : email ? (
-                        <button onClick={handleResend} disabled={resending}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '11px 16px', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500, cursor: resending ? 'not-allowed' : 'pointer', opacity: resending ? 0.6 : 1, fontFamily: 'inherit', marginBottom: '20px' }}>
-                            <RefreshCw size={15} style={{ animation: resending ? 'spin 1s linear infinite' : 'none' }} />
-                            {resending ? 'กำลังส่ง...' : 'ส่งอีเมลใหม่อีกครั้ง'}
-                        </button>
-                    ) : null}
-
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                        <Link href="/login" style={{ color: 'var(--primary-light)', fontWeight: 500 }}>กลับไปหน้าเข้าสู่ระบบ</Link>
-                    </p>
                 </div>
             </div>
         </div>

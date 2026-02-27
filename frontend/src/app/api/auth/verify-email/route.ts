@@ -3,36 +3,31 @@ import prisma from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
     try {
-        const { token } = await req.json();
+        const { email, otp } = await req.json();
 
-        if (!token) {
-            return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 400 });
+        if (!email || !otp) {
+            return NextResponse.json({ error: 'กรุณากรอกอีเมลและรหัส OTP' }, { status: 400 });
         }
 
         const verificationToken = await prisma.verificationToken.findFirst({
-            where: { token },
+            where: { identifier: email, token: String(otp) },
         });
 
         if (!verificationToken) {
-            return NextResponse.json({ error: 'ลิงก์ยืนยันไม่ถูกต้องหรือหมดอายุแล้ว' }, { status: 400 });
+            return NextResponse.json({ error: 'รหัส OTP ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง' }, { status: 400 });
         }
 
         if (verificationToken.expires < new Date()) {
-            await prisma.verificationToken.deleteMany({
-                where: { identifier: verificationToken.identifier, token },
-            });
-            return NextResponse.json({ error: 'ลิงก์ยืนยันหมดอายุแล้ว กรุณาขอลิงก์ใหม่' }, { status: 400 });
+            await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+            return NextResponse.json({ error: 'รหัส OTP หมดอายุแล้ว กรุณาขอรหัสใหม่' }, { status: 400 });
         }
 
         await prisma.user.update({
-            where: { email: verificationToken.identifier },
+            where: { email },
             data: { emailVerified: new Date() },
         });
 
-        // Clean up token — use deleteMany to avoid compound-key edge cases
-        await prisma.verificationToken.deleteMany({
-            where: { identifier: verificationToken.identifier, token },
-        });
+        await prisma.verificationToken.deleteMany({ where: { identifier: email } });
 
         return NextResponse.json({ message: 'ยืนยันอีเมลสำเร็จ!' });
     } catch (error) {

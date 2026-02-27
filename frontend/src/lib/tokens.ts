@@ -5,9 +5,13 @@ export function generateToken(): string {
     return crypto.randomBytes(32).toString('hex');
 }
 
+export function generateOTP(): string {
+    return String(crypto.randomInt(100000, 999999));
+}
+
 export async function createVerificationToken(email: string) {
-    const token = generateToken();
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    const token = generateOTP();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Upsert: delete old token for this email first (NextAuth VerificationToken schema)
     await prisma.verificationToken.deleteMany({ where: { identifier: email } });
