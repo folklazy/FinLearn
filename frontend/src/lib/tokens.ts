@@ -24,8 +24,8 @@ export async function createVerificationToken(email: string) {
 }
 
 export async function createPasswordResetToken(email: string) {
-    const token = generateToken();
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1h
+    const token = generateOTP();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Delete old tokens for this email
     await prisma.passwordResetToken.deleteMany({ where: { email } });

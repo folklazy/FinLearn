@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
-    const [sent, setSent] = useState(false);
     const [error, setError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -22,7 +23,7 @@ export default function ForgotPasswordPage() {
             });
             const data = await res.json();
             if (!res.ok) { setError(data.error); return; }
-            setSent(true);
+            router.push(`/reset-password?email=${encodeURIComponent(email)}`);
         } catch {
             setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
         } finally {
@@ -45,24 +46,10 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 <div className="card-solid" style={{ padding: '32px', borderRadius: 'var(--radius-xl)' }}>
-                    {sent ? (
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                                <CheckCircle size={32} style={{ color: 'var(--success)' }} />
-                            </div>
-                            <h1 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '10px' }}>ตรวจสอบอีเมลของคุณ</h1>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '24px' }}>
-                                หากอีเมล <strong style={{ color: 'var(--text-secondary)' }}>{email}</strong> มีในระบบ เราจะส่งลิงก์รีเซ็ตรหัสผ่านไปให้ทันที
-                            </p>
-                            <Link href="/login" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: 'var(--primary-light)', fontSize: '0.85rem', fontWeight: 500 }}>
-                                <ArrowLeft size={14} /> กลับไปหน้าเข้าสู่ระบบ
-                            </Link>
-                        </div>
-                    ) : (
                         <>
                             <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>ลืมรหัสผ่าน?</h1>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '24px' }}>
-                                กรอกอีเมลที่ใช้สมัครสมาชิก เราจะส่งลิงก์รีเซ็ตรหัสผ่านให้คุณ
+                                กรอกอีเมลที่ใช้สมัครสมาชิก เราจะส่งรหัส OTP ไปให้
                             </p>
 
                             {error && (
@@ -79,7 +66,7 @@ export default function ForgotPasswordPage() {
                                 </div>
                                 <button type="submit" disabled={loading} className="btn btn-primary"
                                     style={{ width: '100%', padding: '12px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                    {loading ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน'}
+                                    {loading ? 'กำลังส่ง...' : 'ส่งรหัส OTP'}
                                 </button>
                             </form>
 
@@ -89,7 +76,6 @@ export default function ForgotPasswordPage() {
                                 </Link>
                             </p>
                         </>
-                    )}
                 </div>
             </div>
         </div>

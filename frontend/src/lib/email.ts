@@ -11,7 +11,6 @@ const transporter = nodemailer.createTransport({
 });
 
 const FROM = process.env.EMAIL_FROM ?? 'FinLearn <noreply@finlearn.app>';
-const BASE_URL = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
 
 export async function sendVerificationEmail(email: string, otp: string) {
     await transporter.sendMail({
@@ -57,12 +56,11 @@ export async function sendVerificationEmail(email: string, otp: string) {
     });
 }
 
-export async function sendPasswordResetEmail(email: string, token: string) {
-    const url = `${BASE_URL}/reset-password?token=${token}`;
+export async function sendPasswordResetEmail(email: string, otp: string) {
     await transporter.sendMail({
         from: FROM,
         to: email,
-        subject: 'รีเซ็ตรหัสผ่าน — FinLearn',
+        subject: `${otp} คือรหัสรีเซ็ตรหัสผ่าน FinLearn ของคุณ`,
         html: `
 <!DOCTYPE html>
 <html lang="th">
@@ -80,17 +78,17 @@ export async function sendPasswordResetEmail(email: string, token: string) {
           </td>
         </tr>
         <tr>
-          <td style="padding:40px;">
-            <h1 style="margin:0 0 12px;font-size:1.3rem;font-weight:700;color:#f0f0f5;">รีเซ็ตรหัสผ่าน</h1>
+          <td style="padding:40px;text-align:center;">
+            <h1 style="margin:0 0 8px;font-size:1.3rem;font-weight:700;color:#f0f0f5;">รหัสรีเซ็ตรหัสผ่าน</h1>
             <p style="margin:0 0 28px;color:#8b8b9e;font-size:0.9rem;line-height:1.7;">
-              มีคำขอรีเซ็ตรหัสผ่านสำหรับบัญชีของคุณ คลิกปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่<br/>
-              ลิงก์นี้จะหมดอายุใน <strong style="color:#c4c4d4;">1 ชั่วโมง</strong>
+              กรอกรหัสนี้ในหน้ารีเซ็ตรหัสผ่าน<br/>
+              รหัสจะหมดอายุใน <strong style="color:#c4c4d4;">15 นาที</strong>
             </p>
-            <a href="${url}" style="display:inline-block;background:linear-gradient(135deg,#7c6cf0,#a78bfa);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.95rem;">
-              ตั้งรหัสผ่านใหม่
-            </a>
-            <p style="margin:28px 0 0;color:#5a5a6e;font-size:0.78rem;line-height:1.6;">
-              ถ้าคุณไม่ได้ขอรีเซ็ตรหัสผ่าน สามารถเพิกเฉยอีเมลนี้ได้เลย รหัสผ่านของคุณจะไม่เปลี่ยนแปลง
+            <div style="background:#0f0f13;border:2px solid #7c6cf0;border-radius:14px;padding:24px 32px;display:inline-block;margin-bottom:28px;">
+              <span style="font-size:2.6rem;font-weight:800;letter-spacing:0.25em;color:#a78bfa;font-variant-numeric:tabular-nums;">${otp}</span>
+            </div>
+            <p style="margin:0;color:#5a5a6e;font-size:0.78rem;line-height:1.6;">
+              ถ้าคุณไม่ได้ขอรีเซ็ตรหัสผ่าน สามารถเพิกเฉยอีเมลนี้ได้เลย
             </p>
           </td>
         </tr>
