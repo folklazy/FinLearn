@@ -5,7 +5,7 @@
 // yahoo-finance2 v3 requires instantiation from .default constructor
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const YahooFinanceCtor = require('yahoo-finance2').default;
-const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical'] });
+const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical', 'yahooSurvey'] });
 
 // ── Price History ──
 export interface YFHistoricalPoint {
@@ -205,26 +205,30 @@ export interface YFFinancials {
 
 export async function getFinancials(symbol: string): Promise<YFFinancials | null> {
     try {
-        const result: any = await yahooFinance.quoteSummary(symbol, {
-            modules: [
-                'incomeStatementHistory', 'incomeStatementHistoryQuarterly',
-                'balanceSheetHistory', 'balanceSheetHistoryQuarterly',
-                'cashflowStatementHistory', 'cashflowStatementHistoryQuarterly',
-            ],
-        });
-        const is = result?.incomeStatementHistory?.incomeStatementHistory?.[0]
-            ?? result?.incomeStatementHistoryQuarterly?.incomeStatementHistory?.[0];
-        const bs = result?.balanceSheetHistory?.balanceSheetStatements?.[0]
-            ?? result?.balanceSheetHistoryQuarterly?.balanceSheetStatements?.[0];
-        const cf = result?.cashflowStatementHistory?.cashflowStatements?.[0]
-            ?? result?.cashflowStatementHistoryQuarterly?.cashflowStatements?.[0];
+        const period1 = new Date(Date.now() - 5 * 365 * 86400000);
+        const ftOpts = { validateResult: false } as any;
+
+        // incomeStatementHistory still returns revenue/netIncome/grossProfit (just not EPS)
+        // balanceSheetHistory + cashflowStatementHistory broken since Nov 2024 → use fundamentalsTimeSeries
+        const [incomeResult, bsArr, cfArr] = await Promise.all([
+            yahooFinance.quoteSummary(symbol, { modules: ['incomeStatementHistory'] }).catch(() => null),
+            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }, ftOpts).catch(() => null),
+            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'cash-flow', type: 'annual' }, ftOpts).catch(() => null),
+        ]);
+
+        const is = (incomeResult as any)?.incomeStatementHistory?.incomeStatementHistory?.[0];
+        // results are sorted oldest-first; take last entry for most recent annual data
+        const bsRows: any[] = Array.isArray(bsArr) ? bsArr.filter((r: any) => r?.TYPE === 'BALANCE_SHEET') : [];
+        const cfRows: any[] = Array.isArray(cfArr) ? cfArr.filter((r: any) => r?.TYPE === 'CASH_FLOW') : [];
+        const bs = bsRows.length ? bsRows[bsRows.length - 1] : null;
+        const cf = cfRows.length ? cfRows[cfRows.length - 1] : null;
 
         if (!is && !bs && !cf) return null;
 
         const rev = is?.totalRevenue ?? 0;
         const cogs = is?.costOfRevenue ?? 0;
         const gp = is?.grossProfit ?? (rev && cogs ? rev - cogs : 0);
-        const totalLiab = bs?.totalLiab ?? bs?.totalLiabilities ?? 0;
+        const totalLiab = bs?.totalLiabilitiesNetMinorityInterest ?? 0;
 
         return {
             incomeStatement: {
@@ -237,18 +241,18 @@ export async function getFinancials(symbol: string): Promise<YFFinancials | null
             },
             balanceSheet: {
                 totalAssets: bs?.totalAssets ?? 0,
-                currentAssets: bs?.totalCurrentAssets ?? 0,
-                nonCurrentAssets: (bs?.totalAssets ?? 0) - (bs?.totalCurrentAssets ?? 0),
+                currentAssets: bs?.currentAssets ?? 0,
+                nonCurrentAssets: bs?.totalNonCurrentAssets ?? ((bs?.totalAssets ?? 0) - (bs?.currentAssets ?? 0)),
                 totalLiabilities: totalLiab,
-                currentLiabilities: bs?.totalCurrentLiabilities ?? 0,
-                nonCurrentLiabilities: totalLiab - (bs?.totalCurrentLiabilities ?? 0),
-                totalEquity: bs?.totalStockholderEquity ?? bs?.totalEquity ?? 0,
+                currentLiabilities: bs?.currentLiabilities ?? 0,
+                nonCurrentLiabilities: bs?.totalNonCurrentLiabilitiesNetMinorityInterest ?? (totalLiab - (bs?.currentLiabilities ?? 0)),
+                totalEquity: bs?.stockholdersEquity ?? bs?.commonStockEquity ?? bs?.totalEquityGrossMinorityInterest ?? 0,
             },
             cashFlow: {
-                operating: cf?.totalCashFromOperatingActivities ?? 0,
-                investing: cf?.totalCashflowsFromInvestingActivities ?? 0,
-                financing: cf?.totalCashFromFinancingActivities ?? 0,
-                netCashFlow: cf?.changeInCash ?? 0,
+                operating: cf?.operatingCashFlow ?? 0,
+                investing: cf?.cashFlowFromContinuingInvestingActivities ?? cf?.investingCashFlow ?? 0,
+                financing: cf?.cashFlowFromContinuingFinancingActivities ?? cf?.financingCashFlow ?? 0,
+                netCashFlow: cf?.changesInCash ?? cf?.endCashPosition ?? 0,
             },
         };
     } catch (err) {
