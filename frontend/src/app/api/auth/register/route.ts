@@ -46,8 +46,16 @@ export async function POST(req: NextRequest) {
             },
         });
 
-        const token = await createVerificationToken(email);
-        await sendVerificationEmail(email, token);
+        try {
+            const token = await createVerificationToken(email);
+            await sendVerificationEmail(email, token);
+        } catch (emailErr) {
+            console.error('Failed to send verification email:', emailErr);
+            return NextResponse.json(
+                { message: 'สร้างบัญชีสำเร็จ! แต่ไม่สามารถส่งอีเมลยืนยันได้ กรุณาติดต่อผู้ดูแลระบบ', emailError: true },
+                { status: 201 },
+            );
+        }
 
         return NextResponse.json(
             { message: 'สร้างบัญชีสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี' },

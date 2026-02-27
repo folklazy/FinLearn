@@ -21,8 +21,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'อีเมลนี้ยืนยันแล้ว' }, { status: 400 });
         }
 
-        const token = await createVerificationToken(email);
-        await sendVerificationEmail(email, token);
+        try {
+            const token = await createVerificationToken(email);
+            await sendVerificationEmail(email, token);
+        } catch (emailErr) {
+            console.error('Resend verification email error:', emailErr);
+            return NextResponse.json({ error: 'ไม่สามารถส่งอีเมลได้ กรุณาตรวจสอบการตั้งค่า SMTP' }, { status: 500 });
+        }
 
         return NextResponse.json({ message: 'ส่งอีเมลยืนยันใหม่เรียบร้อยแล้ว' });
     } catch (error) {
