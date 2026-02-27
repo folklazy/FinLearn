@@ -7,7 +7,8 @@ import Link from 'next/link';
 import {
     User, Mail, Lock, Eye, EyeOff, Save, GraduationCap, Target, Shield,
     Coins, Globe, Bell, Check, ChevronRight, Settings, TrendingUp,
-    BookOpen, BarChart3, Zap, AlertCircle, Star, Trash2, ExternalLink, RefreshCw
+    BookOpen, BarChart3, Zap, AlertCircle, Star, Trash2, ExternalLink, RefreshCw,
+    Camera
 } from 'lucide-react';
 
 const experienceLevels = [
@@ -62,6 +63,9 @@ export default function SettingsPage() {
 
     // Display name
     const [displayName, setDisplayName] = useState('');
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [imageUploading, setImageUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     // Email change
     const [currentEmail, setCurrentEmail] = useState('');
@@ -172,6 +176,45 @@ export default function SettingsPage() {
     };
 
     // ── handlers ──────────────────────────────────────────
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { showMsg('error', 'ไฟล์ต้องมีขนาดไม่เกิน 5MB'); return; }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const src = ev.target?.result as string;
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX = 200;
+                const ratio = Math.min(MAX / img.width, MAX / img.height);
+                canvas.width = img.width * ratio;
+                canvas.height = img.height * ratio;
+                canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const base64 = canvas.toDataURL('image/jpeg', 0.85);
+                setAvatarPreview(base64);
+            };
+            img.src = src;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleSaveImage = async () => {
+        if (!avatarPreview) return;
+        setImageUploading(true);
+        try {
+            const res = await fetch('/api/user/profile', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: avatarPreview }),
+            });
+            if (res.ok) {
+                await updateSession({ image: avatarPreview });
+                showMsg('success', 'อัปโหลดรูปโปรไฟล์สำเร็จ');
+            } else showMsg('error', 'เกิดข้อผิดพลาด');
+        } catch { showMsg('error', 'เกิดข้อผิดพลาด'); }
+        finally { setImageUploading(false); }
+    };
 
     const handleSaveDisplayName = async () => {
         if (!displayName.trim()) { showMsg('error', 'กรุณากรอกชื่อที่แสดง'); return; }
@@ -380,20 +423,72 @@ export default function SettingsPage() {
                 {/* Content */}
                 <div style={{ flex: 1, minWidth: 0 }}>
 
-                    {/* ===== ชื่อที่แสดง ===== */}
+                    {/* ===== ชื่อที่แสดง + รูปโปรไฟล์ ===== */}
                     {activeSection === 'displayname' && (
-                        <div style={card} className="animate-fade-in">
-                            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={20} /> ชื่อที่แสดง</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', marginBottom: '24px' }}>ชื่อที่จะปรากฏในโปรไฟล์และกิจกรรมต่างๆ</p>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                <div>
-                                    <label style={labelStyle}><User size={13} /> ชื่อที่แสดง</label>
-                                    <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="เช่น นักลงทุนมือโปร" style={inputStyle} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="animate-fade-in">
+
+                            {/* รูปโปรไฟล์ */}
+                            <div style={card}>
+                                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}><Camera size={20} /> รูปโปรไฟล์</h2>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', marginBottom: '24px' }}>JPG/PNG ขนาดไม่เกิน 5MB — จะถูกย่อเป็น 200×200px อัตโนมัติ</p>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                                    {/* Avatar preview */}
+                                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', background: 'var(--bg-secondary)', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            {(avatarPreview || session?.user?.image) ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={avatarPreview || session?.user?.image || ''} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <span style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--primary-light)' }}>
+                                                    {(displayName || session?.user?.name || 'U')[0].toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            style={{ position: 'absolute', bottom: 0, right: 0, width: '26px', height: '26px', borderRadius: '50%', background: 'var(--primary)', border: '2px solid var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                        >
+                                            <Camera size={12} color="white" />
+                                        </button>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <button onClick={() => fileInputRef.current?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                                            <Camera size={14} /> เลือกรูปภาพ
+                                        </button>
+                                        {avatarPreview && (
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button onClick={handleSaveImage} disabled={imageUploading} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem' }}>
+                                                    <Save size={13} /> {imageUploading ? 'กำลังบันทึก...' : 'บันทึกรูป'}
+                                                </button>
+                                                <button onClick={() => { setAvatarPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} style={{ padding: '8px 12px', borderRadius: '10px', background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                                                    ยกเลิก
+                                                </button>
+                                            </div>
+                                        )}
+                                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>รองรับ JPG, PNG, GIF, WebP</p>
+                                    </div>
                                 </div>
-                                <button onClick={handleSaveDisplayName} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Save size={15} /> {saving ? 'กำลังบันทึก...' : 'บันทึก'}
-                                </button>
+
+                                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
                             </div>
+
+                            {/* ชื่อที่แสดง */}
+                            <div style={card}>
+                                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={20} /> ชื่อที่แสดง</h2>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', marginBottom: '24px' }}>ชื่อที่จะปรากฏในโปรไฟล์และกิจกรรมต่างๆ</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                    <div>
+                                        <label style={labelStyle}><User size={13} /> ชื่อที่แสดง</label>
+                                        <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="เช่น นักลงทุนมือโปร" style={inputStyle} />
+                                    </div>
+                                    <button onClick={handleSaveDisplayName} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <Save size={15} /> {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
                     )}
 
