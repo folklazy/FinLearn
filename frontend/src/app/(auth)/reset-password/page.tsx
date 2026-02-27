@@ -2,13 +2,15 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Lock, Eye, EyeOff, CheckCircle, RefreshCw } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 function ResetPasswordContent() {
     const searchParams = useSearchParams();
     const email = searchParams.get('email') ?? '';
 
+    // step: 'otp' → 'password' → done via success state
+    const [step, setStep] = useState<'otp' | 'password'>('otp');
     const [digits, setDigits] = useState(['', '', '', '', '', '']);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,13 +56,34 @@ function ResetPasswordContent() {
         inputRefs.current[Math.min(pasted.length, 5)]?.focus();
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Step 1: verify OTP only
+    const handleVerifyOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (otp.length !== 6) { setError('กรุณากรอกรหัส OTP ให้ครบ 6 หลัก'); return; }
+        setLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/auth/check-reset-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, otp }),
+            });
+            const data = await res.json();
+            if (!res.ok) { setError(data.error); setDigits(['', '', '', '', '', '']); inputRefs.current[0]?.focus(); return; }
+            setStep('password');
+        } catch {
+            setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Step 2: set new password
+    const handleSetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        if (otp.length !== 6) { setError('กรุณากรอกรหัส OTP ให้ครบ 6 หลัก'); return; }
         if (password !== confirmPassword) { setError('รหัสผ่านไม่ตรงกัน'); return; }
         if (password.length < 6) { setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
-
         setLoading(true);
         try {
             const res = await fetch('/api/auth/reset-password', {
@@ -69,7 +92,11 @@ function ResetPasswordContent() {
                 body: JSON.stringify({ email, otp, password }),
             });
             const data = await res.json();
-            if (!res.ok) { setError(data.error); setDigits(['', '', '', '', '', '']); inputRefs.current[0]?.focus(); return; }
+            if (!res.ok) {
+                setError(data.error);
+                if (data.error?.includes('OTP')) { setStep('otp'); setDigits(['', '', '', '', '', '']); }
+                return;
+            }
             setSuccess(true);
         } catch {
             setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
@@ -139,15 +166,16 @@ function ResetPasswordContent() {
                                 เข้าสู่ระบบ
                             </Link>
                         </div>
-                    ) : (
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '6px' }}>ตั้งรหัสผ่านใหม่</h1>
+
+                    ) : step === 'otp' ? (
+                        /* ── Step 1: OTP ── */
+                        <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '0', textAlign: 'center' }}>
+                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>ยืนยันตัวตน</h1>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '4px' }}>
                                 กรอกรหัส OTP ที่ส่งไปที่
                             </p>
-                            <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.88rem', marginBottom: '20px' }}>{email}</p>
+                            <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.88rem', marginBottom: '24px' }}>{email}</p>
 
-                            {/* OTP digit boxes */}
                             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '8px' }} onPaste={handlePaste}>
                                 {digits.map((d, i) => (
                                     <input
@@ -161,8 +189,8 @@ function ResetPasswordContent() {
                                         onKeyDown={e => handleKeyDown(i, e)}
                                         disabled={loading}
                                         style={{
-                                            width: '46px', height: '52px', textAlign: 'center',
-                                            fontSize: '1.4rem', fontWeight: 700,
+                                            width: '48px', height: '56px', textAlign: 'center',
+                                            fontSize: '1.5rem', fontWeight: 700,
                                             background: 'var(--bg-elevated)',
                                             border: `2px solid ${d ? 'var(--primary)' : error ? 'var(--danger)' : 'var(--border)'}`,
                                             borderRadius: 'var(--radius-md)',
@@ -175,7 +203,7 @@ function ResetPasswordContent() {
                                 ))}
                             </div>
 
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', marginBottom: '20px' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '20px' }}>
                                 ไม่ได้รับรหัส?{' '}
                                 <button type="button" onClick={handleResend} disabled={resending || cooldown > 0}
                                     style={{ background: 'none', border: 'none', color: cooldown > 0 ? 'var(--text-muted)' : 'var(--primary-light)', fontWeight: 500, cursor: cooldown > 0 ? 'default' : 'pointer', fontSize: '0.8rem', fontFamily: 'inherit', padding: 0 }}>
@@ -184,16 +212,46 @@ function ResetPasswordContent() {
                             </p>
 
                             {error && (
+                                <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-bg)', border: '1px solid rgba(251,113,133,0.2)', color: 'var(--danger)', fontSize: '0.82rem', marginBottom: '16px', textAlign: 'left' }}>
+                                    {error}
+                                </div>
+                            )}
+
+                            <button type="submit" disabled={loading || otp.length !== 6} className="btn btn-primary"
+                                style={{ width: '100%', padding: '12px', opacity: (loading || otp.length !== 6) ? 0.6 : 1, cursor: (loading || otp.length !== 6) ? 'not-allowed' : 'pointer' }}>
+                                {loading ? 'กำลังตรวจสอบ...' : 'ยืนยัน OTP'}
+                            </button>
+
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '16px' }}>
+                                <Link href="/forgot-password" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)' }}>
+                                    <ArrowLeft size={13} /> ขอรหัสใหม่
+                                </Link>
+                            </p>
+                        </form>
+
+                    ) : (
+                        /* ── Step 2: New Password ── */
+                        <form onSubmit={handleSetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                            <button type="button" onClick={() => { setStep('otp'); setError(''); }}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontFamily: 'inherit', padding: '0 0 16px 0', alignSelf: 'flex-start' }}>
+                                <ArrowLeft size={13} /> กลับ
+                            </button>
+                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>ตั้งรหัสผ่านใหม่</h1>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '20px' }}>
+                                กรอกรหัสผ่านใหม่สำหรับ <strong style={{ color: 'var(--text-secondary)' }}>{email}</strong>
+                            </p>
+
+                            {error && (
                                 <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-bg)', border: '1px solid rgba(251,113,133,0.2)', color: 'var(--danger)', fontSize: '0.82rem', marginBottom: '14px' }}>
                                     {error}
                                 </div>
                             )}
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
                                 <div style={{ position: 'relative' }}>
                                     <Lock size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                                     <input type={showPassword ? 'text' : 'password'} placeholder="รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)"
-                                        value={password} onChange={e => setPassword(e.target.value)} required
+                                        value={password} onChange={e => setPassword(e.target.value)} required autoFocus
                                         className="input" style={{ paddingLeft: '40px', paddingRight: '42px' }} />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)}
                                         style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}>
@@ -208,8 +266,8 @@ function ResetPasswordContent() {
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={loading || otp.length !== 6} className="btn btn-primary"
-                                style={{ width: '100%', padding: '12px', opacity: (loading || otp.length !== 6) ? 0.6 : 1, cursor: (loading || otp.length !== 6) ? 'not-allowed' : 'pointer' }}>
+                            <button type="submit" disabled={loading} className="btn btn-primary"
+                                style={{ width: '100%', padding: '12px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
                                 {loading ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่'}
                             </button>
                         </form>
