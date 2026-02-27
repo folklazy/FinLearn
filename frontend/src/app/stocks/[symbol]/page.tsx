@@ -23,7 +23,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [loading, setLoading] = useState(true);
     const router = useRouter();
     const [priceRange, setPriceRange] = useState('1Y');
-    const PRICE_RANGES = ['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
+    const PRICE_RANGES = ['1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
     const [activeSection, setActiveSection] = useState('overview');
 
     useEffect(() => {
@@ -145,8 +145,6 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         const now = h.length;
         const today = new Date();
         switch (priceRange) {
-            case '1D':  return h.slice(Math.max(0, now - 2));
-            case '5D':  return h.slice(Math.max(0, now - 5));
             case '1M':  return h.slice(Math.max(0, now - 30));
             case '3M':  return h.slice(Math.max(0, now - 90));
             case '6M':  return h.slice(Math.max(0, now - 180));

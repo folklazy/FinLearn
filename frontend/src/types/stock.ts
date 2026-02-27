@@ -22,6 +22,7 @@ export interface CompanyProfile {
     descriptionEn: string;
     sector: string;
     industry: string;
+    exchange: string;
     marketCap: number;
     marketCapLabel: string;      // e.g. "บริษัทขนาดใหญ่"
     employees: number;
