@@ -44,19 +44,8 @@ export default function RegisterPage() {
                 return;
             }
 
-            // Auto login after successful registration
-            const result = await signIn('credentials', {
-                email,
-                password,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                // Registration succeeded but auto-login failed — redirect to login
-                window.location.href = '/login';
-            } else {
-                window.location.href = '/onboarding';
-            }
+            // Redirect to verify-email page (must verify before login)
+            window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
         } catch {
             setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
         } finally {

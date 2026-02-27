@@ -12,9 +12,12 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const [unverifiedEmail, setUnverifiedEmail] = useState('');
+
     const handleCredentialLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setUnverifiedEmail('');
         setLoading(true);
 
         try {
@@ -24,7 +27,10 @@ export default function LoginPage() {
                 redirect: false,
             });
 
-            if (result?.error) {
+            if (result?.error === 'EMAIL_NOT_VERIFIED') {
+                setUnverifiedEmail(email);
+                setError('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ');
+            } else if (result?.error) {
                 setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
             } else {
                 window.location.href = '/';
@@ -80,6 +86,9 @@ export default function LoginPage() {
                         {error && (
                             <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-bg)', border: '1px solid rgba(251,113,133,0.2)', color: 'var(--danger)', fontSize: '0.82rem', textAlign: 'center' }}>
                                 {error}
+                                {unverifiedEmail && (
+                                    <span> <Link href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`} style={{ color: 'var(--danger)', textDecoration: 'underline', fontWeight: 600 }}>ส่งลิงก์ยืนยันใหม่</Link></span>
+                                )}
                             </div>
                         )}
                         <div style={{ position: 'relative' }}>
@@ -87,14 +96,19 @@ export default function LoginPage() {
                             <input type="email" placeholder="อีเมล" value={email} onChange={e => setEmail(e.target.value)} required
                                 className="input" style={{ paddingLeft: '40px' }} />
                         </div>
-                        <div style={{ position: 'relative' }}>
-                            <Lock size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                            <input type={showPassword ? 'text' : 'password'} placeholder="รหัสผ่าน" value={password} onChange={e => setPassword(e.target.value)} required
-                                className="input" style={{ paddingLeft: '40px', paddingRight: '42px' }} />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)}
-                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}>
-                                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                            </button>
+                        <div>
+                            <div style={{ position: 'relative' }}>
+                                <Lock size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                                <input type={showPassword ? 'text' : 'password'} placeholder="รหัสผ่าน" value={password} onChange={e => setPassword(e.target.value)} required
+                                    className="input" style={{ paddingLeft: '40px', paddingRight: '42px' }} />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}>
+                                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                                </button>
+                            </div>
+                            <div style={{ textAlign: 'right', marginTop: '6px' }}>
+                                <Link href="/forgot-password" style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>ลืมรหัสผ่าน?</Link>
+                            </div>
                         </div>
                         <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '2px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
                             {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
