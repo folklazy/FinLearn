@@ -19,7 +19,7 @@ const NAV_LINKS = [
     { href: '/', label: 'หน้าหลัก' },
     { href: '/stocks', label: 'หุ้น' },
     { href: '/learn', label: 'บทเรียน' },
-    { href: '/watchlist', label: 'Watchlist', authOnly: true },
+    { href: '/watchlist', label: 'พอร์ต', authOnly: true },
 ];
 
 export default function Navbar() {
