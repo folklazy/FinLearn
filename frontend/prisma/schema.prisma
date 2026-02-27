@@ -450,6 +450,7 @@ model User {
   profile           UserProfile?
   sectorPreferences UserSectorPreference[]
   watchlists        Watchlist[]
+  favorites         UserFavorite[]
   paperPortfolios   PaperPortfolio[]
   lessonProgress    UserLessonProgress[]
 
@@ -721,6 +722,59 @@ model IngestionRun {
 
   @@index([providerId, jobName])
   @@map("ingestion_runs")
+}
+
+// =========================
+// User Favorites (simple symbol watchlist)
+// =========================
+
+model UserFavorite {
+  userId   String   @map("user_id")
+  symbol   String
+  addedAt  DateTime @default(now()) @map("added_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, symbol])
+  @@index([userId])
+  @@map("user_favorites")
+}
+
+// =========================
+// API Cache (persistent, TTL-based)
+// =========================
+
+model ApiCache {
+  key       String   @id
+  provider  String
+  dataType  String   @map("data_type")
+  symbol    String?
+  data      Json
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([provider, dataType])
+  @@index([symbol])
+  @@index([expiresAt])
+  @@map("api_cache")
+}
+
+// =========================
+// API Usage Tracking
+// =========================
+
+model ApiUsageDaily {
+  provider   String   @map("provider")
+  date       DateTime @db.Date
+  callCount  Int      @default(0) @map("call_count")
+  dailyLimit Int      @map("daily_limit")
+  lastCallAt DateTime? @map("last_call_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@id([provider, date])
+  @@map("api_usage_daily")
 }
 
 model IngestionError {

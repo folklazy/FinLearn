@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { StockData } from '@/types/stock';
 import { formatCurrency, formatPercent, formatLargeNumber, formatVolume, formatDate, getPriceColor, getSignalColor } from '@/lib/utils';
@@ -22,6 +23,9 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [data, setData] = useState<StockData | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const { data: session } = useSession();
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [favLoading, setFavLoading] = useState(false);
     const [priceRange, setPriceRange] = useState('1Y');
     const PRICE_RANGES = ['1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
     const [activeSection, setActiveSection] = useState('overview');
@@ -32,6 +36,30 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             .catch(err => console.error('Failed to load stock:', err))
             .finally(() => setLoading(false));
     }, [symbol]);
+
+    useEffect(() => {
+        if (!session?.user) return;
+        fetch(`/api/watchlist/${symbol}`)
+            .then(r => r.json())
+            .then(d => setIsFavorite(d.isFavorite ?? false))
+            .catch(() => {});
+    }, [symbol, session]);
+
+    const toggleFavorite = async () => {
+        if (!session?.user) { router.push('/login'); return; }
+        setFavLoading(true);
+        try {
+            if (isFavorite) {
+                await fetch(`/api/watchlist/${symbol}`, { method: 'DELETE' });
+                setIsFavorite(false);
+            } else {
+                await fetch('/api/watchlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol }) });
+                setIsFavorite(true);
+            }
+        } finally {
+            setFavLoading(false);
+        }
+    };
 
     // Scroll spy — highlight TOC section when in viewport
     useEffect(() => {
@@ -252,7 +280,11 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
             {/* ===== 2. QUICK ACTIONS ===== */}
             <section className="animate-fade-in-up" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', animationDelay: '0.05s' }}>
-                <button className="btn btn-outline"><Heart size={16} /> เพิ่มเข้า Watchlist</button>
+                <button className="btn btn-outline" onClick={toggleFavorite} disabled={favLoading}
+                    style={{ background: isFavorite ? 'rgba(239,68,68,0.1)' : undefined, borderColor: isFavorite ? '#ef4444' : undefined, color: isFavorite ? '#ef4444' : undefined }}>
+                    <Heart size={16} fill={isFavorite ? '#ef4444' : 'none'} />
+                    {isFavorite ? 'ลบออกจาก Watchlist' : 'เพิ่มเข้า Watchlist'}
+                </button>
                 <button className="btn btn-success"><ShoppingCart size={16} /> ทดลองซื้อในพอร์ตจำลอง</button>
             </section>
 
