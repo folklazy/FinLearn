@@ -135,29 +135,42 @@ export class StockService {
             ? fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.epsdiluted || s.eps })).reverse()
             : (yahooMetrics?.epsHistory ?? []);
 
-        // Build competitors from Finnhub peers + FMP profile + FMP key metrics
+        // Build competitors — FMP (primary) + Yahoo Finance (fallback when FMP rate-limited)
         const competitors: CompetitorData[] = [];
         const peerSymbols = (finnhubPeers || []).filter(p => p !== symbol).slice(0, 4);
         if (peerSymbols.length > 0) {
-            const [peerProfiles, peerMetrics] = await Promise.all([
+            const [peerFmpProfiles, peerFmpMetrics, peerYahooProfiles, peerYahooMetrics] = await Promise.all([
                 Promise.all(peerSymbols.map(p => fmp.getProfile(p).catch(() => null))),
                 Promise.all(peerSymbols.map(p => fmp.getKeyMetrics(p).catch(() => null))),
+                Promise.all(peerSymbols.map(p => yahoo.getProfile(p).catch(() => null))),
+                Promise.all(peerSymbols.map(p => yahoo.getKeyMetrics(p).catch(() => null))),
             ]);
             for (let i = 0; i < peerSymbols.length; i++) {
-                const pp = peerProfiles[i];
-                const pm = peerMetrics[i];
-                if (pp) {
-                    const peerRevGrowth = pm?.revenueGrowth != null ? pm.revenueGrowth * 100 : 0;
-                    competitors.push({
-                        symbol: peerSymbols[i],
-                        name: pp.companyName,
-                        marketCap: pp.marketCap,
-                        pe: pm?.peRatioTTM ? parseFloat(pm.peRatioTTM.toFixed(1)) : null,
-                        profitMargin: pm?.netProfitMarginTTM ? parseFloat(pm.netProfitMarginTTM.toFixed(2)) : 0,
-                        revenueGrowth: parseFloat(peerRevGrowth.toFixed(1)),
-                        dividendYield: pp.lastDividend > 0 && pp.price > 0 ? parseFloat(((pp.lastDividend / pp.price) * 100).toFixed(2)) : null,
-                    });
-                }
+                const pp = peerFmpProfiles[i];
+                const pm = peerFmpMetrics[i];
+                const yp = peerYahooProfiles[i];
+                const ym = peerYahooMetrics[i];
+
+                const peerName = pp?.companyName || yp?.name;
+                const peerMarketCap = pp?.marketCap || yp?.marketCap || 0;
+                if (!peerName) continue; // skip if no name from any source
+
+                const peerRevGrowth = pm?.revenueGrowth != null
+                    ? pm.revenueGrowth * 100
+                    : (ym?.revenueGrowth ?? 0);
+                const peerDivYield = pp?.lastDividend && pp?.price
+                    ? parseFloat(((pp.lastDividend / pp.price) * 100).toFixed(2))
+                    : (ym?.dividendYield ?? null);
+
+                competitors.push({
+                    symbol: peerSymbols[i],
+                    name: peerName,
+                    marketCap: peerMarketCap,
+                    pe: pm?.peRatioTTM ? parseFloat(pm.peRatioTTM.toFixed(1)) : (ym?.pe ?? null),
+                    profitMargin: pm?.netProfitMarginTTM ? parseFloat(pm.netProfitMarginTTM.toFixed(2)) : (ym?.profitMargin ?? 0),
+                    revenueGrowth: parseFloat((peerRevGrowth ?? 0).toFixed(1)),
+                    dividendYield: peerDivYield,
+                });
             }
         }
 
