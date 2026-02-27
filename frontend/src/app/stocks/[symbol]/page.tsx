@@ -111,7 +111,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         financials.incomeStatement.grossProfit > 0 ? { name: 'กำไรขั้นต้น', value: financials.incomeStatement.grossProfit / 1e9, fill: '#8b5cf6' } : null,
         financials.incomeStatement.costOfRevenue > 0 ? { name: 'ต้นทุน', value: -financials.incomeStatement.costOfRevenue / 1e9, fill: '#ef4444' } : null,
         financials.incomeStatement.operatingExpenses > 0 ? { name: 'ค่าใช้จ่าย', value: -financials.incomeStatement.operatingExpenses / 1e9, fill: '#f59e0b' } : null,
-        financials.incomeStatement.netIncome != null ? { name: 'กำไรสุทธิ', value: financials.incomeStatement.netIncome / 1e9, fill: '#22c55e' } : null,
+        financials.incomeStatement.netIncome !== 0 ? { name: 'กำไรสุทธิ', value: financials.incomeStatement.netIncome / 1e9, fill: financials.incomeStatement.netIncome > 0 ? '#22c55e' : '#ef4444' } : null,
     ].filter(Boolean) as { name: string; value: number; fill: string }[] : [];
 
     // Balance sheet pie
@@ -385,7 +385,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 {(hasRevenueHistory || hasEpsHistory) ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>รายได้ 5 ปี (พันล้าน $)</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>รายได้ 5 ปี (พันล้าน $)</div>
+                                {keyMetrics.revenueGrowth ? (
+                                    <span className={`badge ${keyMetrics.revenueGrowth > 0 ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.7rem' }}>
+                                        {formatPercent(keyMetrics.revenueGrowth)} YoY
+                                    </span>
+                                ) : <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>N/A</span>}
+                            </div>
                             {revenueChartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={180}>
                                     <BarChart data={revenueChartData}>
@@ -403,7 +410,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             )}
                         </div>
                         <div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>กำไรต่อหุ้น (EPS) 5 ปี</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>กำไรต่อหุ้น (EPS) 5 ปี</div>
+                                {keyMetrics.epsGrowth ? (
+                                    <span className={`badge ${keyMetrics.epsGrowth > 0 ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.7rem' }}>
+                                        EPS {formatPercent(keyMetrics.epsGrowth)} YoY
+                                    </span>
+                                ) : <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>N/A</span>}
+                            </div>
                             {epsChartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={180}>
                                     <LineChart data={epsChartData}>
