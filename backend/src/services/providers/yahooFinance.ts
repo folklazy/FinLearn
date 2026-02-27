@@ -128,7 +128,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             .slice(0, 5)
             .map((s: any) => ({
                 year: s.endDate ? new Date(s.endDate).getFullYear().toString() : '',
-                value: s.dilutedEps ?? s.basicEps ?? 0,
+                value: s.epsdiluted ?? s.dilutedEps ?? s.eps ?? s.basicEps ?? 0,
             }))
             .filter((s: any) => s.year)
             .reverse();
@@ -146,8 +146,8 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         if (fd?.earningsGrowth != null) {
             epsGrowth = fd.earningsGrowth * 100;
         } else if (is && is.length >= 2) {
-            const e0 = is[0]?.dilutedEps ?? is[0]?.basicEps;
-            const e1 = is[1]?.dilutedEps ?? is[1]?.basicEps;
+            const e0 = is[0]?.epsdiluted ?? is[0]?.dilutedEps ?? is[0]?.eps ?? is[0]?.basicEps;
+            const e1 = is[1]?.epsdiluted ?? is[1]?.dilutedEps ?? is[1]?.eps ?? is[1]?.basicEps;
             if (e0 != null && e1 != null && e1 !== 0) {
                 epsGrowth = ((e0 - e1) / Math.abs(e1)) * 100;
             }
@@ -221,12 +221,17 @@ export async function getFinancials(symbol: string): Promise<YFFinancials | null
 
         if (!is && !bs && !cf) return null;
 
+        const rev = is?.totalRevenue ?? 0;
+        const cogs = is?.costOfRevenue ?? 0;
+        const gp = is?.grossProfit ?? (rev && cogs ? rev - cogs : 0);
+        const totalLiab = bs?.totalLiab ?? bs?.totalLiabilities ?? 0;
+
         return {
             incomeStatement: {
-                revenue: is?.totalRevenue ?? 0,
-                costOfRevenue: is?.costOfRevenue ?? 0,
-                grossProfit: is?.grossProfit ?? 0,
-                operatingExpenses: is?.totalOperatingExpenses ?? 0,
+                revenue: rev,
+                costOfRevenue: cogs,
+                grossProfit: gp,
+                operatingExpenses: is?.totalOperatingExpenses ?? is?.operatingExpenses ?? 0,
                 operatingIncome: is?.operatingIncome ?? is?.ebit ?? 0,
                 netIncome: is?.netIncome ?? null,
             },
@@ -234,10 +239,10 @@ export async function getFinancials(symbol: string): Promise<YFFinancials | null
                 totalAssets: bs?.totalAssets ?? 0,
                 currentAssets: bs?.totalCurrentAssets ?? 0,
                 nonCurrentAssets: (bs?.totalAssets ?? 0) - (bs?.totalCurrentAssets ?? 0),
-                totalLiabilities: bs?.totalLiab ?? 0,
+                totalLiabilities: totalLiab,
                 currentLiabilities: bs?.totalCurrentLiabilities ?? 0,
-                nonCurrentLiabilities: (bs?.totalLiab ?? 0) - (bs?.totalCurrentLiabilities ?? 0),
-                totalEquity: bs?.totalStockholderEquity ?? 0,
+                nonCurrentLiabilities: totalLiab - (bs?.totalCurrentLiabilities ?? 0),
+                totalEquity: bs?.totalStockholderEquity ?? bs?.totalEquity ?? 0,
             },
             cashFlow: {
                 operating: cf?.totalCashFromOperatingActivities ?? 0,
