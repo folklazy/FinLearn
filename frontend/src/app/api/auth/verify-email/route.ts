@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
         }
 
         if (verificationToken.expires < new Date()) {
-            await prisma.verificationToken.delete({
-                where: { identifier_token: { identifier: verificationToken.identifier, token } },
+            await prisma.verificationToken.deleteMany({
+                where: { identifier: verificationToken.identifier, token },
             });
             return NextResponse.json({ error: 'ลิงก์ยืนยันหมดอายุแล้ว กรุณาขอลิงก์ใหม่' }, { status: 400 });
         }
@@ -29,8 +29,9 @@ export async function POST(req: NextRequest) {
             data: { emailVerified: new Date() },
         });
 
-        await prisma.verificationToken.delete({
-            where: { identifier_token: { identifier: verificationToken.identifier, token } },
+        // Clean up token — use deleteMany to avoid compound-key edge cases
+        await prisma.verificationToken.deleteMany({
+            where: { identifier: verificationToken.identifier, token },
         });
 
         return NextResponse.json({ message: 'ยืนยันอีเมลสำเร็จ!' });
