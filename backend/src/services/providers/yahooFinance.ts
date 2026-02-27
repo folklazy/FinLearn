@@ -89,14 +89,14 @@ export interface YFKeyMetrics {
     dividendYield: number | null;
     dividendPerShare: number | null;
     revenue: number | null;
-    revenueGrowth: number;       // already percentage e.g. 8.5 = 8.5%
+    revenueGrowth: number | null; // already percentage e.g. 8.5 = 8.5%
     netIncome: number | null;
-    profitMargin: number | null; // already percentage e.g. 25.3 = 25.3%
-    debtToEquity: number;
-    currentRatio: number;
-    roe: number | null;          // already percentage e.g. 22.3 = 22.3%
+    profitMargin: number | null;   // already percentage e.g. 25.3 = 25.3%
+    debtToEquity: number | null;
+    currentRatio: number | null;
+    roe: number | null;            // already percentage e.g. 22.3 = 22.3%
     eps: number;
-    epsGrowth: number | null;    // already percentage
+    epsGrowth: number | null;      // already percentage
     revenueHistory: { year: string; value: number }[];
     epsHistory: { year: string; value: number }[];
 }
@@ -132,20 +132,40 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             .filter((s: any) => s.year)
             .reverse();
 
+        // Compute revenue growth from history when direct value unavailable
+        let revenueGrowth: number | null = null;
+        if (fd?.revenueGrowth != null) {
+            revenueGrowth = fd.revenueGrowth * 100;
+        } else if (is && is.length >= 2 && is[1]?.totalRevenue) {
+            revenueGrowth = ((is[0].totalRevenue - is[1].totalRevenue) / Math.abs(is[1].totalRevenue)) * 100;
+        }
+
+        // Compute EPS growth from history when direct value unavailable
+        let epsGrowth: number | null = null;
+        if (fd?.earningsGrowth != null) {
+            epsGrowth = fd.earningsGrowth * 100;
+        } else if (is && is.length >= 2) {
+            const e0 = is[0]?.dilutedEps ?? is[0]?.basicEps;
+            const e1 = is[1]?.dilutedEps ?? is[1]?.basicEps;
+            if (e0 != null && e1 != null && e1 !== 0) {
+                epsGrowth = ((e0 - e1) / Math.abs(e1)) * 100;
+            }
+        }
+
         return {
-            pe: fd?.currentPrice && fd?.trailingEps ? fd.currentPrice / fd.trailingEps : (sd?.trailingPE ?? null),
+            pe: sd?.trailingPE ?? (fd?.currentPrice && fd?.trailingEps ? fd.currentPrice / fd.trailingEps : null) ?? (ks?.forwardPE ?? null),
             pb: ks?.priceToBook ?? null,
             dividendYield: sd?.dividendYield ? sd.dividendYield * 100 : null,
             dividendPerShare: sd?.dividendRate ?? null,
             revenue: fd?.totalRevenue ?? (is?.[0]?.totalRevenue ?? null),
-            revenueGrowth: fd?.revenueGrowth ? fd.revenueGrowth * 100 : 0,
+            revenueGrowth,
             netIncome: fd?.netIncomeToCommon ?? (is?.[0]?.netIncome ?? null),
             profitMargin: fd?.profitMargins != null ? fd.profitMargins * 100 : null,
-            debtToEquity: fd?.debtToEquity ?? 0,
-            currentRatio: fd?.currentRatio ?? 0,
+            debtToEquity: fd?.debtToEquity ?? null,
+            currentRatio: fd?.currentRatio ?? null,
             roe: fd?.returnOnEquity != null ? fd.returnOnEquity * 100 : null,
             eps: ks?.trailingEps ?? 0,
-            epsGrowth: fd?.earningsGrowth != null ? fd.earningsGrowth * 100 : null,
+            epsGrowth,
             revenueHistory,
             epsHistory,
         };

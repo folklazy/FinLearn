@@ -156,9 +156,17 @@ export class StockService {
             }
         }
 
+        // Compute growth from FMP income history as final fallback
+        const fmpRevGrowth = fmpIncome.length >= 2 && fmpIncome[1]?.revenue
+            ? ((fmpIncome[0].revenue - fmpIncome[1].revenue) / Math.abs(fmpIncome[1].revenue)) * 100
+            : null;
+        const fmpEpsGrowth = fmpIncome.length >= 2 && fmpIncome[1]?.epsdiluted
+            ? ((fmpIncome[0].epsdiluted - fmpIncome[1].epsdiluted) / Math.abs(fmpIncome[1].epsdiluted)) * 100
+            : null;
+
         // Extract metrics — FMP (decimal) → Finnhub (percentage) → Yahoo Finance (percentage)
         // NOTE: FMP ratios are decimals, Finnhub & Yahoo are percentages
-        const pe = fmpMetrics?.peRatioTTM ?? (finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null);
+        const pe = fmpMetrics?.peRatioTTM ?? finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null;
         const roeRaw = (fmpMetrics?.roeTTM != null ? fmpMetrics.roeTTM * 100 : null) ?? finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0;
         const profitMarginRaw = fmpMetrics?.netProfitMarginTTM ?? finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0;
         const divYieldRaw = (fmpMetrics?.dividendYieldTTM != null ? fmpMetrics.dividendYieldTTM * 100 : null) ?? finnhubFinancials?.dividendYieldIndicatedAnnual ?? yahooMetrics?.dividendYield ?? 0;
@@ -166,8 +174,8 @@ export class StockService {
         const currentRatio = fmpMetrics?.currentRatioTTM ?? finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? 0;
         const pb = fmpMetrics?.priceToBookRatioTTM ?? finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null;
         const eps = fmpIncome[0]?.epsdiluted ?? yahooMetrics?.eps ?? 0;
-        const epsGrowthRaw = (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? 0;
-        const revenueGrowthRaw = (fmpMetrics?.revenueGrowth != null ? fmpMetrics.revenueGrowth * 100 : null) ?? finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? 0;
+        const epsGrowthRaw = (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? fmpEpsGrowth ?? 0;
+        const revenueGrowthRaw = (fmpMetrics?.revenueGrowth != null ? fmpMetrics.revenueGrowth * 100 : null) ?? finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? fmpRevGrowth ?? 0;
 
         // Volume fallback: Finnhub → Yahoo
         const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];
