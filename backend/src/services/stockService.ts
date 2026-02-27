@@ -64,7 +64,7 @@ export class StockService {
                 fmp.getIncomeStatements(symbol, 5).catch(() => []),
                 fmp.getBalanceSheet(symbol).catch(() => null),
                 fmp.getCashFlow(symbol).catch(() => null),
-                fmp.getHistoricalPrices(symbol, 365).catch(() => []),
+                fmp.getHistoricalPrices(symbol, 1825).catch(() => []),
                 finnhub.getNews(symbol, 30).catch(() => []),
                 finnhub.getPeers(symbol).catch(() => []),
                 finnhub.getBasicFinancials(symbol).catch(() => null),
@@ -109,7 +109,7 @@ export class StockService {
                 date: h.date, open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume,
             })).reverse();
         } else {
-            const yhist = await yahoo.getHistoricalPrices(symbol, 365);
+            const yhist = await yahoo.getHistoricalPrices(symbol, 1825);
             history = yhist.map(h => ({
                 date: h.date, open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume,
             }));

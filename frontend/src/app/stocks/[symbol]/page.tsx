@@ -21,6 +21,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [data, setData] = useState<StockData | null>(null);
     const [loading, setLoading] = useState(true);
     const [priceRange, setPriceRange] = useState('1Y');
+    const PRICE_RANGES = ['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
     const [activeSection, setActiveSection] = useState('overview');
 
     useEffect(() => {
@@ -140,13 +141,21 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const getPriceHistory = () => {
         const h = price.history;
         const now = h.length;
+        const today = new Date();
         switch (priceRange) {
-            case '1W': return h.slice(Math.max(0, now - 7));
-            case '1M': return h.slice(Math.max(0, now - 30));
-            case '3M': return h.slice(Math.max(0, now - 90));
-            case '6M': return h.slice(Math.max(0, now - 180));
-            case '1Y': return h;
-            default: return h;
+            case '1D':  return h.slice(Math.max(0, now - 2));
+            case '5D':  return h.slice(Math.max(0, now - 5));
+            case '1M':  return h.slice(Math.max(0, now - 30));
+            case '3M':  return h.slice(Math.max(0, now - 90));
+            case '6M':  return h.slice(Math.max(0, now - 180));
+            case 'YTD': {
+                const jan1 = `${today.getFullYear()}-01-01`;
+                return h.filter(p => p.date >= jan1);
+            }
+            case '1Y':  return h.slice(Math.max(0, now - 365));
+            case '5Y':  return h;
+            case 'All': return h;
+            default:    return h;
         }
     };
 
@@ -253,8 +262,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             <section id="price-chart" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.15s', scrollMarginTop: '80px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                     <h2 className="section-title" style={{ marginBottom: 0 }}><BarChart3 size={20} /> กราฟราคา</h2>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                        {['1W', '1M', '3M', '6M', '1Y'].map(r => (
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {PRICE_RANGES.map(r => (
                             <button key={r}
                                 onClick={() => setPriceRange(r)}
                                 style={{
