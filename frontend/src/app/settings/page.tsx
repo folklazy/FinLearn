@@ -53,7 +53,7 @@ interface UserData {
 }
 
 export default function SettingsPage() {
-    const { data: session, status } = useSession();
+    const { data: session, status, update: updateSession } = useSession();
     const router = useRouter();
     const [activeSection, setActiveSection] = useState<ActiveSection>('displayname');
     const [loading, setLoading] = useState(true);
@@ -179,10 +179,12 @@ export default function SettingsPage() {
         try {
             const res = await fetch('/api/user/profile', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ displayName: displayName.trim() }),
+                body: JSON.stringify({ displayName: displayName.trim(), name: displayName.trim() }),
             });
-            if (res.ok) showMsg('success', 'บันทึกชื่อที่แสดงสำเร็จ');
-            else showMsg('error', 'เกิดข้อผิดพลาด');
+            if (res.ok) {
+                await updateSession({ name: displayName.trim() });
+                showMsg('success', 'บันทึกชื่อที่แสดงสำเร็จ');
+            } else showMsg('error', 'เกิดข้อผิดพลาด');
         } catch { showMsg('error', 'เกิดข้อผิดพลาด'); }
         finally { setSaving(false); }
     };
