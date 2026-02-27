@@ -226,7 +226,14 @@ export class StockService {
         const pe = fmpMetrics?.peRatioTTM ?? finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null;
         const roeRaw = (fmpMetrics?.roeTTM != null ? fmpMetrics.roeTTM * 100 : null) ?? finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0;
         const profitMarginRaw = fmpMetrics?.netProfitMarginTTM ?? finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0;
-        const divYieldRaw = (fmpMetrics?.dividendYieldTTM != null ? fmpMetrics.dividendYieldTTM * 100 : null)
+        // Resolve dividendPerShare first so we can compute yield from it (most accurate)  
+        const resolvedDivPerShare = fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null) ?? yahooMetrics?.dividendPerShare ?? null;
+        const divYieldFromPerShare = resolvedDivPerShare != null && resolvedDivPerShare > 0 && price > 0
+            ? parseFloat(((resolvedDivPerShare / price) * 100).toFixed(2))
+            : null;
+        // divYieldFromPerShare overrides stale pre-computed yields
+        const divYieldRaw = divYieldFromPerShare
+            || (fmpMetrics?.dividendYieldTTM != null ? fmpMetrics.dividendYieldTTM * 100 : null)
             || finnhubFinancials?.dividendYieldIndicatedAnnual
             || yahooMetrics?.dividendYield
             || 0;
@@ -234,8 +241,9 @@ export class StockService {
         const currentRatio = fmpMetrics?.currentRatioTTM ?? finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? null;
         const pb = fmpMetrics?.priceToBookRatioTTM ?? finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null;
         const eps = fmpIncome[0]?.epsdiluted ?? yahooMetrics?.eps ?? 0;
-        const epsGrowthRaw = (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? fmpEpsGrowth ?? 0;
-        const revenueGrowthRaw = (fmpMetrics?.revenueGrowth != null ? fmpMetrics.revenueGrowth * 100 : null) ?? finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? fmpRevGrowth ?? 0;
+        // Prefer annual income-statement comparison (stable) over Finnhub 5Y CAGR and Yahoo quarterly YoY
+        const epsGrowthRaw = (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? fmpEpsGrowth ?? finnhubFinancials?.epsGrowth5Y ?? yahooMetrics?.epsGrowth ?? 0;
+        const revenueGrowthRaw = (fmpMetrics?.revenueGrowth != null ? fmpMetrics.revenueGrowth * 100 : null) ?? fmpRevGrowth ?? finnhubFinancials?.revenueGrowth5Y ?? yahooMetrics?.revenueGrowth ?? 0;
 
         // Volume fallback: Finnhub → Yahoo
         const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];
@@ -291,7 +299,7 @@ export class StockService {
                 peIndustryAvg: pe ? parseFloat((pe * 0.9).toFixed(1)) : null,
                 pb: pb ? parseFloat(pb.toFixed(1)) : null,
                 dividendYield: divYieldRaw > 0 ? parseFloat(divYieldRaw.toFixed(2)) : null,
-                dividendPerShare: fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null) ?? yahooMetrics?.dividendPerShare ?? null,
+                dividendPerShare: resolvedDivPerShare,
                 revenue: fmpIncome[0]?.revenue ?? yahooMetrics?.revenue ?? null,
                 revenueGrowth: parseFloat(revenueGrowthRaw.toFixed(1)),
                 netIncome: fmpIncome[0]?.netIncome ?? yahooMetrics?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? null,
