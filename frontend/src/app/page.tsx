@@ -53,17 +53,22 @@ export default function HomePage() {
           );
           return results
             .filter(Boolean)
-            .map((d: Record<string, unknown>) => ({
-              symbol: d.ticker ?? d.symbol,
-              name: d.name ?? d.longName ?? d.ticker,
-              logo: d.logo ?? `https://logo.clearbit.com/${String(d.website ?? '').replace(/^https?:\/\//, '')}`,
-              sector: d.sector ?? '',
-              price: Number(d.price ?? d.regularMarketPrice ?? 0),
-              change: Number(d.change ?? d.regularMarketChange ?? 0),
-              changePercent: Number(d.changePercent ?? d.regularMarketChangePercent ?? 0),
-              marketCap: Number(d.marketCap ?? 0),
-              overallScore: Number(d.overallScore ?? d.score ?? 0),
-            })) as PopularStock[];
+            .map((d: Record<string, unknown>) => {
+              const profile = (d.profile ?? {}) as Record<string, unknown>;
+              const priceData = (d.price ?? {}) as Record<string, unknown>;
+              const scores = (d.scores ?? {}) as Record<string, unknown>;
+              return {
+                symbol: String(d.symbol ?? profile.symbol ?? ''),
+                name: String(profile.name ?? d.name ?? ''),
+                logo: String(profile.logo ?? d.logo ?? ''),
+                sector: String(profile.sector ?? d.sector ?? ''),
+                price: Number(priceData.current ?? d.price ?? 0),
+                change: Number(priceData.change ?? d.change ?? 0),
+                changePercent: Number(priceData.changePercent ?? d.changePercent ?? 0),
+                marketCap: Number(profile.marketCap ?? d.marketCap ?? 0),
+                overallScore: Number(scores.overall ?? d.overallScore ?? 0),
+              };
+            }) as PopularStock[];
         })
         .then(data => setStocks(data?.length ? data : FALLBACK))
         .catch(() => setStocks(FALLBACK))
@@ -91,7 +96,7 @@ export default function HomePage() {
                 <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.symbol}</span>
                 <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(s.price)}</span>
                 <span className={s.change >= 0 ? 'num-up' : 'num-down'} style={{ fontWeight: 600 }}>
-                  {s.change >= 0 ? '+' : ''}{formatPercent(s.changePercent)}
+                  {formatPercent(s.changePercent)}
                 </span>
                 <span style={{ color: 'var(--border-light)', margin: '0 4px' }}>·</span>
               </Link>
@@ -212,7 +217,7 @@ export default function HomePage() {
                         background: stock.change >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)',
                         color: stock.change >= 0 ? 'var(--success)' : 'var(--danger)'
                       }}>
-                        {stock.change >= 0 ? '+' : ''}{formatPercent(stock.changePercent)}
+                        {formatPercent(stock.changePercent)}
                       </span>
                     </div>
                     {/* Price */}
