@@ -228,9 +228,16 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>{profile.name}</h1>
                             <span className="badge badge-primary">{profile.symbol}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <span className="badge badge-primary">{profile.sector}</span>
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{profile.industry}</span>
+                            {profile.exchange && (
+                                <span style={{
+                                    padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700,
+                                    background: 'rgba(99,102,241,0.15)', color: 'var(--primary)',
+                                    border: '1px solid rgba(99,102,241,0.3)', letterSpacing: '0.03em',
+                                }}>{profile.exchange}</span>
+                            )}
                         </div>
                     </div>
                 </div>

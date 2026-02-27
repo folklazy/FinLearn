@@ -4,6 +4,18 @@ import { fmp, finnhub, twelveData, yahoo } from './cachedProviders';
 import { cacheService } from './cacheService';
 import { SP500_CONSTITUENTS, SP500_SECTORS } from '../data/sp500';
 
+function normalizeExchange(ex: string): string {
+    if (!ex) return '';
+    const u = ex.toUpperCase();
+    if (u.includes('NASDAQ')) return 'NASDAQ';
+    if (u.includes('NYSE ARCA') || u.includes('NYSEARCA')) return 'NYSE ARCA';
+    if (u.includes('NEW YORK') || u === 'NYSE') return 'NYSE';
+    if (u.includes('AMEX') || u.includes('AMERICAN STOCK')) return 'AMEX';
+    if (u.includes('OTC') || u.includes('PINK')) return 'OTC';
+    if (u.includes('CBOE')) return 'CBOE';
+    return ex;
+}
+
 function marketCapLabel(cap: number): string {
     if (cap >= 200e9) return '🏢 บริษัทขนาดใหญ่มาก (Mega Cap)';
     if (cap >= 10e9) return '🏢 บริษัทขนาดใหญ่ (Large Cap)';
@@ -248,6 +260,7 @@ export class StockService {
                 descriptionEn: profileDesc,
                 sector: profileSector,
                 industry: profileIndustry,
+                exchange: normalizeExchange(fmpProfile?.exchange || ''),
                 marketCap: profileMarketCap,
                 marketCapLabel: marketCapLabel(profileMarketCap),
                 employees: profileEmployees,
