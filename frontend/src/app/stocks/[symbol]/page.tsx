@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { StockData } from '@/types/stock';
 import { formatCurrency, formatPercent, formatLargeNumber, formatVolume, formatDate, getPriceColor, getSignalColor } from '@/lib/utils';
@@ -20,6 +21,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const { symbol } = use(params);
     const [data, setData] = useState<StockData | null>(null);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
     const [priceRange, setPriceRange] = useState('1Y');
     const PRICE_RANGES = ['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
     const [activeSection, setActiveSection] = useState('overview');
@@ -749,10 +751,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             </tr>
                             {/* Competitors */}
                             {competitors.map(c => (
-                                <tr key={c.symbol} style={{ borderBottom: '1px solid var(--border)' }}
+                                <tr key={c.symbol} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                                    onClick={() => router.push(`/stocks/${c.symbol}`)}
                                     onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-card-hover)')}
                                     onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{c.symbol}</td>
+                                    <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        {c.symbol} <ChevronRight size={12} style={{ opacity: 0.6 }} />
+                                    </td>
                                     <td style={{ padding: '12px 16px' }}>{formatLargeNumber(c.marketCap)}</td>
                                     <td style={{ padding: '12px 16px' }}>{c.pe?.toFixed(1) ?? 'N/A'}</td>
                                     <td style={{ padding: '12px 16px' }}>{c.profitMargin ? `${c.profitMargin}%` : 'N/A'}</td>
