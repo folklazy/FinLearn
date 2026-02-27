@@ -19,6 +19,7 @@ const NAV_LINKS = [
     { href: '/', label: 'หน้าหลัก' },
     { href: '/stocks', label: 'หุ้น' },
     { href: '/learn', label: 'บทเรียน' },
+    { href: '/watchlist', label: 'Watchlist', authOnly: true },
 ];
 
 export default function Navbar() {
@@ -124,7 +125,7 @@ export default function Navbar() {
 
                     {/* ── Desktop links ── */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} className="hidden-mobile">
-                        {NAV_LINKS.map(link => (
+                        {NAV_LINKS.filter(link => !link.authOnly || !!session).map(link => (
                             <Link key={link.href} href={link.href} style={{
                                 padding: '7px 14px', borderRadius: '8px', fontSize: '0.84rem',
                                 fontWeight: isActive(link.href) ? 600 : 450,
@@ -301,7 +302,7 @@ export default function Navbar() {
                                 placeholder="ค้นหาหุ้น..." className="input"
                                 style={{ paddingLeft: '34px', fontSize: '0.85rem', background: 'var(--bg-secondary)' }} />
                         </form>
-                        {NAV_LINKS.map(link => (
+                        {NAV_LINKS.filter(link => !link.authOnly || !!session).map(link => (
                             <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
                                 style={{
                                     padding: '10px 8px', borderRadius: '8px', fontSize: '0.88rem',
