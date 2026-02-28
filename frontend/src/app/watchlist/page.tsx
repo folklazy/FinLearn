@@ -7,8 +7,9 @@ import Link from 'next/link';
 import {
     TrendingUp, TrendingDown, RefreshCw, ArrowUpRight,
     ArrowDownLeft, Clock, BarChart2, Wallet, ExternalLink,
-    CheckCircle, AlertCircle
+    CheckCircle, AlertCircle, PieChart as PieIcon,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -81,7 +82,7 @@ export default function PortfolioPage() {
                     const res = await fetch(`${API_BASE}/api/stocks/${pos.ticker}`);
                     if (!res.ok) return pos;
                     const data = await res.json();
-                    const currentPrice: number = data?.price ?? data?.regularMarketPrice ?? data?.close ?? 0;
+                    const currentPrice: number = data?.price?.current ?? data?.price ?? data?.regularMarketPrice ?? 0;
                     if (!currentPrice) return pos;
                     const currentValue = pos.quantity * currentPrice;
                     const unrealizedPnl = currentValue - pos.totalCost;
@@ -181,6 +182,18 @@ export default function PortfolioPage() {
     const totalPnlPct = portfolio && portfolio.startingCash > 0 ? (totalPnl / portfolio.startingCash) * 100 : 0;
     const totalUnrealizedPnl = positions.reduce((s, p) => s + (p.unrealizedPnl ?? 0), 0);
 
+    // Allocation data
+    const ALLOC_COLORS = ['#6366f1', '#8b5cf6', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
+    const allocData = [
+        ...positions.map((pos, i) => ({
+            name: pos.ticker,
+            value: pos.currentValue ?? pos.totalCost,
+            color: ALLOC_COLORS[i % ALLOC_COLORS.length],
+        })),
+        ...(portfolio?.cashBalance ?? 0) > 0 ? [{ name: 'เงินสด', value: portfolio!.cashBalance, color: '#64748b' }] : [],
+    ];
+    const totalAllocValue = allocData.reduce((s, d) => s + d.value, 0);
+
     const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px 24px' };
     const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' as const, fontFamily: 'inherit' };
 
@@ -258,61 +271,116 @@ export default function PortfolioPage() {
 
             {/* ── Holdings Tab ── */}
             {tab === 'holdings' && (
-                <div style={cardStyle}>
-                    <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <BarChart2 size={18} /> หุ้นที่ถือครอง
-                    </h2>
-                    {positions.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-                            <BarChart2 size={40} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>ยังไม่มีหุ้นในพอร์ต</p>
-                            <button onClick={() => setTab('trade')} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
-                                <ArrowUpRight size={14} /> เริ่มซื้อหุ้น
-                            </button>
-                        </div>
-                    ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                        {['หุ้น', 'จำนวน', 'ต้นทุนเฉลี่ย', 'ราคาปัจจุบัน', 'มูลค่า', 'P&L', ''].map(h => (
-                                            <th key={h} style={{ padding: '8px 12px', textAlign: h === '' ? 'center' : 'right', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {positions.map(pos => (
-                                        <tr key={pos.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                            <td style={{ padding: '12px' }}>
-                                                <p style={{ fontWeight: 700, margin: 0 }}>{pos.ticker}</p>
-                                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pos.name}</p>
-                                            </td>
-                                            <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity.toFixed(pos.quantity % 1 === 0 ? 0 : 4)}</td>
-                                            <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(pos.avgCost)}</td>
-                                            <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                {pos.currentPrice ? `$${fmt(pos.currentPrice)}` : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>N/A</span>}
-                                            </td>
-                                            <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(pos.currentValue ?? pos.totalCost)}</td>
-                                            <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                {pos.unrealizedPnl !== undefined ? (
-                                                    <span style={{ color: pos.unrealizedPnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
-                                                        {pos.unrealizedPnl >= 0 ? '+' : ''}${fmt(pos.unrealizedPnl)}
-                                                        <br />
-                                                        <span style={{ fontSize: '0.72rem' }}>{pct(pos.unrealizedPnlPct ?? 0)}</span>
-                                                    </span>
-                                                ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                                            </td>
-                                            <td style={{ padding: '12px', textAlign: 'center' }}>
-                                                <Link href={`/stocks/${pos.ticker}`} style={{ color: 'var(--primary-light)', display: 'inline-flex', alignItems: 'center' }}>
-                                                    <ExternalLink size={14} />
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Allocation Chart Card */}
+                    {positions.length > 0 && (
+                        <div style={cardStyle}>
+                            <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <PieIcon size={18} /> สัดส่วนพอร์ต
+                            </h2>
+                            <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                {/* Pie */}
+                                <div style={{ width: '180px', height: '180px', flexShrink: 0 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie data={allocData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
+                                                {allocData.map((entry, i) => (
+                                                    <Cell key={i} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip formatter={(v: number | undefined) => [v != null ? `$${fmt(v)}` : '—', '']} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                {/* Legend */}
+                                <div style={{ flex: 1, minWidth: '160px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {allocData.map((d, i) => {
+                                        const allocPct = totalAllocValue > 0 ? (d.value / totalAllocValue) * 100 : 0;
+                                        return (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: d.color, flexShrink: 0 }} />
+                                                <span style={{ fontSize: '0.82rem', fontWeight: 600, flex: 1 }}>{d.name}</span>
+                                                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>${fmt(d.value)}</span>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, minWidth: '44px', textAlign: 'right', color: d.name === 'เงินสด' ? 'var(--text-muted)' : 'var(--text-primary)' }}>{allocPct.toFixed(1)}%</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     )}
+
+                    {/* Holdings Table Card */}
+                    <div style={cardStyle}>
+                        <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <BarChart2 size={18} /> หุ้นที่ถือครอง
+                        </h2>
+                        {positions.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+                                <BarChart2 size={40} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>ยังไม่มีหุ้นในพอร์ต</p>
+                                <button onClick={() => setTab('trade')} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+                                    <ArrowUpRight size={14} /> เริ่มซื้อหุ้น
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                            {['หุ้น', 'สัดส่วน', 'จำนวน', 'ต้นทุนเฉลี่ย', 'ราคาปัจจุบัน', 'มูลค่า', 'P&L', ''].map(h => (
+                                                <th key={h} style={{ padding: '8px 12px', textAlign: h === 'หุ้น' ? 'left' : h === '' ? 'center' : 'right', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {positions.map((pos, i) => {
+                                            const posValue = pos.currentValue ?? pos.totalCost;
+                                            const allocPct = totalAllocValue > 0 ? (posValue / totalAllocValue) * 100 : 0;
+                                            const color = ALLOC_COLORS[i % ALLOC_COLORS.length];
+                                            return (
+                                                <tr key={pos.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <p style={{ fontWeight: 700, margin: 0 }}>{pos.ticker}</p>
+                                                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pos.name}</p>
+                                                    </td>
+                                                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                                                            <div style={{ width: '48px', height: '6px', borderRadius: '3px', background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+                                                                <div style={{ width: `${Math.min(100, allocPct)}%`, height: '100%', background: color, borderRadius: '3px' }} />
+                                                            </div>
+                                                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color, minWidth: '36px' }}>{allocPct.toFixed(1)}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity.toFixed(pos.quantity % 1 === 0 ? 0 : 4)}</td>
+                                                    <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(pos.avgCost)}</td>
+                                                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                                                        {pos.currentPrice ? `$${fmt(pos.currentPrice)}` : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>N/A</span>}
+                                                    </td>
+                                                    <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(posValue)}</td>
+                                                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                                                        {pos.unrealizedPnl !== undefined ? (
+                                                            <span style={{ color: pos.unrealizedPnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                                                                {pos.unrealizedPnl >= 0 ? '+' : ''}${fmt(pos.unrealizedPnl)}
+                                                                <br />
+                                                                <span style={{ fontSize: '0.72rem' }}>{pct(pos.unrealizedPnlPct ?? 0)}</span>
+                                                            </span>
+                                                        ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                                                    </td>
+                                                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                                                        <Link href={`/stocks/${pos.ticker}`} style={{ color: 'var(--primary-light)', display: 'inline-flex', alignItems: 'center' }}>
+                                                            <ExternalLink size={14} />
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 

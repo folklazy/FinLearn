@@ -7,10 +7,10 @@ import { api } from '@/lib/api';
 import { StockData } from '@/types/stock';
 import { formatCurrency, formatPercent, formatLargeNumber, formatVolume, formatDate, getPriceColor, getSignalColor } from '@/lib/utils';
 import {
-    Heart, ShoppingCart, Building2, DollarSign,
+    Heart, Building2, DollarSign,
     BarChart3, Newspaper, Activity, Users, Star, Lightbulb, AlertTriangle,
     ExternalLink, Calendar, ArrowUpRight, ArrowDownRight, Info,
-    ChevronRight, BookOpen,
+    ChevronRight, BookOpen, TrendingUp, X, CheckCircle, AlertCircle as AlertIcon,
 } from 'lucide-react';
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
@@ -30,6 +30,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const PRICE_RANGES = ['1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
     const [activeSection, setActiveSection] = useState('overview');
 
+    // Trade modal
+    const [showTradeModal, setShowTradeModal] = useState<boolean>(false);
+    const [tradeQty, setTradeQty] = useState('1');
+    const [tradeSubmitting, setTradeSubmitting] = useState<boolean>(false);
+    const [tradeResult, setTradeResult] = useState<{ ok: boolean; msg: string } | null>(null);
+    const [currentPosition, setCurrentPosition] = useState<{ quantity: number; avgCost: number } | null>(null);
+
     useEffect(() => {
         api.getStock(symbol)
             .then(d => setData(d))
@@ -42,6 +49,17 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         fetch(`/api/watchlist/${symbol}`)
             .then(r => r.json())
             .then(d => setIsFavorite(d.isFavorite ?? false))
+            .catch(() => {});
+    }, [symbol, session]);
+
+    useEffect(() => {
+        if (!session?.user) return;
+        fetch('/api/portfolio')
+            .then(r => r.json())
+            .then(d => {
+                const pos = (d.positions || []).find((p: { ticker: string }) => p.ticker === symbol.toUpperCase());
+                setCurrentPosition(pos ? { quantity: pos.quantity, avgCost: pos.avgCost } : null);
+            })
             .catch(() => {});
     }, [symbol, session]);
 
@@ -95,6 +113,36 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     }
 
     const { profile, price, keyMetrics, financials, news, events, signals, competitors, scores, beginnerTips } = data;
+
+    const handleQuickTrade = async () => {
+        if (!session?.user) { router.push('/login'); return; }
+        const qty = parseFloat(tradeQty);
+        if (!qty || qty <= 0) return;
+        setTradeSubmitting(true);
+        setTradeResult(null);
+        try {
+            const res = await fetch('/api/portfolio/trade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol: symbol.toUpperCase(), side: 'BUY', quantity: qty, price: price.current }),
+            });
+            const d = await res.json();
+            if (res.ok) {
+                setTradeResult({ ok: true, msg: `ซื้อ ${symbol.toUpperCase()} ${qty} หุ้น @ ${formatCurrency(price.current)} สำเร็จ` });
+                setCurrentPosition(prev => {
+                    if (!prev) return { quantity: qty, avgCost: price.current };
+                    const newQty = prev.quantity + qty;
+                    return { quantity: newQty, avgCost: (prev.quantity * prev.avgCost + qty * price.current) / newQty };
+                });
+            } else {
+                setTradeResult({ ok: false, msg: d.error || 'เกิดข้อผิดพลาด' });
+            }
+        } catch {
+            setTradeResult({ ok: false, msg: 'เกิดข้อผิดพลาด' });
+        } finally {
+            setTradeSubmitting(false);
+        }
+    };
 
     // ── Data availability flags ──
     const hasHistory = price.history && price.history.length > 0;
@@ -285,7 +333,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     <Heart size={16} fill={isFavorite ? '#ef4444' : 'none'} />
                     {isFavorite ? 'ลบออกจาก Watchlist' : 'เพิ่มเข้า Watchlist'}
                 </button>
-                <button className="btn btn-success"><ShoppingCart size={16} /> ทดลองซื้อในพอร์ตจำลอง</button>
+                <button
+                    className="btn btn-success"
+                    onClick={() => { if (!session?.user) { router.push('/login'); return; } setShowTradeModal(true); setTradeResult(null); setTradeQty('1'); }}
+                    style={currentPosition ? { background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.35)', color: 'var(--primary-light)' } : undefined}
+                >
+                    <TrendingUp size={16} />
+                    {currentPosition ? `ถือ ${currentPosition.quantity % 1 === 0 ? currentPosition.quantity : currentPosition.quantity.toFixed(2)} หุ้น · ซื้อเพิ่ม` : 'เทรดในพอร์ตจำลอง'}
+                </button>
             </section>
 
 
@@ -882,6 +937,103 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 </p>
             </section>
             </div>
+
+        {/* ===== TRADE MODAL ===== */}
+        {showTradeModal && (
+            <div
+                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+                onClick={e => { if (e.target === e.currentTarget) { setShowTradeModal(false); setTradeResult(null); } }}
+            >
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '420px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
+                    {/* Modal header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <img src={profile.logo} alt="" style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'white', padding: '4px' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>{profile.symbol}</h3>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</p>
+                            </div>
+                        </div>
+                        <button onClick={() => { setShowTradeModal(false); setTradeResult(null); }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex' }}>
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    {/* Price strip */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: '12px', marginBottom: '20px' }}>
+                        <div>
+                            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>ราคาตลาดปัจจุบัน</p>
+                            <p style={{ fontSize: '1.4rem', fontWeight: 900, margin: '2px 0 0' }}>{formatCurrency(price.current)}</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>เปลี่ยนแปลง</p>
+                            <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: '2px 0 0', color: price.change >= 0 ? '#22c55e' : '#ef4444' }}>
+                                {price.change >= 0 ? '+' : ''}{formatCurrency(price.change)} ({formatPercent(price.changePercent)})
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Current position badge */}
+                    {currentPosition && (
+                        <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(99,102,241,0.08)', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.82rem' }}>
+                            <span style={{ color: 'var(--primary-light)' }}>ถือครองอยู่: </span>
+                            <strong>{currentPosition!.quantity % 1 === 0 ? currentPosition!.quantity : currentPosition!.quantity.toFixed(4)} หุ้น</strong>
+                            <span style={{ color: 'var(--text-muted)' }}> · ต้นทุนเฉลี่ย {formatCurrency(currentPosition!.avgCost)}</span>
+                        </div>
+                    )}
+
+                    {/* Quantity input */}
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>จำนวนหุ้น</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button onClick={() => setTradeQty(q => Math.max(1, parseInt(q || '1') - 1).toString())} style={{ width: '36px', height: '42px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>-</button>
+                            <input
+                                type="number" min="1" step="1"
+                                value={tradeQty}
+                                onChange={e => setTradeQty(e.target.value)}
+                                style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700, textAlign: 'center', outline: 'none', fontFamily: 'inherit' }}
+                            />
+                            <button onClick={() => setTradeQty(q => (parseInt(q || '1') + 1).toString())} style={{ width: '36px', height: '42px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>+</button>
+                        </div>
+                    </div>
+
+                    {/* Order preview */}
+                    <div style={{ padding: '14px 16px', background: 'var(--bg-secondary)', borderRadius: '12px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>ราคา/หุ้น</span>
+                            <span style={{ fontWeight: 600 }}>{formatCurrency(price.current)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>จำนวน</span>
+                            <span style={{ fontWeight: 600 }}>{tradeQty || '0'} หุ้น</span>
+                        </div>
+                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontWeight: 700 }}>มูลค่ารวม</span>
+                            <span style={{ fontWeight: 800, fontSize: '1rem' }}>{formatCurrency((parseFloat(tradeQty) || 0) * price.current)}</span>
+                        </div>
+                    </div>
+
+                    {/* Result message */}
+                    {tradeResult && (
+                        <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', background: tradeResult!.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${tradeResult!.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: tradeResult!.ok ? '#22c55e' : '#ef4444' }}>
+                            {tradeResult!.ok ? <CheckCircle size={16} /> : <AlertIcon size={16} />}
+                            {tradeResult!.msg}
+                        </div>
+                    )}
+
+                    {/* Submit button */}
+                    <button
+                        onClick={handleQuickTrade}
+                        disabled={tradeSubmitting || !tradeQty || parseFloat(tradeQty) <= 0}
+                        style={{ width: '100%', padding: '14px', borderRadius: '12px', background: '#22c55e', border: 'none', color: 'white', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: (tradeSubmitting || !tradeQty || parseFloat(tradeQty) <= 0) ? 0.6 : 1, transition: 'opacity 0.15s' }}
+                    >
+                        <TrendingUp size={18} />
+                        {tradeSubmitting ? 'กำลังดำเนินการ...' : `ซื้อ ${tradeQty || '0'} หุ้น · ${formatCurrency((parseFloat(tradeQty) || 0) * price.current)}`}
+                    </button>
+                    <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px' }}>เงินสมมติ — ไม่ใช่เงินจริง</p>
+                </div>
+            </div>
+        )}
         </div>
     );
 }
