@@ -10,7 +10,7 @@ import {
     Heart, Building2, DollarSign,
     BarChart3, Newspaper, Activity, Users, Star, Lightbulb, AlertTriangle,
     ExternalLink, Calendar, ArrowUpRight, ArrowDownRight, Info,
-    ChevronRight, BookOpen, TrendingUp, X, CheckCircle, AlertCircle as AlertIcon,
+    ChevronRight, BookOpen, TrendingUp, TrendingDown, X, CheckCircle, AlertCircle as AlertIcon,
 } from 'lucide-react';
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
@@ -32,9 +32,10 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
     // Trade modal
     const [showTradeModal, setShowTradeModal] = useState<boolean>(false);
+    const [tradeSide, setTradeSide] = useState<'BUY' | 'SELL'>('BUY');
     const [tradeQty, setTradeQty] = useState('1');
     const [tradeSubmitting, setTradeSubmitting] = useState<boolean>(false);
-    const [tradeResult, setTradeResult] = useState<{ ok: boolean; msg: string } | null>(null);
+    const [tradeResult, setTradeResult] = useState<{ ok: boolean; msg: string; realizedPnl?: number } | null>(null);
     const [tradeWarnings, setTradeWarnings] = useState<string[]>([]);
     const [currentPosition, setCurrentPosition] = useState<{ quantity: number; avgCost: number } | null>(null);
     const [portfolioCash, setPortfolioCash] = useState<number | null>(null);
@@ -121,6 +122,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         if (!session?.user) { router.push('/login'); return; }
         const qty = parseFloat(tradeQty);
         if (!qty || qty <= 0) return;
+        if (tradeSide === 'SELL' && currentPosition && qty > currentPosition.quantity) return;
         setTradeSubmitting(true);
         setTradeResult(null);
         setTradeWarnings([]);
@@ -128,22 +130,32 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             const res = await fetch('/api/portfolio/trade', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ symbol: symbol.toUpperCase(), side: 'BUY', quantity: qty, price: price.current }),
+                body: JSON.stringify({ symbol: symbol.toUpperCase(), side: tradeSide, quantity: qty, price: price.current }),
             });
             const d = await res.json();
             if (res.ok) {
-                setTradeResult({ ok: true, msg: `ซื้อ ${symbol.toUpperCase()} ${qty} หุ้น @ ${formatCurrency(price.current)} สำเร็จ` });
+                const sideLabel = tradeSide === 'BUY' ? 'ซื้อ' : 'ขาย';
+                setTradeResult({ ok: true, msg: `${sideLabel} ${symbol.toUpperCase()} ${qty} หุ้น @ ${formatCurrency(price.current)} สำเร็จ`, realizedPnl: d.realizedPnl ?? undefined });
                 const warns: string[] = [];
                 if (d.marketWarning) warns.push(d.marketWarning);
                 if (d.pdtWarning) warns.push(d.pdtWarning);
                 setTradeWarnings(warns);
-                const cost = qty * price.current;
-                setPortfolioCash(prev => prev != null ? prev - cost : prev);
-                setCurrentPosition(prev => {
-                    if (!prev) return { quantity: qty, avgCost: price.current };
-                    const newQty = prev.quantity + qty;
-                    return { quantity: newQty, avgCost: (prev.quantity * prev.avgCost + qty * price.current) / newQty };
-                });
+                const value = qty * price.current;
+                if (tradeSide === 'BUY') {
+                    setPortfolioCash(prev => prev != null ? prev - value : prev);
+                    setCurrentPosition(prev => {
+                        if (!prev) return { quantity: qty, avgCost: price.current };
+                        const newQty = prev.quantity + qty;
+                        return { quantity: newQty, avgCost: (prev.quantity * prev.avgCost + qty * price.current) / newQty };
+                    });
+                } else {
+                    setPortfolioCash(prev => prev != null ? prev + value : prev);
+                    setCurrentPosition(prev => {
+                        if (!prev) return null;
+                        const newQty = prev.quantity - qty;
+                        return newQty <= 0.0001 ? null : { quantity: newQty, avgCost: prev.avgCost };
+                    });
+                }
             } else {
                 setTradeResult({ ok: false, msg: d.error || 'เกิดข้อผิดพลาด' });
             }
@@ -964,9 +976,18 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</p>
                             </div>
                         </div>
-                        <button onClick={() => { setShowTradeModal(false); setTradeResult(null); }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex' }}>
+                        <button onClick={() => { setShowTradeModal(false); setTradeResult(null); setTradeWarnings([]); }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex' }}>
                             <X size={20} />
                         </button>
+                    </div>
+
+                    {/* BUY / SELL toggle */}
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+                        {(['BUY', 'SELL'] as const).map(s => (
+                            <button key={s} onClick={() => { setTradeSide(s); setTradeResult(null); setTradeWarnings([]); setTradeQty('1'); }} style={{ flex: 1, padding: '10px', borderRadius: '10px', fontFamily: 'inherit', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.15s', border: '2px solid', borderColor: tradeSide === s ? (s === 'BUY' ? '#22c55e' : '#ef4444') : 'var(--border)', background: tradeSide === s ? (s === 'BUY' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)') : 'transparent', color: tradeSide === s ? (s === 'BUY' ? '#22c55e' : '#ef4444') : 'var(--text-muted)' }}>
+                                {s === 'BUY' ? '▲ ซื้อ' : '▼ ขาย'}
+                            </button>
+                        ))}
                     </div>
 
                     {/* Price strip */}
@@ -984,17 +1005,26 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
 
                     {/* Current position badge */}
-                    {currentPosition && (
-                        <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(99,102,241,0.08)', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.82rem' }}>
-                            <span style={{ color: 'var(--primary-light)' }}>ถือครองอยู่: </span>
-                            <strong>{currentPosition!.quantity % 1 === 0 ? currentPosition!.quantity : currentPosition!.quantity.toFixed(4)} หุ้น</strong>
-                            <span style={{ color: 'var(--text-muted)' }}> · ต้นทุนเฉลี่ย {formatCurrency(currentPosition!.avgCost)}</span>
+                    {currentPosition ? (
+                        <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(99,102,241,0.08)', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.2)', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <span style={{ color: 'var(--primary-light)' }}>ถือครอง </span>
+                                <strong>{currentPosition!.quantity % 1 === 0 ? currentPosition!.quantity : currentPosition!.quantity.toFixed(4)} หุ้น</strong>
+                                <span style={{ color: 'var(--text-muted)' }}> · ต้นทุน {formatCurrency(currentPosition!.avgCost)}</span>
+                            </div>
+                            {tradeSide === 'SELL' && (
+                                <button onClick={() => setTradeQty(currentPosition!.quantity.toString())} style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>ขายทั้งหมด</button>
+                            )}
                         </div>
-                    )}
+                    ) : tradeSide === 'SELL' ? (
+                        <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(239,68,68,0.06)', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.82rem', color: '#ef4444' }}>
+                            ไม่มีหุ้น {symbol.toUpperCase()} ในพอร์ต
+                        </div>
+                    ) : null}
 
                     {/* Quantity input */}
                     <div style={{ marginBottom: '16px' }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>จำนวนหุ้น</label>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>จำนวนหุ้น {tradeSide === 'SELL' && currentPosition ? <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ถือ {currentPosition.quantity.toFixed(currentPosition.quantity % 1 === 0 ? 0 : 4)} หุ้น)</span> : ''}</label>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <button onClick={() => setTradeQty(q => Math.max(1, parseInt(q || '1') - 1).toString())} style={{ width: '36px', height: '42px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>-</button>
                             <input
@@ -1009,9 +1039,18 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                     {/* Order preview */}
                     {(() => {
-                        const orderCost = (parseFloat(tradeQty) || 0) * price.current;
-                        const remaining = portfolioCash != null ? portfolioCash - orderCost : null;
-                        const notEnough = remaining != null && remaining < 0;
+                        const qty = parseFloat(tradeQty) || 0;
+                        const orderValue = qty * price.current;
+                        const isSell = tradeSide === 'SELL';
+                        const held = currentPosition?.quantity ?? 0;
+                        const notEnoughShares = isSell && qty > held;
+                        const remaining = portfolioCash != null
+                            ? isSell ? portfolioCash + orderValue : portfolioCash - orderValue
+                            : null;
+                        const notEnoughCash = !isSell && remaining != null && remaining < 0;
+                        const estPnl = isSell && currentPosition
+                            ? qty * (price.current - currentPosition.avgCost)
+                            : null;
                         return (
                             <div style={{ padding: '14px 16px', background: 'var(--bg-secondary)', borderRadius: '12px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1020,12 +1059,18 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>จำนวน</span>
-                                    <span style={{ fontWeight: 600 }}>{tradeQty || '0'} หุ้น</span>
+                                    <span style={{ fontWeight: 600, color: notEnoughShares ? '#ef4444' : undefined }}>{tradeQty || '0'} หุ้น {notEnoughShares ? `(มีแค่ ${held})` : ''}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>มูลค่ารวม</span>
-                                    <span style={{ fontWeight: 700 }}>{formatCurrency(orderCost)}</span>
+                                    <span style={{ color: 'var(--text-muted)' }}>{isSell ? 'รายได้จากขาย' : 'มูลค่ารวม'}</span>
+                                    <span style={{ fontWeight: 700, color: isSell ? '#22c55e' : undefined }}>{formatCurrency(orderValue)}</span>
                                 </div>
+                                {isSell && estPnl != null && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>กำไร/ขาดทุนโดยประมาณ</span>
+                                        <span style={{ fontWeight: 700, color: estPnl >= 0 ? '#22c55e' : '#ef4444' }}>{estPnl >= 0 ? '+' : ''}{formatCurrency(estPnl)}</span>
+                                    </div>
+                                )}
                                 {portfolioCash != null && (
                                     <>
                                         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
@@ -1033,12 +1078,10 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                             <span style={{ fontWeight: 600 }}>{formatCurrency(portfolioCash)}</span>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontWeight: 700 }}>เงินสดคงเหลือ</span>
-                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: notEnough ? '#ef4444' : '#22c55e' }}>{formatCurrency(remaining!)}</span>
+                                            <span style={{ fontWeight: 700 }}>เงินสดหลัง{isSell ? 'ขาย' : 'ซื้อ'}</span>
+                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: notEnoughCash ? '#ef4444' : '#22c55e' }}>{formatCurrency(remaining!)}</span>
                                         </div>
-                                        {notEnough && (
-                                            <p style={{ fontSize: '0.75rem', color: '#ef4444', margin: 0 }}>⚠️ เงินสดไม่พอ</p>
-                                        )}
+                                        {notEnoughCash && <p style={{ fontSize: '0.75rem', color: '#ef4444', margin: 0 }}>⚠️ เงินสดไม่พอ</p>}
                                     </>
                                 )}
                             </div>
@@ -1047,9 +1090,16 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                     {/* Result message */}
                     {tradeResult && (
-                        <div style={{ marginBottom: tradeWarnings.length > 0 ? '8px' : '16px', padding: '12px 14px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', background: tradeResult!.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${tradeResult!.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: tradeResult!.ok ? '#22c55e' : '#ef4444' }}>
-                            {tradeResult!.ok ? <CheckCircle size={16} /> : <AlertIcon size={16} />}
-                            {tradeResult!.msg}
+                        <div style={{ marginBottom: (tradeResult.realizedPnl !== undefined || tradeWarnings.length > 0) ? '8px' : '16px', padding: '12px 14px', borderRadius: '10px', fontSize: '0.85rem', background: tradeResult!.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${tradeResult!.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: tradeResult!.ok ? '#22c55e' : '#ef4444' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {tradeResult!.ok ? <CheckCircle size={16} /> : <AlertIcon size={16} />}
+                                {tradeResult!.msg}
+                            </div>
+                            {tradeResult.realizedPnl !== undefined && (
+                                <div style={{ marginTop: '6px', fontSize: '0.78rem', paddingLeft: '24px', opacity: 0.9 }}>
+                                    Realized P/L (FIFO): <strong style={{ color: tradeResult.realizedPnl >= 0 ? '#22c55e' : '#ef4444' }}>{tradeResult.realizedPnl >= 0 ? '+' : ''}{formatCurrency(tradeResult.realizedPnl)}</strong>
+                                </div>
+                            )}
                         </div>
                     )}
                     {/* Market / PDT warnings */}
@@ -1061,14 +1111,23 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     ))}
 
                     {/* Submit button */}
-                    <button
-                        onClick={handleQuickTrade}
-                        disabled={tradeSubmitting || !tradeQty || parseFloat(tradeQty) <= 0}
-                        style={{ width: '100%', padding: '14px', borderRadius: '12px', background: '#22c55e', border: 'none', color: 'white', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: (tradeSubmitting || !tradeQty || parseFloat(tradeQty) <= 0) ? 0.6 : 1, transition: 'opacity 0.15s' }}
-                    >
-                        <TrendingUp size={18} />
-                        {tradeSubmitting ? 'กำลังดำเนินการ...' : `ซื้อ ${tradeQty || '0'} หุ้น · ${formatCurrency((parseFloat(tradeQty) || 0) * price.current)}`}
-                    </button>
+                    {(() => {
+                        const qty = parseFloat(tradeQty) || 0;
+                        const isSell = tradeSide === 'SELL';
+                        const held = currentPosition?.quantity ?? 0;
+                        const disabled = tradeSubmitting || qty <= 0
+                            || (isSell && qty > held)
+                            || (isSell && held === 0)
+                            || (!isSell && portfolioCash != null && qty * price.current > portfolioCash);
+                        return (
+                            <button onClick={handleQuickTrade} disabled={disabled}
+                                style={{ width: '100%', padding: '14px', borderRadius: '12px', background: isSell ? '#ef4444' : '#22c55e', border: 'none', color: 'white', fontSize: '1rem', fontWeight: 800, cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: disabled ? 0.5 : 1, transition: 'opacity 0.15s' }}
+                            >
+                                {isSell ? <TrendingDown size={18} /> : <TrendingUp size={18} />}
+                                {tradeSubmitting ? 'กำลังดำเนินการ...' : `${isSell ? 'ขาย' : 'ซื้อ'} ${tradeQty || '0'} หุ้น · ${formatCurrency(qty * price.current)}`}
+                            </button>
+                        );
+                    })()}
                     <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px' }}>เงินสมมติ — ไม่ใช่เงินจริง</p>
                 </div>
             </div>

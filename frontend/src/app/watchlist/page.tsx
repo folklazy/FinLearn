@@ -13,12 +13,22 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+interface Lot {
+    qty: number;
+    unitCost: number;
+    purchaseDateStr: string;
+    holdingDays: number;
+    gainType: 'SHORT' | 'LONG';
+}
+
 interface Position {
     ticker: string;
     name: string;
     quantity: number;
     avgCost: number;
     totalCost: number;
+    realizedPnl?: number;
+    lots?: Lot[];
     currentPrice?: number;
     currentValue?: number;
     unrealizedPnl?: number;
@@ -74,6 +84,7 @@ export default function PortfolioPage() {
     const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
     const [pdtWarning, setPdtWarning] = useState(false);
     const [dayTradeCount, setDayTradeCount] = useState(0);
+    const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
 
     // Trade form
     const [tradeSym, setTradeSym] = useState('');
@@ -117,8 +128,12 @@ export default function PortfolioPage() {
             if (!res.ok) return;
             const data = await res.json();
             setPortfolio(data.portfolio);
-            const withPrices = await fetchPrices(data.positions);
-            setPositions(withPrices);
+            // Preserve lots from API before fetchPrices strips unknown fields
+            const rawPositions: Position[] = data.positions || [];
+            const withPrices = await fetchPrices(rawPositions);
+            // Re-attach lots after fetchPrices (spread preserves them)
+            setPositions(withPrices.map((p, i) => ({ ...rawPositions[i], ...p })));
+            
             if (data.marketStatus) setMarketStatus(data.marketStatus);
             if (data.pdtWarning !== undefined) setPdtWarning(data.pdtWarning);
             if (data.dayTradeCount !== undefined) setDayTradeCount(data.dayTradeCount);
@@ -380,7 +395,7 @@ export default function PortfolioPage() {
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                                     <thead>
                                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                            {['หุ้น', 'สัดส่วน', 'จำนวน', 'ต้นทุนเฉลี่ย', 'ราคาปัจจุบัน', 'มูลค่า', 'P&L', ''].map(h => (
+                                            {['หุ้น', 'สัดส่วน', 'จำนวน', 'ต้นทุนเฉลี่ย', 'ราคา', 'มูลค่า', 'Unrealized P&L', ''].map(h => (
                                                 <th key={h} style={{ padding: '8px 12px', textAlign: h === 'หุ้น' ? 'left' : h === '' ? 'center' : 'right', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
                                             ))}
                                         </tr>
@@ -390,41 +405,87 @@ export default function PortfolioPage() {
                                             const posValue = pos.currentValue ?? pos.totalCost;
                                             const allocPct = totalAllocValue > 0 ? (posValue / totalAllocValue) * 100 : 0;
                                             const color = ALLOC_COLORS[i % ALLOC_COLORS.length];
+                                            const isExpanded = expandedTicker === pos.ticker;
                                             return (
-                                                <tr key={pos.ticker} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <p style={{ fontWeight: 700, margin: 0 }}>{pos.ticker}</p>
-                                                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pos.name}</p>
-                                                    </td>
-                                                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                                                            <div style={{ width: '48px', height: '6px', borderRadius: '3px', background: 'var(--bg-secondary)', overflow: 'hidden' }}>
-                                                                <div style={{ width: `${Math.min(100, allocPct)}%`, height: '100%', background: color, borderRadius: '3px' }} />
+                                                <>
+                                                    <tr key={pos.ticker} style={{ borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}
+                                                        onClick={() => setExpandedTicker(isExpanded ? null : pos.ticker)}>
+                                                        <td style={{ padding: '12px' }}>
+                                                            <p style={{ fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                                <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{isExpanded ? '▼' : '▶'}</span>
+                                                                {pos.ticker}
+                                                            </p>
+                                                            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pos.name}</p>
+                                                        </td>
+                                                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                                                                <div style={{ width: '40px', height: '5px', borderRadius: '3px', background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+                                                                    <div style={{ width: `${Math.min(100, allocPct)}%`, height: '100%', background: color }} />
+                                                                </div>
+                                                                <span style={{ fontSize: '0.78rem', fontWeight: 600, color }}>{allocPct.toFixed(1)}%</span>
                                                             </div>
-                                                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color, minWidth: '36px' }}>{allocPct.toFixed(1)}%</span>
-                                                        </div>
-                                                    </td>
-                                                    <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity.toFixed(pos.quantity % 1 === 0 ? 0 : 4)}</td>
-                                                    <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(pos.avgCost)}</td>
-                                                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                        {pos.currentPrice ? `$${fmt(pos.currentPrice)}` : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>N/A</span>}
-                                                    </td>
-                                                    <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(posValue)}</td>
-                                                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                        {pos.unrealizedPnl !== undefined ? (
-                                                            <span style={{ color: pos.unrealizedPnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
-                                                                {pos.unrealizedPnl >= 0 ? '+' : ''}${fmt(pos.unrealizedPnl)}
-                                                                <br />
-                                                                <span style={{ fontSize: '0.72rem' }}>{pct(pos.unrealizedPnlPct ?? 0)}</span>
-                                                            </span>
-                                                        ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                                                    </td>
-                                                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                                                        <Link href={`/stocks/${pos.ticker}`} style={{ color: 'var(--primary-light)', display: 'inline-flex', alignItems: 'center' }}>
-                                                            <ExternalLink size={14} />
-                                                        </Link>
-                                                    </td>
-                                                </tr>
+                                                        </td>
+                                                        <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity.toFixed(pos.quantity % 1 === 0 ? 0 : 4)}</td>
+                                                        <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(pos.avgCost)}</td>
+                                                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                                                            {pos.currentPrice ? `$${fmt(pos.currentPrice)}` : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>N/A</span>}
+                                                        </td>
+                                                        <td style={{ padding: '12px', textAlign: 'right' }}>${fmt(posValue)}</td>
+                                                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                                                            {pos.unrealizedPnl !== undefined ? (
+                                                                <span style={{ color: pos.unrealizedPnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                                                                    {pos.unrealizedPnl >= 0 ? '+' : ''}${fmt(pos.unrealizedPnl)}
+                                                                    <br /><span style={{ fontSize: '0.72rem' }}>{pct(pos.unrealizedPnlPct ?? 0)}</span>
+                                                                </span>
+                                                            ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                                                        </td>
+                                                        <td style={{ padding: '12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                                                            <Link href={`/stocks/${pos.ticker}`} style={{ color: 'var(--primary-light)', display: 'inline-flex', alignItems: 'center' }}>
+                                                                <ExternalLink size={14} />
+                                                            </Link>
+                                                        </td>
+                                                    </tr>
+                                                    {/* Lot detail sub-rows */}
+                                                    {isExpanded && pos.lots && pos.lots.length > 0 && (
+                                                        <tr key={`${pos.ticker}-lots`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                            <td colSpan={8} style={{ padding: '0 12px 14px 28px', background: 'rgba(99,102,241,0.03)' }}>
+                                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>รายละเอียดล็อต (FIFO — เก่าสุดขายก่อน)</div>
+                                                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                                                                    <thead>
+                                                                        <tr style={{ color: 'var(--text-muted)' }}>
+                                                                            {['วันซื้อ', 'ถือมา', 'จำนวน', 'ต้นทุน/หุ้น', 'ประเภทกำไร', 'Unrealized P/L'].map(h => (
+                                                                                <th key={h} style={{ padding: '4px 8px', textAlign: h === 'วันซื้อ' || h === 'ถือมา' || h === 'ประเภทกำไร' ? 'left' : 'right', fontWeight: 500 }}>{h}</th>
+                                                                            ))}
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {pos.lots.map((lot, li) => {
+                                                                            const lotPnl = pos.currentPrice
+                                                                                ? lot.qty * (pos.currentPrice - lot.unitCost)
+                                                                                : null;
+                                                                            return (
+                                                                                <tr key={li} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                                                                    <td style={{ padding: '5px 8px' }}>{lot.purchaseDateStr}</td>
+                                                                                    <td style={{ padding: '5px 8px' }}>{lot.holdingDays}d</td>
+                                                                                    <td style={{ padding: '5px 8px', textAlign: 'right' }}>{lot.qty.toFixed(lot.qty % 1 === 0 ? 0 : 4)}</td>
+                                                                                    <td style={{ padding: '5px 8px', textAlign: 'right' }}>${fmt(lot.unitCost)}</td>
+                                                                                    <td style={{ padding: '5px 8px' }}>
+                                                                                        <span style={{ padding: '2px 7px', borderRadius: '4px', fontWeight: 700, fontSize: '0.72rem', background: lot.gainType === 'LONG' ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)', color: lot.gainType === 'LONG' ? '#22c55e' : '#f59e0b' }}>
+                                                                                            {lot.gainType === 'LONG' ? 'LONG-TERM' : 'SHORT-TERM'}
+                                                                                        </span>
+                                                                                    </td>
+                                                                                    <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 600, color: lotPnl == null ? 'var(--text-muted)' : lotPnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                                                                                        {lotPnl != null ? `${lotPnl >= 0 ? '+' : ''}$${fmt(lotPnl)}` : '—'}
+                                                                                    </td>
+                                                                                </tr>
+                                                                            );
+                                                                        })}
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </>
                                             );
                                         })}
                                     </tbody>
@@ -432,6 +493,46 @@ export default function PortfolioPage() {
                             </div>
                         )}
                     </div>
+                {/* Tax Summary Card */}
+                {positions.length > 0 && (() => {
+                    let shortUnrealized = 0, longUnrealized = 0;
+                    for (const pos of positions) {
+                        if (!pos.lots || !pos.currentPrice) continue;
+                        for (const lot of pos.lots) {
+                            const lotPnl = lot.qty * (pos.currentPrice - lot.unitCost);
+                            if (lot.gainType === 'SHORT') shortUnrealized += lotPnl;
+                            else longUnrealized += lotPnl;
+                        }
+                    }
+                    const totalRealized = portfolio?.totalRealizedPnl ?? 0;
+                    return (
+                        <div style={cardStyle}>
+                            <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                🏷️ สรุปภาษีและกำไร/ขาดทุน
+                            </h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                                <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                                    <p style={{ fontSize: '0.73rem', color: '#f59e0b', marginBottom: '6px', fontWeight: 600 }}>📅 Short-term Unrealized</p>
+                                    <p style={{ fontSize: '1.2rem', fontWeight: 800, color: shortUnrealized >= 0 ? '#22c55e' : '#ef4444' }}>{shortUnrealized >= 0 ? '+' : ''}${fmt(shortUnrealized)}</p>
+                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>ถือ &lt; 1 ปี · อัตราภาษีปกติ</p>
+                                </div>
+                                <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                                    <p style={{ fontSize: '0.73rem', color: '#22c55e', marginBottom: '6px', fontWeight: 600 }}>📆 Long-term Unrealized</p>
+                                    <p style={{ fontSize: '1.2rem', fontWeight: 800, color: longUnrealized >= 0 ? '#22c55e' : '#ef4444' }}>{longUnrealized >= 0 ? '+' : ''}${fmt(longUnrealized)}</p>
+                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>ถือ ≥ 1 ปี · อัตราภาษีพิเศษ</p>
+                                </div>
+                                <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                                    <p style={{ fontSize: '0.73rem', color: 'var(--primary-light)', marginBottom: '6px', fontWeight: 600 }}>✅ Realized P/L (FIFO)</p>
+                                    <p style={{ fontSize: '1.2rem', fontWeight: 800, color: totalRealized >= 0 ? '#22c55e' : '#ef4444' }}>{totalRealized >= 0 ? '+' : ''}${fmt(totalRealized)}</p>
+                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>รับรู้แล้ว · ต้องรายงานภาษี</p>
+                                </div>
+                            </div>
+                            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '12px' }}>
+                                ⚠️ ข้อมูลนี้เป็นการจำลองเท่านั้น — ไม่ใช่คำแนะนำภาษีจริง US short-term capital gains (&lt;1 ปี) เสียภาษีในอัตราปกติ long-term (≥1 ปี) เสียภาษี 0/15/20%
+                            </p>
+                        </div>
+                    );
+                })()}
                 </div>
             )}
 
