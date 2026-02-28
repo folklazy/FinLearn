@@ -479,8 +479,8 @@ export default function PortfolioPage() {
                                                         </td>
                                                         <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                                                             <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                                                <button onClick={() => setInlinePanel(p => p?.ticker === pos.ticker && p.side === 'BUY' ? null : { ticker: pos.ticker, name: pos.name, side: 'BUY', qty: '1', heldQty: pos.quantity })} style={{ padding: '4px 10px', borderRadius: '7px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid rgba(34,197,94,0.35)', background: inlinePanel?.ticker === pos.ticker && inlinePanel.side === 'BUY' ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.08)', color: '#22c55e' }}>▲ ซื้อ</button>
-                                                                <button onClick={() => setInlinePanel(p => p?.ticker === pos.ticker && p.side === 'SELL' ? null : { ticker: pos.ticker, name: pos.name, side: 'SELL', qty: '1', heldQty: pos.quantity })} style={{ padding: '4px 10px', borderRadius: '7px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid rgba(239,68,68,0.35)', background: inlinePanel?.ticker === pos.ticker && inlinePanel.side === 'SELL' ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.08)', color: '#ef4444' }}>▼ ขาย</button>
+                                                                <button onClick={() => setInlinePanel(p => p?.ticker === pos.ticker && p.side === 'BUY' ? null : { ticker: pos.ticker, name: pos.name, side: 'BUY', qty: '1', heldQty: pos.quantity })} style={{ padding: '4px 10px', borderRadius: '7px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid rgba(34,197,94,0.35)', background: inlinePanel?.ticker === pos.ticker && inlinePanel.side === 'BUY' ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.08)', color: '#22c55e' }}>ซื้อ</button>
+                                                                <button onClick={() => setInlinePanel(p => p?.ticker === pos.ticker && p.side === 'SELL' ? null : { ticker: pos.ticker, name: pos.name, side: 'SELL', qty: '1', heldQty: pos.quantity })} style={{ padding: '4px 10px', borderRadius: '7px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid rgba(239,68,68,0.35)', background: inlinePanel?.ticker === pos.ticker && inlinePanel.side === 'SELL' ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.08)', color: '#ef4444' }}>ขาย</button>
                                                                 <Link href={`/stocks/${pos.ticker}`} style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', marginLeft: '2px' }}>
                                                                     <ExternalLink size={13} />
                                                                 </Link>
@@ -505,7 +505,7 @@ export default function PortfolioPage() {
                                                                     <div style={{ background: isSell ? 'rgba(239,68,68,0.05)' : 'rgba(34,197,94,0.05)', border: `1px solid ${isSell ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'}`, borderRadius: '12px', padding: '14px 16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
                                                                         {/* Side label */}
                                                                         <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isSell ? '#ef4444' : '#22c55e', minWidth: '80px' }}>
-                                                                            {isSell ? '▼ ขาย' : '▲ ซื้อเพิ่ม'} {pos.ticker}
+                                                                            {isSell ? 'ขาย' : 'ซื้อเพิ่ม'} {pos.ticker}
                                                                             <div style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)', marginTop: '2px' }}>ราคา ${price > 0 ? fmt(price) : 'N/A'}</div>
                                                                         </div>
                                                                         {/* Qty */}
@@ -643,7 +643,7 @@ export default function PortfolioPage() {
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
                             {(['BUY', 'SELL'] as const).map(s => (
                                 <button key={s} onClick={() => setTradeSide(s)} style={{ flex: 1, padding: '9px', borderRadius: '10px', fontFamily: 'inherit', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', border: '2px solid', borderColor: tradeSide === s ? (s === 'BUY' ? '#22c55e' : '#ef4444') : 'var(--border)', background: tradeSide === s ? (s === 'BUY' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)') : 'transparent', color: tradeSide === s ? (s === 'BUY' ? '#22c55e' : '#ef4444') : 'var(--text-muted)' }}>
-                                    {s === 'BUY' ? '▲ ซื้อ' : '▼ ขาย'}
+                                    {s === 'BUY' ? 'ซื้อ' : 'ขาย'}
                                 </button>
                             ))}
                         </div>
