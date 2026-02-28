@@ -502,7 +502,7 @@ export default function PortfolioPage() {
                                                                         {/* Qty stepper */}
                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                                             <button onClick={() => setInlinePanel(p => p ? { ...p, qty: String(Math.max(1, parseFloat(p.qty || '1') - 1)) } : p)} style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
-                                                                            <input type="number" value={inlinePanel.qty} onChange={e => setInlinePanel(p => p ? { ...p, qty: e.target.value } : p)} style={{ width: '56px', padding: '5px 8px', borderRadius: '6px', background: 'var(--bg-card)', border: `1px solid ${notEnough ? '#ef4444' : 'var(--border)'}`, color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 700, textAlign: 'center', outline: 'none', fontFamily: 'inherit' }} />
+                                                                            <input type="text" inputMode="decimal" value={inlinePanel.qty} onChange={e => setInlinePanel(p => p ? { ...p, qty: e.target.value } : p)} style={{ width: '56px', padding: '5px 8px', borderRadius: '6px', background: 'var(--bg-card)', border: `1px solid ${notEnough ? '#ef4444' : 'var(--border)'}`, color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 700, textAlign: 'center', outline: 'none', fontFamily: 'inherit' }} />
                                                                             <button onClick={() => setInlinePanel(p => p ? { ...p, qty: String(parseFloat(p.qty || '1') + 1) } : p)} style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                                                                             {isSell && <button onClick={() => setInlinePanel(p => p ? { ...p, qty: String(pos.quantity) } : p)} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid rgba(239,68,68,0.25)', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>ทั้งหมด</button>}
                                                                         </div>
@@ -646,11 +646,11 @@ export default function PortfolioPage() {
                             </div>
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>ราคา (USD)</label>
-                                <input type="number" value={tradePrice} onChange={e => setTradePrice(e.target.value)} placeholder="0.00" min="0" step="0.01" style={inputStyle} />
+                                <input type="text" inputMode="decimal" value={tradePrice} onChange={e => setTradePrice(e.target.value)} placeholder="0.00" style={inputStyle} />
                             </div>
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>จำนวนหุ้น</label>
-                                <input type="number" value={tradeQty} onChange={e => setTradeQty(e.target.value)} placeholder="1" min="0.0001" step="1" style={inputStyle} />
+                                <input type="text" inputMode="decimal" value={tradeQty} onChange={e => setTradeQty(e.target.value)} placeholder="1" style={inputStyle} />
                             </div>
                             {tradeSym && tradeQty && tradePrice && (
                                 <div style={{ padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between' }}>

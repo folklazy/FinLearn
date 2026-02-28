@@ -1028,7 +1028,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <button onClick={() => setTradeQty(q => Math.max(1, parseInt(q || '1') - 1).toString())} style={{ width: '36px', height: '42px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>-</button>
                             <input
-                                type="number" min="1" step="1"
+                                type="text" inputMode="decimal"
                                 value={tradeQty}
                                 onChange={e => setTradeQty(e.target.value)}
                                 style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700, textAlign: 'center', outline: 'none', fontFamily: 'inherit' }}
