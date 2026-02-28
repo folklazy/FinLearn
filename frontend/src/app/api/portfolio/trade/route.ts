@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { getMarketStatus, countDayTrades } from '@/lib/market-hours';
 
 // POST /api/portfolio/trade — execute a paper trade
 export async function POST(req: NextRequest) {
@@ -46,6 +47,10 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: `ไม่พบหุ้น ${symbol}` }, { status: 404 });
             }
         }
+
+        // Market hours check (warn but don't block — simulator)
+        const marketStatus = getMarketStatus();
+        const marketWarning = !marketStatus.isOpen ? marketStatus.message : null;
 
         // Get or create default portfolio
         let portfolio = await prisma.paperPortfolio.findFirst({
@@ -106,6 +111,17 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // PDT check — count day trades (same symbol buy+sell same day) in last 5 days
+        const tradeSummary = trades.map(t => ({
+            side: t.side,
+            ticker: company.ticker,
+            tradeDate: t.tradeDate,
+        }));
+        const dayTradeCount = countDayTrades(tradeSummary, 5);
+        const pdtWarning = dayTradeCount >= 3
+            ? `คุณมี ${dayTradeCount} day trade ใน 5 วันที่ผ่านมา (PDT rule: ≥4 ครั้ง + พอร์ต < $25,000 จะถูกจำกัด)`
+            : null;
+
         // Create trade
         const trade = await prisma.paperTrade.create({
             data: {
@@ -119,6 +135,34 @@ export async function POST(req: NextRequest) {
             },
         });
 
+        // Compute realized P/L on SELL using FIFO
+        let realizedPnl: number | null = null;
+        if (side === 'SELL') {
+            type TmpLot = { qty: number; unitCost: number };
+            const lotTmp = new Map<bigint, TmpLot[]>();
+            let rem = qty;
+            let rpnl = 0;
+            for (const t of trades) {
+                if (t.side === 'BUY') {
+                    const tQty = Number(t.quantity);
+                    const tPrice = Number(t.price);
+                    const tFees = Number(t.fees);
+                    const arr = lotTmp.get(t.companyId) ?? [];
+                    arr.push({ qty: tQty, unitCost: (tQty * tPrice + tFees) / tQty });
+                    lotTmp.set(t.companyId, arr);
+                }
+            }
+            const lots = lotTmp.get(company.id) ?? [];
+            while (rem > 0.00001 && lots.length > 0) {
+                const lot = lots[0];
+                const consumed = Math.min(rem, lot.qty);
+                rpnl += consumed * (px - lot.unitCost) - (consumed / qty) * 0;
+                if (lot.qty <= rem + 0.00001) { rem -= lot.qty; lots.shift(); }
+                else { lot.qty -= rem; rem = 0; }
+            }
+            realizedPnl = rpnl;
+        }
+
         return NextResponse.json({
             ok: true,
             tradeId: trade.id.toString(),
@@ -127,6 +171,9 @@ export async function POST(req: NextRequest) {
             quantity: qty,
             price: px,
             total: cost,
+            realizedPnl,
+            marketWarning,
+            pdtWarning,
         });
     } catch (err) {
         console.error('Trade error:', err);

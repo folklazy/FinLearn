@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
     TrendingUp, TrendingDown, RefreshCw, ArrowUpRight,
     ArrowDownLeft, Clock, BarChart2, Wallet, ExternalLink,
-    CheckCircle, AlertCircle, PieChart as PieIcon,
+    CheckCircle, AlertCircle, PieChart as PieIcon, Activity, Info,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -30,6 +30,17 @@ interface Portfolio {
     name: string;
     startingCash: number;
     cashBalance: number;
+    totalRealizedPnl: number;
+    totalReturnPct: number;
+}
+
+interface MarketStatus {
+    isOpen: boolean;
+    isWeekend: boolean;
+    isHoliday: boolean;
+    message: string;
+    etTime: string;
+    dateStr: string;
 }
 
 interface Trade {
@@ -60,6 +71,9 @@ export default function PortfolioPage() {
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<'holdings' | 'trade' | 'history'>('holdings');
     const [toast, setToast] = useState({ type: '', text: '' });
+    const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
+    const [pdtWarning, setPdtWarning] = useState(false);
+    const [dayTradeCount, setDayTradeCount] = useState(0);
 
     // Trade form
     const [tradeSym, setTradeSym] = useState('');
@@ -105,6 +119,9 @@ export default function PortfolioPage() {
             setPortfolio(data.portfolio);
             const withPrices = await fetchPrices(data.positions);
             setPositions(withPrices);
+            if (data.marketStatus) setMarketStatus(data.marketStatus);
+            if (data.pdtWarning !== undefined) setPdtWarning(data.pdtWarning);
+            if (data.dayTradeCount !== undefined) setDayTradeCount(data.dayTradeCount);
         } catch (e) {
             console.error(e);
         } finally {
@@ -136,7 +153,7 @@ export default function PortfolioPage() {
             const res = await fetch(`${API_BASE}/api/stocks/${tradeSym.trim().toUpperCase()}`);
             if (!res.ok) { showToast('error', `ไม่พบหุ้น ${tradeSym}`); return; }
             const data = await res.json();
-            const price = data?.price ?? data?.regularMarketPrice ?? data?.close ?? 0;
+            const price = data?.price?.current ?? data?.price ?? data?.regularMarketPrice ?? 0;
             if (price) setTradePrice(price.toFixed(2));
             else showToast('error', 'ไม่พบราคา');
         } catch {
@@ -178,8 +195,6 @@ export default function PortfolioPage() {
     // Computed totals
     const totalPositionsValue = positions.reduce((s, p) => s + (p.currentValue ?? p.totalCost), 0);
     const totalValue = (portfolio?.cashBalance ?? 0) + totalPositionsValue;
-    const totalPnl = portfolio ? totalValue - portfolio.startingCash : 0;
-    const totalPnlPct = portfolio && portfolio.startingCash > 0 ? (totalPnl / portfolio.startingCash) * 100 : 0;
     const totalUnrealizedPnl = positions.reduce((s, p) => s + (p.unrealizedPnl ?? 0), 0);
 
     // Allocation data
@@ -217,7 +232,7 @@ export default function PortfolioPage() {
             )}
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <BarChart2 size={28} style={{ color: 'var(--primary-light)' }} /> Portfolio Simulator
@@ -226,37 +241,73 @@ export default function PortfolioPage() {
                         จำลองการลงทุนด้วยเงินสมมติ ไม่มีความเสี่ยงจริง
                     </p>
                 </div>
-                <button onClick={() => { loadPortfolio(); loadHistory(); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    <RefreshCw size={14} /> รีเฟรช
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {/* Market status badge */}
+                    {marketStatus && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: marketStatus.isOpen ? 'rgba(34,197,94,0.12)' : 'rgba(100,116,139,0.12)', border: `1px solid ${marketStatus.isOpen ? 'rgba(34,197,94,0.3)' : 'rgba(100,116,139,0.25)'}`, color: marketStatus.isOpen ? '#22c55e' : 'var(--text-muted)' }}>
+                            <Activity size={12} />
+                            <span>{marketStatus.isOpen ? 'ตลาดเปิด' : 'ตลาดปิด'}</span>
+                            <span style={{ opacity: 0.7 }}>{marketStatus.etTime}</span>
+                        </div>
+                    )}
+                    <button onClick={() => { loadPortfolio(); loadHistory(); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        <RefreshCw size={14} /> รีเฟรช
+                    </button>
+                </div>
             </div>
 
+            {/* Market status info bar */}
+            {marketStatus && !marketStatus.isOpen && (
+                <div style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', background: 'rgba(100,116,139,0.08)', border: '1px solid rgba(100,116,139,0.2)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                    <Info size={14} style={{ flexShrink: 0 }} />
+                    <span>{marketStatus.message} — การซื้อขายใน Simulator เป็น Market Order ใช้ราคา ณ เวลาที่ trade</span>
+                </div>
+            )}
+
+            {/* PDT Warning */}
+            {pdtWarning && (
+                <div style={{ marginBottom: '16px', padding: '12px 16px', borderRadius: '10px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.82rem' }}>
+                    <AlertCircle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '1px' }} />
+                    <div>
+                        <p style={{ fontWeight: 700, color: '#f59e0b', margin: '0 0 2px' }}>⚠️ Pattern Day Trader (PDT) Warning</p>
+                        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>คุณมี <strong>{dayTradeCount} day trade</strong> ใน 5 วันทำการล่าสุด — กฎ PDT จริง: ถ้า ≥ 4 ครั้งและพอร์ต &lt; $25,000 จะถูกโบรกเกอร์จำกัด</p>
+                    </div>
+                </div>
+            )}
+
             {/* Summary Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '24px' }}>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><Wallet size={13} /> มูลค่าพอร์ตรวม</p>
-                    <p style={{ fontSize: '1.4rem', fontWeight: 800 }}>${fmt(totalValue)}</p>
-                    <p style={{ fontSize: '0.78rem', marginTop: '4px', color: totalPnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
-                        {totalPnl >= 0 ? <TrendingUp size={12} style={{ display: 'inline', marginRight: '3px' }} /> : <TrendingDown size={12} style={{ display: 'inline', marginRight: '3px' }} />}
-                        {totalPnl >= 0 ? '+' : ''}${fmt(totalPnl)} ({pct(totalPnlPct)})
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><Wallet size={12} /> มูลค่าพอร์ตรวม</p>
+                    <p style={{ fontSize: '1.35rem', fontWeight: 800 }}>${fmt(totalValue)}</p>
+                    <p style={{ fontSize: '0.75rem', marginTop: '4px', color: (portfolio?.totalReturnPct ?? 0) >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                        {(portfolio?.totalReturnPct ?? 0) >= 0 ? <TrendingUp size={11} style={{ display: 'inline', marginRight: '3px' }} /> : <TrendingDown size={11} style={{ display: 'inline', marginRight: '3px' }} />}
+                        ผลตอบแทน {pct(portfolio?.totalReturnPct ?? 0)}
                     </p>
                 </div>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px' }}>💵 เงินสด</p>
-                    <p style={{ fontSize: '1.4rem', fontWeight: 800 }}>${fmt(portfolio?.cashBalance ?? 0)}</p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>ทุนตั้งต้น ${fmt(portfolio?.startingCash ?? 0)}</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>💵 เงินสด</p>
+                    <p style={{ fontSize: '1.35rem', fontWeight: 800 }}>${fmt(portfolio?.cashBalance ?? 0)}</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>/ ทุน ${fmt(portfolio?.startingCash ?? 0)}</p>
                 </div>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px' }}>📈 มูลค่าหุ้น</p>
-                    <p style={{ fontSize: '1.4rem', fontWeight: 800 }}>${fmt(totalPositionsValue)}</p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{positions.length} ตัว</p>
-                </div>
-                <div style={cardStyle}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px' }}>💹 Unrealized P&L</p>
-                    <p style={{ fontSize: '1.4rem', fontWeight: 800, color: totalUnrealizedPnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>📈 Unrealized P&L</p>
+                    <p style={{ fontSize: '1.35rem', fontWeight: 800, color: totalUnrealizedPnl >= 0 ? '#22c55e' : '#ef4444' }}>
                         {totalUnrealizedPnl >= 0 ? '+' : ''}${fmt(totalUnrealizedPnl)}
                     </p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>ยังไม่รับรู้กำไร/ขาดทุน</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>ยังไม่รับรู้</p>
+                </div>
+                <div style={cardStyle}>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>🏷️ Realized P&L</p>
+                    <p style={{ fontSize: '1.35rem', fontWeight: 800, color: (portfolio?.totalRealizedPnl ?? 0) >= 0 ? '#22c55e' : '#ef4444' }}>
+                        {(portfolio?.totalRealizedPnl ?? 0) >= 0 ? '+' : ''}${fmt(portfolio?.totalRealizedPnl ?? 0)}
+                    </p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>FIFO รับรู้แล้ว</p>
+                </div>
+                <div style={cardStyle}>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>📊 สัดส่วนหุ้น</p>
+                    <p style={{ fontSize: '1.35rem', fontWeight: 800 }}>${fmt(totalPositionsValue)}</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>{positions.length} ตัว | {totalValue > 0 ? ((totalPositionsValue / totalValue) * 100).toFixed(1) : '0'}%</p>
                 </div>
             </div>
 
