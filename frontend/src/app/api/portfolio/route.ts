@@ -39,9 +39,12 @@ export async function GET() {
             orderBy: { tradeDate: 'asc' },
         });
 
-        // Compute positions and cash
+        // Compute positions and cash — FIFO (First In, First Out) cost basis
         let cashBalance = Number(portfolio.startingCash);
-        const posMap = new Map<string, { ticker: string; name: string; qty: number; totalCost: number }>();
+
+        // lotMap: ticker → ordered queue of BUY lots (oldest first)
+        type Lot = { qty: number; unitCost: number };
+        const lotMap = new Map<string, { name: string; lots: Lot[] }>();
 
         for (const trade of trades) {
             const sym = trade.company.ticker;
@@ -51,30 +54,44 @@ export async function GET() {
 
             if (trade.side === 'BUY') {
                 cashBalance -= qty * price + fees;
-                const cur = posMap.get(sym) ?? { ticker: sym, name: trade.company.name, qty: 0, totalCost: 0 };
-                cur.qty += qty;
-                cur.totalCost += qty * price + fees;
-                posMap.set(sym, cur);
+                const entry = lotMap.get(sym) ?? { name: trade.company.name, lots: [] };
+                // unitCost includes pro-rated fees per share
+                entry.lots.push({ qty, unitCost: (qty * price + fees) / qty });
+                lotMap.set(sym, entry);
             } else {
                 cashBalance += qty * price - fees;
-                const cur = posMap.get(sym);
-                if (cur) {
-                    const avgCost = cur.totalCost / cur.qty;
-                    cur.totalCost -= avgCost * qty;
-                    cur.qty -= qty;
-                    if (cur.qty <= 0.0001) posMap.delete(sym);
-                    else posMap.set(sym, cur);
+                const entry = lotMap.get(sym);
+                if (entry) {
+                    // FIFO: deplete oldest lots first
+                    let remaining = qty;
+                    while (remaining > 0.00001 && entry.lots.length > 0) {
+                        const lot = entry.lots[0];
+                        if (lot.qty <= remaining + 0.00001) {
+                            remaining -= lot.qty;
+                            entry.lots.shift();
+                        } else {
+                            lot.qty -= remaining;
+                            remaining = 0;
+                        }
+                    }
+                    if (entry.lots.length === 0) lotMap.delete(sym);
                 }
             }
         }
 
-        const positions = Array.from(posMap.values()).map(p => ({
-            ticker: p.ticker,
-            name: p.name,
-            quantity: p.qty,
-            avgCost: p.qty > 0 ? p.totalCost / p.qty : 0,
-            totalCost: p.totalCost,
-        }));
+        const positions = Array.from(lotMap.entries()).map(([ticker, { name, lots }]) => {
+            const totalQty = lots.reduce((s, l) => s + l.qty, 0);
+            const totalCost = lots.reduce((s, l) => s + l.qty * l.unitCost, 0);
+            return {
+                ticker,
+                name,
+                quantity: totalQty,
+                avgCost: totalQty > 0 ? totalCost / totalQty : 0,
+                totalCost,
+                // Include individual lots for transparency
+                lots: lots.map(l => ({ qty: l.qty, unitCost: l.unitCost })),
+            };
+        }).filter(p => p.quantity > 0.0001);
 
         return NextResponse.json({
             portfolio: {
