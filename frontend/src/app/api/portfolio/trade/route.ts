@@ -22,12 +22,29 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'จำนวนและราคาต้องมากกว่า 0' }, { status: 400 });
         }
 
-        // Find company by ticker
-        const company = await prisma.company.findUnique({
+        // Find company by ticker — auto-create from external API if not in local DB
+        let company = await prisma.company.findUnique({
             where: { ticker: symbol.toUpperCase() },
         });
         if (!company) {
-            return NextResponse.json({ error: `ไม่พบหุ้น ${symbol}` }, { status: 404 });
+            try {
+                const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                const stockRes = await fetch(`${apiBase}/api/stocks/${symbol.toUpperCase()}`);
+                if (!stockRes.ok) {
+                    return NextResponse.json({ error: `ไม่พบหุ้น ${symbol}` }, { status: 404 });
+                }
+                const stockData = await stockRes.json();
+                const companyName: string = stockData?.profile?.name ?? symbol.toUpperCase();
+                const exchange: string | undefined = stockData?.profile?.exchange ?? undefined;
+                const logoUrl: string | undefined = stockData?.profile?.logo ?? undefined;
+                company = await prisma.company.upsert({
+                    where: { ticker: symbol.toUpperCase() },
+                    update: {},
+                    create: { ticker: symbol.toUpperCase(), name: companyName, exchange, logoUrl },
+                });
+            } catch {
+                return NextResponse.json({ error: `ไม่พบหุ้น ${symbol}` }, { status: 404 });
+            }
         }
 
         // Get or create default portfolio

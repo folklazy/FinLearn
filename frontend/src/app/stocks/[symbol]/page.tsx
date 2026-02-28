@@ -36,6 +36,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [tradeSubmitting, setTradeSubmitting] = useState<boolean>(false);
     const [tradeResult, setTradeResult] = useState<{ ok: boolean; msg: string } | null>(null);
     const [currentPosition, setCurrentPosition] = useState<{ quantity: number; avgCost: number } | null>(null);
+    const [portfolioCash, setPortfolioCash] = useState<number | null>(null);
 
     useEffect(() => {
         api.getStock(symbol)
@@ -59,6 +60,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             .then(d => {
                 const pos = (d.positions || []).find((p: { ticker: string }) => p.ticker === symbol.toUpperCase());
                 setCurrentPosition(pos ? { quantity: pos.quantity, avgCost: pos.avgCost } : null);
+                if (d.portfolio?.cashBalance != null) setPortfolioCash(Number(d.portfolio.cashBalance));
             })
             .catch(() => {});
     }, [symbol, session]);
@@ -129,6 +131,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             const d = await res.json();
             if (res.ok) {
                 setTradeResult({ ok: true, msg: `ซื้อ ${symbol.toUpperCase()} ${qty} หุ้น @ ${formatCurrency(price.current)} สำเร็จ` });
+                const cost = qty * price.current;
+                setPortfolioCash(prev => prev != null ? prev - cost : prev);
                 setCurrentPosition(prev => {
                     if (!prev) return { quantity: qty, avgCost: price.current };
                     const newQty = prev.quantity + qty;
@@ -998,20 +1002,42 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
 
                     {/* Order preview */}
-                    <div style={{ padding: '14px 16px', background: 'var(--bg-secondary)', borderRadius: '12px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: 'var(--text-muted)' }}>ราคา/หุ้น</span>
-                            <span style={{ fontWeight: 600 }}>{formatCurrency(price.current)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: 'var(--text-muted)' }}>จำนวน</span>
-                            <span style={{ fontWeight: 600 }}>{tradeQty || '0'} หุ้น</span>
-                        </div>
-                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontWeight: 700 }}>มูลค่ารวม</span>
-                            <span style={{ fontWeight: 800, fontSize: '1rem' }}>{formatCurrency((parseFloat(tradeQty) || 0) * price.current)}</span>
-                        </div>
-                    </div>
+                    {(() => {
+                        const orderCost = (parseFloat(tradeQty) || 0) * price.current;
+                        const remaining = portfolioCash != null ? portfolioCash - orderCost : null;
+                        const notEnough = remaining != null && remaining < 0;
+                        return (
+                            <div style={{ padding: '14px 16px', background: 'var(--bg-secondary)', borderRadius: '12px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>ราคา/หุ้น</span>
+                                    <span style={{ fontWeight: 600 }}>{formatCurrency(price.current)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>จำนวน</span>
+                                    <span style={{ fontWeight: 600 }}>{tradeQty || '0'} หุ้น</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>มูลค่ารวม</span>
+                                    <span style={{ fontWeight: 700 }}>{formatCurrency(orderCost)}</span>
+                                </div>
+                                {portfolioCash != null && (
+                                    <>
+                                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>เงินสดปัจจุบัน</span>
+                                            <span style={{ fontWeight: 600 }}>{formatCurrency(portfolioCash)}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ fontWeight: 700 }}>เงินสดคงเหลือ</span>
+                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: notEnough ? '#ef4444' : '#22c55e' }}>{formatCurrency(remaining!)}</span>
+                                        </div>
+                                        {notEnough && (
+                                            <p style={{ fontSize: '0.75rem', color: '#ef4444', margin: 0 }}>⚠️ เงินสดไม่พอ</p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* Result message */}
                     {tradeResult && (
