@@ -86,10 +86,6 @@ export default function PortfolioPage() {
     const [dayTradeCount, setDayTradeCount] = useState(0);
     const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
 
-    // Inline trade panel per row
-    const [inlinePanel, setInlinePanel] = useState<{ ticker: string; name: string; side: 'BUY' | 'SELL'; qty: string; heldQty: number } | null>(null);
-    const [inlineSubmitting, setInlineSubmitting] = useState(false);
-
     // New stock modal (buy stock not in portfolio)
     const [showNewModal, setShowNewModal] = useState(false);
     const [tradeSym, setTradeSym] = useState('');
@@ -210,34 +206,6 @@ export default function PortfolioPage() {
             showToast('error', 'เกิดข้อผิดพลาด');
         } finally {
             setTrading(false);
-        }
-    };
-
-    const handleInlineTrade = async () => {
-        if (!inlinePanel) return;
-        const qty = parseFloat(inlinePanel.qty);
-        if (!qty || qty <= 0) return;
-        const pos = positions.find(p => p.ticker === inlinePanel.ticker);
-        const price = pos?.currentPrice;
-        if (!price) { showToast('error', 'ไม่พบราคาหุ้น'); return; }
-        setInlineSubmitting(true);
-        try {
-            const res = await fetch('/api/portfolio/trade', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ symbol: inlinePanel.ticker, side: inlinePanel.side, quantity: qty, price }),
-            });
-            const d = await res.json();
-            if (!res.ok) { showToast('error', d.error || 'เกิดข้อผิดพลาด'); return; }
-            const label = inlinePanel.side === 'BUY' ? 'ซื้อ' : 'ขาย';
-            showToast('success', `${label} ${inlinePanel.ticker} ${qty} หุ้น @ $${fmt(price)} สำเร็จ`);
-            if (d.marketWarning) showToast('error', `⚠️ ${d.marketWarning}`);
-            setInlinePanel(null);
-            await loadPortfolio(); await loadHistory();
-        } catch {
-            showToast('error', 'เกิดข้อผิดพลาด');
-        } finally {
-            setInlineSubmitting(false);
         }
     };
 
@@ -446,7 +414,7 @@ export default function PortfolioPage() {
                                             const isExpanded = expandedTicker === pos.ticker;
                                             return (
                                                 <>
-                                                    <tr key={pos.ticker} style={{ borderBottom: isExpanded || inlinePanel?.ticker === pos.ticker ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
+                                                    <tr key={pos.ticker} style={{ borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
                                                         <td style={{ padding: '12px', cursor: 'pointer' }}
                                                             onClick={() => setExpandedTicker(isExpanded ? null : pos.ticker)}>
                                                             <p style={{ fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -477,67 +445,12 @@ export default function PortfolioPage() {
                                                                 </span>
                                                             ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                                                         </td>
-                                                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                                                            <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                                                <button onClick={() => setInlinePanel(p => p?.ticker === pos.ticker && p.side === 'BUY' ? null : { ticker: pos.ticker, name: pos.name, side: 'BUY', qty: '1', heldQty: pos.quantity })} style={{ padding: '4px 10px', borderRadius: '7px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid rgba(34,197,94,0.35)', background: inlinePanel?.ticker === pos.ticker && inlinePanel.side === 'BUY' ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.08)', color: '#22c55e' }}>ซื้อ</button>
-                                                                <button onClick={() => setInlinePanel(p => p?.ticker === pos.ticker && p.side === 'SELL' ? null : { ticker: pos.ticker, name: pos.name, side: 'SELL', qty: '1', heldQty: pos.quantity })} style={{ padding: '4px 10px', borderRadius: '7px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid rgba(239,68,68,0.35)', background: inlinePanel?.ticker === pos.ticker && inlinePanel.side === 'SELL' ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.08)', color: '#ef4444' }}>ขาย</button>
-                                                                <Link href={`/stocks/${pos.ticker}`} style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', marginLeft: '2px' }}>
-                                                                    <ExternalLink size={13} />
-                                                                </Link>
-                                                            </div>
+                                                        <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                                                            <Link href={`/stocks/${pos.ticker}`} style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center' }}>
+                                                                <ExternalLink size={14} />
+                                                            </Link>
                                                         </td>
                                                     </tr>
-                                                    {/* Inline trade panel */}
-                                                    {inlinePanel?.ticker === pos.ticker && (() => {
-                                                        const isSell = inlinePanel.side === 'SELL';
-                                                        const qty = parseFloat(inlinePanel.qty) || 0;
-                                                        const price = pos.currentPrice ?? 0;
-                                                        const value = qty * price;
-                                                        const cash = portfolio?.cashBalance ?? 0;
-                                                        const afterCash = isSell ? cash + value : cash - value;
-                                                        const estPnl = isSell ? qty * (price - pos.avgCost) : null;
-                                                        const notEnoughShares = isSell && qty > pos.quantity;
-                                                        const notEnoughCash = !isSell && afterCash < 0;
-                                                        const disabled = inlineSubmitting || qty <= 0 || notEnoughShares || notEnoughCash || (isSell && pos.quantity <= 0);
-                                                        return (
-                                                            <tr key={`${pos.ticker}-panel`} style={{ borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
-                                                                <td colSpan={8} style={{ padding: '0 12px 12px 28px' }}>
-                                                                    <div style={{ background: isSell ? 'rgba(239,68,68,0.05)' : 'rgba(34,197,94,0.05)', border: `1px solid ${isSell ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'}`, borderRadius: '12px', padding: '14px 16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
-                                                                        {/* Side label */}
-                                                                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isSell ? '#ef4444' : '#22c55e', minWidth: '80px' }}>
-                                                                            {isSell ? 'ขาย' : 'ซื้อเพิ่ม'} {pos.ticker}
-                                                                            <div style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)', marginTop: '2px' }}>ราคา ${price > 0 ? fmt(price) : 'N/A'}</div>
-                                                                        </div>
-                                                                        {/* Qty */}
-                                                                        <div>
-                                                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>จำนวน{isSell ? ` (ถือ ${pos.quantity.toFixed(pos.quantity % 1 === 0 ? 0 : 4)})` : ''}</div>
-                                                                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                                                                                <button onClick={() => setInlinePanel(p => p ? { ...p, qty: String(Math.max(1, parseFloat(p.qty || '1') - 1)) } : p)} style={{ width: '30px', height: '32px', borderRadius: '7px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1rem', fontFamily: 'inherit' }}>-</button>
-                                                                                <input type="number" min="0.0001" step="1" value={inlinePanel.qty} onChange={e => setInlinePanel(p => p ? { ...p, qty: e.target.value } : p)} style={{ width: '64px', padding: '6px 8px', borderRadius: '7px', background: 'var(--bg-secondary)', border: `1px solid ${(notEnoughShares || notEnoughCash) ? '#ef4444' : 'var(--border)'}`, color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center', outline: 'none', fontFamily: 'inherit' }} />
-                                                                                <button onClick={() => setInlinePanel(p => p ? { ...p, qty: String(parseFloat(p.qty || '1') + 1) } : p)} style={{ width: '30px', height: '32px', borderRadius: '7px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1rem', fontFamily: 'inherit' }}>+</button>
-                                                                                {isSell && <button onClick={() => setInlinePanel(p => p ? { ...p, qty: String(pos.quantity) } : p)} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.7rem', border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, whiteSpace: 'nowrap' }}>ทั้งหมด</button>}
-                                                                            </div>
-                                                                        </div>
-                                                                        {/* Summary */}
-                                                                        <div style={{ fontSize: '0.8rem', lineHeight: 1.7 }}>
-                                                                            <div><span style={{ color: 'var(--text-muted)' }}>{isSell ? 'รายได้' : 'มูลค่า'}: </span><strong>${fmt(value)}</strong></div>
-                                                                            {estPnl != null && <div><span style={{ color: 'var(--text-muted)' }}>P/L โดยประมาณ: </span><strong style={{ color: estPnl >= 0 ? '#22c55e' : '#ef4444' }}>{estPnl >= 0 ? '+' : ''}${fmt(estPnl)}</strong></div>}
-                                                                            <div><span style={{ color: 'var(--text-muted)' }}>เงินสดหลัง: </span><strong style={{ color: afterCash < 0 ? '#ef4444' : undefined }}>${fmt(afterCash)}</strong></div>
-                                                                            {notEnoughShares && <div style={{ color: '#ef4444', fontSize: '0.72rem' }}>⚠️ หุ้นไม่พอ</div>}
-                                                                            {notEnoughCash && <div style={{ color: '#ef4444', fontSize: '0.72rem' }}>⚠️ เงินสดไม่พอ</div>}
-                                                                        </div>
-                                                                        {/* Buttons */}
-                                                                        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-                                                                            <button onClick={() => setInlinePanel(null)} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.82rem' }}>ยกเลิก</button>
-                                                                            <button onClick={handleInlineTrade} disabled={disabled} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: isSell ? '#ef4444' : '#22c55e', color: 'white', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 700, opacity: disabled ? 0.5 : 1, whiteSpace: 'nowrap' }}>
-                                                                                {inlineSubmitting ? '...' : `${isSell ? 'ขาย' : 'ซื้อ'} ${inlinePanel.qty || 0} หุ้น`}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })()}
                                                     {/* Lot detail sub-rows */}
                                                     {isExpanded && pos.lots && pos.lots.length > 0 && (
                                                         <tr key={`${pos.ticker}-lots`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
