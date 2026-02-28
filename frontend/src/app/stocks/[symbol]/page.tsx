@@ -35,6 +35,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [tradeQty, setTradeQty] = useState('1');
     const [tradeSubmitting, setTradeSubmitting] = useState<boolean>(false);
     const [tradeResult, setTradeResult] = useState<{ ok: boolean; msg: string } | null>(null);
+    const [tradeWarnings, setTradeWarnings] = useState<string[]>([]);
     const [currentPosition, setCurrentPosition] = useState<{ quantity: number; avgCost: number } | null>(null);
     const [portfolioCash, setPortfolioCash] = useState<number | null>(null);
 
@@ -122,6 +123,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         if (!qty || qty <= 0) return;
         setTradeSubmitting(true);
         setTradeResult(null);
+        setTradeWarnings([]);
         try {
             const res = await fetch('/api/portfolio/trade', {
                 method: 'POST',
@@ -131,6 +133,10 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             const d = await res.json();
             if (res.ok) {
                 setTradeResult({ ok: true, msg: `ซื้อ ${symbol.toUpperCase()} ${qty} หุ้น @ ${formatCurrency(price.current)} สำเร็จ` });
+                const warns: string[] = [];
+                if (d.marketWarning) warns.push(d.marketWarning);
+                if (d.pdtWarning) warns.push(d.pdtWarning);
+                setTradeWarnings(warns);
                 const cost = qty * price.current;
                 setPortfolioCash(prev => prev != null ? prev - cost : prev);
                 setCurrentPosition(prev => {
@@ -1041,11 +1047,18 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                     {/* Result message */}
                     {tradeResult && (
-                        <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', background: tradeResult!.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${tradeResult!.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: tradeResult!.ok ? '#22c55e' : '#ef4444' }}>
+                        <div style={{ marginBottom: tradeWarnings.length > 0 ? '8px' : '16px', padding: '12px 14px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', background: tradeResult!.ok ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', border: `1px solid ${tradeResult!.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: tradeResult!.ok ? '#22c55e' : '#ef4444' }}>
                             {tradeResult!.ok ? <CheckCircle size={16} /> : <AlertIcon size={16} />}
                             {tradeResult!.msg}
                         </div>
                     )}
+                    {/* Market / PDT warnings */}
+                    {tradeWarnings.map((w, i) => (
+                        <div key={i} style={{ marginBottom: i === tradeWarnings.length - 1 ? '16px' : '6px', padding: '10px 14px', borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.78rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b' }}>
+                            <AlertIcon size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+                            {w}
+                        </div>
+                    ))}
 
                     {/* Submit button */}
                     <button
