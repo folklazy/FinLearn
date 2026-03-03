@@ -11,6 +11,7 @@ import {
     BarChart3, Newspaper, Activity, Users, Star, Lightbulb, AlertTriangle,
     ExternalLink, Calendar, ArrowUpRight, ArrowDownRight, Info,
     ChevronRight, BookOpen, TrendingUp, TrendingDown, X, CheckCircle, AlertCircle as AlertIcon,
+    FileText, Wallet, BarChart2,
 } from 'lucide-react';
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
@@ -180,15 +181,15 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
     // ── TOC sections ──
     const tocSections = [
-        { id: 'overview', label: 'ภาพรวมบริษัท', icon: '🏢', always: true },
-        { id: 'price-chart', label: 'กราฟราคา', icon: '📈', always: hasHistory },
-        { id: 'key-metrics', label: 'ตัวเลขสำคัญ', icon: '💰', always: true },
-        { id: 'financials', label: 'งบการเงิน', icon: '📊', always: hasFinancials },
-        { id: 'news-events', label: 'ข่าวสาร', icon: '📰', always: hasNews },
-        { id: 'signals', label: 'สัญญาณซื้อ-ขาย', icon: '⚡', always: hasSignals },
-        { id: 'competitors', label: 'คู่แข่ง', icon: '👥', always: hasCompetitors },
-        { id: 'scores', label: 'คะแนน', icon: '⭐', always: true },
-        { id: 'tips', label: 'คำแนะนำ', icon: '💡', always: true },
+        { id: 'overview', label: 'ภาพรวมบริษัท', always: true },
+        { id: 'price-chart', label: 'กราฟราคา', always: hasHistory },
+        { id: 'key-metrics', label: 'ตัวเลขสำคัญ', always: true },
+        { id: 'financials', label: 'งบการเงิน', always: hasFinancials },
+        { id: 'news-events', label: 'ข่าวสาร', always: hasNews },
+        { id: 'signals', label: 'สัญญาณซื้อ-ขาย', always: hasSignals },
+        { id: 'competitors', label: 'คู่แข่ง', always: hasCompetitors },
+        { id: 'scores', label: 'คะแนน', always: true },
+        { id: 'tips', label: 'คำแนะนำ', always: true },
     ].filter(s => s.always);
 
     // Chart Colors
@@ -438,13 +439,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </ResponsiveContainer>
                 ) : (
                     <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลกราฟราคาไม่พร้อมใช้งานสำหรับหุ้นนี้</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}><BarChart3 size={14} /> ข้อมูลกราฟราคาไม่พร้อมใช้งานสำหรับหุ้นนี้</p>
                     </div>
                 )}
 
                 {/* 52-week Range */}
                 <div style={{ marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>📊 ช่วงราคา 52 สัปดาห์</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}><BarChart2 size={14} /> ช่วงราคา 52 สัปดาห์</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600 }}>{formatCurrency(price.week52Low)}</span>
                         <div style={{ flex: 1, position: 'relative' }}>
@@ -490,7 +491,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <h2 className="section-title"><DollarSign size={20} /> ตัวเลขสำคัญ</h2>
 
                 {/* Value Metrics */}
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary-light)', marginBottom: '12px' }}>💰 ความคุ้มค่า</h3>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary-light)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={15} /> ความคุ้มค่า</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                     <div className="metric-card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -539,7 +540,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 </div>
 
                 {/* Growth */}
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '12px' }}>📈 การเติบโต</h3>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><TrendingUp size={15} /> การเติบโต</h3>
                 {(hasRevenueHistory || hasEpsHistory) ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
@@ -595,7 +596,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
                 ) : (
                     <div style={{ padding: '24px', background: 'var(--bg-secondary)', borderRadius: '12px', textAlign: 'center' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>📊 ข้อมูลการเติบโตไม่พร้อมใช้งานสำหรับหุ้นนี้</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}><TrendingUp size={14} /> ข้อมูลการเติบโตไม่พร้อมใช้งานสำหรับหุ้นนี้</p>
                     </div>
                 )}
             </section>
@@ -608,8 +609,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     {/* Income Statement */}
                     {incomeData.length > 0 && (
                     <div>
-                        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                            📊 งบกำไรขาดทุน (พันล้าน $)
+                        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <BarChart3 size={14} /> งบกำไรขาดทุน (พันล้าน $)
                         </h3>
                         <ResponsiveContainer width="100%" height={200}>
                             <BarChart data={incomeData} layout="vertical">
@@ -645,8 +646,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     {/* Cash Flow */}
                     {cashFlowData.length > 0 && (
                     <div>
-                        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                            💵 กระแสเงินสด (พันล้าน $)
+                        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Wallet size={14} /> กระแสเงินสด (พันล้าน $)
                         </h3>
                         <ResponsiveContainer width="100%" height={200}>
                             <BarChart data={cashFlowData}>
@@ -688,7 +689,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                                 <ExternalLink size={10} />
                                             </span>
                                             <span className={`badge ${n.sentiment === 'positive' ? 'badge-success' : n.sentiment === 'negative' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.6rem' }}>
-                                                {n.sentiment === 'positive' ? '📈 เชิงบวก' : n.sentiment === 'negative' ? '📉 เชิงลบ' : '➡️ กลาง'}
+                                                {n.sentiment === 'positive' ? 'เชิงบวก' : n.sentiment === 'negative' ? 'เชิงลบ' : 'กลาง'}
                                             </span>
                                         </div>
                                     </div>
@@ -698,16 +699,16 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
                     {/* Events */}
                     <div>
-                        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>📅 เหตุการณ์สำคัญ</h3>
+                        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={14} /> เหตุการณ์สำคัญ</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {events.map(ev => (
                                 <div key={ev.id} style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '10px', display: 'flex', gap: '12px' }}>
                                     <div style={{
                                         width: '44px', height: '44px', borderRadius: '10px',
                                         background: ev.type === 'earnings' ? 'rgba(99,102,241,0.15)' : 'rgba(34,197,94,0.15)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                     }}>
-                                        {ev.type === 'earnings' ? '📊' : ev.type === 'dividend' ? '💰' : '📋'}
+                                        {ev.type === 'earnings' ? <BarChart3 size={18} style={{ color: 'var(--primary-light)' }} /> : ev.type === 'dividend' ? <DollarSign size={18} style={{ color: 'var(--success)' }} /> : <FileText size={18} style={{ color: 'var(--accent)' }} />}
                                     </div>
                                     <div>
                                         <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '2px' }}>{ev.title}</div>
@@ -731,18 +732,18 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
                     {/* Technical */}
                     <div style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px' }}>📊 Technical Signals</h3>
+                        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><Activity size={14} /> Technical Signals</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>ราคา vs MA50</span>
                                 <span className={`badge ${signals.technical.ma50 === 'above' ? 'badge-success' : 'badge-danger'}`}>
-                                    {signals.technical.ma50 === 'above' ? '✅ เหนือ' : '❌ ใต้'}
+                                    {signals.technical.ma50 === 'above' ? 'เหนือ' : 'ใต้'}
                                 </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>ราคา vs MA200</span>
                                 <span className={`badge ${signals.technical.ma200 === 'above' ? 'badge-success' : 'badge-danger'}`}>
-                                    {signals.technical.ma200 === 'above' ? '✅ เหนือ' : '❌ ใต้'}
+                                    {signals.technical.ma200 === 'above' ? 'เหนือ' : 'ใต้'}
                                 </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -754,7 +755,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>MACD</span>
                                 <span className={`badge ${signals.technical.macd === 'bullish' ? 'badge-success' : 'badge-danger'}`}>
-                                    {signals.technical.macd === 'bullish' ? '📈 Bullish' : '📉 Bearish'}
+                                    {signals.technical.macd === 'bullish' ? 'Bullish' : 'Bearish'}
                                 </span>
                             </div>
                         </div>
@@ -771,30 +772,30 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                     {/* Fundamental */}
                     <div style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
-                        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px' }}>📋 Fundamental Signals</h3>
+                        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={14} /> Fundamental Signals</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>กำไรเติบโต</span>
                                 <span className={`badge ${signals.fundamental.earningsGrowth === 'positive' ? 'badge-success' : 'badge-danger'}`}>
-                                    {signals.fundamental.earningsGrowth === 'positive' ? '📈 เพิ่ม' : '📉 ลด'}
+                                    {signals.fundamental.earningsGrowth === 'positive' ? 'เพิ่ม' : 'ลด'}
                                 </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>P/E vs ค่าเฉลี่ย</span>
                                 <span className={`badge ${signals.fundamental.peVsAvg === 'undervalued' ? 'badge-success' : signals.fundamental.peVsAvg === 'overvalued' ? 'badge-danger' : 'badge-warning'}`}>
-                                    {signals.fundamental.peVsAvg === 'undervalued' ? '💎 ถูก' : signals.fundamental.peVsAvg === 'overvalued' ? '💸 แพง' : '⚖️ พอดี'}
+                                    {signals.fundamental.peVsAvg === 'undervalued' ? 'ถูก' : signals.fundamental.peVsAvg === 'overvalued' ? 'แพง' : 'พอดี'}
                                 </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>เงินสดในมือ</span>
                                 <span className={`badge ${signals.fundamental.cashPosition === 'strong' ? 'badge-success' : 'badge-warning'}`}>
-                                    {signals.fundamental.cashPosition === 'strong' ? '💪 แข็งแกร่ง' : '⚠️ ปานกลาง'}
+                                    {signals.fundamental.cashPosition === 'strong' ? 'แข็งแกร่ง' : 'ปานกลาง'}
                                 </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>ระดับหนี้</span>
                                 <span className={`badge ${signals.fundamental.debtLevel === 'low' ? 'badge-success' : signals.fundamental.debtLevel === 'moderate' ? 'badge-warning' : 'badge-danger'}`}>
-                                    {signals.fundamental.debtLevel === 'low' ? '✅ ต่ำ' : signals.fundamental.debtLevel === 'moderate' ? '⚠️ ปานกลาง' : '❌ สูง'}
+                                    {signals.fundamental.debtLevel === 'low' ? 'ต่ำ' : signals.fundamental.debtLevel === 'moderate' ? 'ปานกลาง' : 'สูง'}
                                 </span>
                             </div>
                         </div>
@@ -811,12 +812,12 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                     {/* Summary */}
                     <div style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '16px', textAlign: 'center' }}>📊 สรุปรวม</h3>
+                        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '16px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><BarChart3 size={14} /> สรุปรวม</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {[
-                                { label: '✅ เหมาะลงทุนระยะยาว', value: signals.summary.longTermInvest, color: 'var(--success)' },
-                                { label: '⏳ รอจังหวะ', value: signals.summary.waitForTiming, color: 'var(--warning)' },
-                                { label: '❌ ไม่แนะนำ', value: signals.summary.notRecommended, color: 'var(--danger)' },
+                                { label: 'เหมาะลงทุนระยะยาว', value: signals.summary.longTermInvest, color: 'var(--success)' },
+                                { label: 'รอจังหวะ', value: signals.summary.waitForTiming, color: 'var(--warning)' },
+                                { label: 'ไม่แนะนำ', value: signals.summary.notRecommended, color: 'var(--danger)' },
                             ].map((s, i) => (
                                 <div key={i}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>

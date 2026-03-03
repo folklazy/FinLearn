@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, useCallback, Suspense } from 'react';
-import { Search, LayoutGrid, List, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
+import { Search, LayoutGrid, List, ChevronLeft, ChevronRight, TrendingUp, Flame, BarChart3 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatPercent, formatLargeNumber } from '@/lib/utils';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -171,17 +171,20 @@ function StocksContent() {
             {/* Tabs */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: 'var(--bg-secondary)', borderRadius: '10px', padding: '4px', width: 'fit-content' }}>
                 {[
-                    { key: 'popular' as Tab, label: 'ยอดนิยม', icon: '🔥' },
-                    { key: 'sp500' as Tab, label: 'S&P 500', icon: '📊' },
-                    { key: 'search' as Tab, label: 'ค้นหา', icon: '🔍' },
+                    { key: 'popular' as Tab, label: 'ยอดนิยม', Icon: Flame },
+                    { key: 'sp500' as Tab, label: 'S&P 500', Icon: BarChart3 },
+                    { key: 'search' as Tab, label: 'ค้นหา', Icon: Search },
                 ].map(t => (
                     <button key={t.key} onClick={() => setTab(t.key)} style={{
-                        padding: '8px 16px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: tab === t.key ? 600 : 450,
-                        background: tab === t.key ? 'var(--bg-tertiary)' : 'transparent',
-                        color: tab === t.key ? 'white' : 'var(--text-muted)',
-                        border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '7px 14px', borderRadius: '8px',
+                        background: tab === t.key ? 'var(--bg-card)' : 'transparent',
+                        border: 'none', color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)',
+                        fontWeight: tab === t.key ? 600 : 400, fontSize: '0.82rem',
+                        cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+                        boxShadow: tab === t.key ? 'var(--shadow-sm)' : 'none',
                     }}>
-                        {t.icon} {t.label}
+                        <t.Icon size={14} /> {t.label}
                     </button>
                 ))}
             </div>
@@ -219,9 +222,9 @@ function StocksContent() {
                 </div>
             ) : stocks.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-                    <p style={{ fontSize: '2.5rem', marginBottom: '12px', opacity: 0.4 }}>
-                        {tab === 'search' ? '🔍' : '📊'}
-                    </p>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '12px', opacity: 0.4, display: 'flex', justifyContent: 'center' }}>
+                        {tab === 'search' ? <Search size={48} /> : <BarChart3 size={48} />}
+                    </div>
                     <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                         {tab === 'search' ? 'ไม่พบหุ้นที่ค้นหา' : 'ไม่มีข้อมูล'}
                     </p>
