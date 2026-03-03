@@ -102,7 +102,7 @@ export default function Navbar() {
 
     return (
         <nav style={{
-            position: 'sticky', top: 0, zIndex: 100,
+            position: 'sticky', top: 0, zIndex: 'var(--z-navbar)' as unknown as number,
             background: 'rgba(14,15,20,0.82)',
             backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
             borderBottom: '1px solid var(--border)',
@@ -161,11 +161,11 @@ export default function Navbar() {
 
                             {/* Search Dropdown */}
                             {showDropdown && searchResults.length > 0 && (
-                                <div className="animate-scale-in" style={{
+                                <div className="animate-scale-in" role="listbox" aria-label="ผลการค้นหา" style={{
                                     position: 'absolute', top: 'calc(100% + 6px)', right: 0,
                                     minWidth: '340px', background: 'var(--bg-elevated)',
                                     border: '1px solid var(--border)', borderRadius: '12px',
-                                    boxShadow: '0 16px 48px rgba(0,0,0,0.4)', zIndex: 9999, overflow: 'hidden',
+                                    boxShadow: '0 16px 48px rgba(0,0,0,0.4)', zIndex: 'var(--z-dropdown)' as unknown as number, overflow: 'hidden',
                                 }}>
                                     <div style={{ padding: '6px 12px 4px', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
                                         ผลการค้นหา — {searchResults.length} รายการ
@@ -223,11 +223,16 @@ export default function Navbar() {
                             <div className="skeleton" style={{ width: '80px', height: '34px', borderRadius: '9px' }} />
                         ) : session?.user ? (
                             <div ref={menuRef} style={{ position: 'relative' }}>
-                                <button onClick={() => setUserMenu(!userMenu)} style={{
+                                <button
+                                    onClick={() => setUserMenu(!userMenu)}
+                                    aria-label="เมนูผู้ใช้"
+                                    aria-expanded={userMenu}
+                                    aria-haspopup="true"
+                                    style={{
                                     display: 'flex', alignItems: 'center', gap: '7px',
                                     background: 'var(--bg-elevated)', border: '1px solid var(--border)',
                                     borderRadius: '9px', padding: '5px 10px 5px 6px',
-                                    color: 'var(--text-primary)', cursor: 'pointer',
+                                    color: 'var(--text-primary)', cursor: 'pointer', minHeight: '44px',
                                     transition: 'border-color 0.2s var(--ease)', fontFamily: 'inherit',
                                 }}
                                     onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--border-light)')}
@@ -247,11 +252,11 @@ export default function Navbar() {
                                 </button>
 
                                 {userMenu && (
-                                    <div className="animate-scale-in" style={{
+                                    <div className="animate-scale-in" role="menu" style={{
                                         position: 'absolute', right: 0, top: 'calc(100% + 6px)',
                                         minWidth: '200px', background: 'var(--bg-elevated)',
                                         border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                                        padding: '6px', boxShadow: 'var(--shadow-lg)', zIndex: 1000,
+                                        padding: '6px', boxShadow: 'var(--shadow-lg)', zIndex: 'var(--z-dropdown)' as unknown as number,
                                     }}>
                                         <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
                                             <p style={{ fontSize: '0.82rem', fontWeight: 600 }}>{session.user.name}</p>
@@ -287,15 +292,20 @@ export default function Navbar() {
                     </div>
 
                     {/* ── Mobile toggle ── */}
-                    <button onClick={() => setMobileOpen(!mobileOpen)} className="show-mobile"
-                        style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '4px' }}>
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
+                        aria-expanded={mobileOpen}
+                        aria-controls="mobile-menu"
+                        className="show-mobile"
+                        style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '10px', minWidth: '44px', minHeight: '44px', borderRadius: '8px' }}>
                         {mobileOpen ? <X size={22} /> : <Menu size={22} />}
                     </button>
                 </div>
 
                 {/* ── Mobile menu ── */}
                 {mobileOpen && (
-                    <div style={{ padding: '12px 0 16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div id="mobile-menu" style={{ padding: '12px 0 16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <form onSubmit={handleSearch} style={{ position: 'relative', marginBottom: '4px' }}>
                             <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}

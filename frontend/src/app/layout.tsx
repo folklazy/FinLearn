@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -8,6 +8,12 @@ import OnboardingGuard from "@/components/providers/OnboardingGuard";
 export const metadata: Metadata = {
   title: "FinLearn — เรียนรู้การลงทุนอย่างมั่นใจ",
   description: "แพลตฟอร์มเรียนรู้การลงทุนหุ้นสำหรับมือใหม่ ข้อมูลบริษัท กราฟ งบการเงิน และ Portfolio Simulator",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0e0f14",
 };
 
 export default function RootLayout({

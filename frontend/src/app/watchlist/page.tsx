@@ -7,7 +7,7 @@ import Link from 'next/link';
 import {
     TrendingUp, TrendingDown, RefreshCw, ArrowUpRight,
     ArrowDownLeft, Clock, BarChart2, Wallet, ExternalLink,
-    CheckCircle, AlertCircle, PieChart as PieIcon, Activity, Info,
+    CheckCircle, AlertCircle, PieChart as PieIcon, Activity, Info, Tag,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -271,7 +271,7 @@ export default function PortfolioPage() {
 
             {/* Toast */}
             {toast.text && (
-                <div style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 1000, padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 500, background: toast.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', border: `1px solid ${toast.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: toast.type === 'success' ? '#22c55e' : '#ef4444', maxWidth: '360px' }}>
+                <div role="status" aria-live="polite" className="toast-enter" style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 'var(--z-toast)' as unknown as number, padding: '12px 18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 500, background: toast.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', border: `1px solid ${toast.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: toast.type === 'success' ? '#22c55e' : '#ef4444', maxWidth: '360px', backdropFilter: 'blur(12px)', boxShadow: 'var(--shadow-lg)' }}>
                     {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
                     {toast.text}
                 </div>
@@ -296,7 +296,7 @@ export default function PortfolioPage() {
                             <span style={{ opacity: 0.7 }}>{marketStatus.etTime}</span>
                         </div>
                     )}
-                    <button onClick={() => { loadPortfolio(); loadHistory(); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <button onClick={() => { loadPortfolio(); loadHistory(); }} aria-label="รีเฟรชข้อมูล" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit', minHeight: '44px' }}>
                         <RefreshCw size={14} /> รีเฟรช
                     </button>
                 </div>
@@ -315,7 +315,7 @@ export default function PortfolioPage() {
                 <div style={{ marginBottom: '16px', padding: '12px 16px', borderRadius: '10px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.82rem' }}>
                     <AlertCircle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '1px' }} />
                     <div>
-                        <p style={{ fontWeight: 700, color: '#f59e0b', margin: '0 0 2px' }}>⚠️ Pattern Day Trader (PDT) Warning</p>
+                        <p style={{ fontWeight: 700, color: '#f59e0b', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertCircle size={14} /> Pattern Day Trader (PDT) Warning</p>
                         <p style={{ color: 'var(--text-secondary)', margin: 0 }}>คุณมี <strong>{dayTradeCount} day trade</strong> ใน 5 วันทำการล่าสุด — กฎ PDT จริง: ถ้า ≥ 4 ครั้งและพอร์ต &lt; $25,000 จะถูกโบรกเกอร์จำกัด</p>
                     </div>
                 </div>
@@ -324,7 +324,7 @@ export default function PortfolioPage() {
             {/* Summary Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '24px' }}>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><Wallet size={12} /> มูลค่าพอร์ตรวม</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><BarChart2 size={12} /> มูลค่าพอร์ตรวม</p>
                     <p style={{ fontSize: '1.35rem', fontWeight: 800 }}>${fmt(totalValue)}</p>
                     <p style={{ fontSize: '0.75rem', marginTop: '4px', color: (portfolio?.totalReturnPct ?? 0) >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
                         {(portfolio?.totalReturnPct ?? 0) >= 0 ? <TrendingUp size={11} style={{ display: 'inline', marginRight: '3px' }} /> : <TrendingDown size={11} style={{ display: 'inline', marginRight: '3px' }} />}
@@ -332,26 +332,26 @@ export default function PortfolioPage() {
                     </p>
                 </div>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>💵 เงินสด</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><Wallet size={12} /> เงินสด</p>
                     <p style={{ fontSize: '1.35rem', fontWeight: 800 }}>${fmt(portfolio?.cashBalance ?? 0)}</p>
                     <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>/ ทุน ${fmt(portfolio?.startingCash ?? 0)}</p>
                 </div>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>📈 Unrealized P&L</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><TrendingUp size={12} /> Unrealized P&amp;L</p>
                     <p style={{ fontSize: '1.35rem', fontWeight: 800, color: totalUnrealizedPnl >= 0 ? '#22c55e' : '#ef4444' }}>
                         {totalUnrealizedPnl >= 0 ? '+' : ''}${fmt(totalUnrealizedPnl)}
                     </p>
                     <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>ยังไม่รับรู้</p>
                 </div>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>🏷️ Realized P&L</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><Tag size={12} /> Realized P&amp;L</p>
                     <p style={{ fontSize: '1.35rem', fontWeight: 800, color: (portfolio?.totalRealizedPnl ?? 0) >= 0 ? '#22c55e' : '#ef4444' }}>
                         {(portfolio?.totalRealizedPnl ?? 0) >= 0 ? '+' : ''}${fmt(portfolio?.totalRealizedPnl ?? 0)}
                     </p>
                     <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>FIFO รับรู้แล้ว</p>
                 </div>
                 <div style={cardStyle}>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>📊 สัดส่วนหุ้น</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><PieIcon size={12} /> สัดส่วนหุ้น</p>
                     <p style={{ fontSize: '1.35rem', fontWeight: 800 }}>${fmt(totalPositionsValue)}</p>
                     <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '4px' }}>{positions.length} ตัว | {totalValue > 0 ? ((totalPositionsValue / totalValue) * 100).toFixed(1) : '0'}%</p>
                 </div>
@@ -445,7 +445,12 @@ export default function PortfolioPage() {
                                                 <>
                                                     <tr key={pos.ticker} style={{ borderBottom: isExpanded || inlinePanel?.ticker === pos.ticker ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
                                                         <td style={{ padding: '12px', cursor: 'pointer' }}
-                                                            onClick={() => setExpandedTicker(isExpanded ? null : pos.ticker)}>
+                                                            onClick={() => setExpandedTicker(isExpanded ? null : pos.ticker)}
+                                                            role="button"
+                                                            aria-expanded={isExpanded}
+                                                            aria-label={`${isExpanded ? 'ยุบ' : 'ขยาย'}รายละเอียด ${pos.ticker}`}
+                                                            tabIndex={0}
+                                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedTicker(isExpanded ? null : pos.ticker); } }}>
                                                             <p style={{ fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
                                                                 <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{isExpanded ? '▼' : '▶'}</span>
                                                                 {pos.ticker}
@@ -617,12 +622,12 @@ export default function PortfolioPage() {
 
             {/* ── New Stock Modal ── */}
             {showNewModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+                <div role="dialog" aria-modal="true" aria-label="เพิ่มหุ้นใหม่" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 'var(--z-modal-backdrop)' as unknown as number, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
                     onClick={e => { if (e.target === e.currentTarget) setShowNewModal(false); }}>
                     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '400px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h3 style={{ fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>เพิ่มหุ้นใหม่</h3>
-                            <button onClick={() => setShowNewModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.3rem', lineHeight: 1 }}>✕</button>
+                            <button onClick={() => setShowNewModal(false)} aria-label="\u0e1b\u0e34\u0e14" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.3rem', lineHeight: 1, padding: '4px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>✕</button>
                         </div>
 
                         {/* Side toggle */}
