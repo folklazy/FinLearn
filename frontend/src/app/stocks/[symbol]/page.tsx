@@ -641,13 +641,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 </div>
 
                 {/* Strength Metrics */}
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--success)', marginBottom: '12px' }}>💪 ความแข็งแกร่ง</h3>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--success)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}><Activity size={15} /> ความแข็งแกร่ง</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                     {[
                         { label: 'รายได้ต่อปี', value: keyMetrics.revenue != null ? formatLargeNumber(keyMetrics.revenue) : 'N/A' },
                         { label: 'กำไรสุทธิ', value: keyMetrics.netIncome != null ? formatLargeNumber(keyMetrics.netIncome) : 'N/A' },
-                        { label: 'อัตรากำไรสุทธิ', value: keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A', color: keyMetrics.profitMargin > 20 ? 'var(--success)' : keyMetrics.profitMargin > 0 ? 'var(--warning)' : undefined },
-                        { label: 'หนี้ต่อทุน (D/E)', value: keyMetrics.debtToEquity != null && keyMetrics.debtToEquity > 0 ? `${keyMetrics.debtToEquity}%` : 'N/A', color: (keyMetrics.debtToEquity ?? 0) > 150 ? 'var(--danger)' : (keyMetrics.debtToEquity ?? 0) > 0 ? 'var(--success)' : undefined },
+                        { label: 'อัตรากำไรสุทธิ', value: keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A', color: keyMetrics.profitMargin > 20 ? 'var(--success)' : keyMetrics.profitMargin > 0 ? 'var(--warning)' : keyMetrics.profitMargin < 0 ? 'var(--danger)' : undefined },
+                        { label: 'หนี้ต่อทุน (D/E)', value: keyMetrics.debtToEquity != null && keyMetrics.debtToEquity > 0 ? `${keyMetrics.debtToEquity}%` : 'N/A', color: (keyMetrics.debtToEquity ?? 0) > 150 ? 'var(--danger)' : (keyMetrics.debtToEquity ?? 0) > 80 ? 'var(--warning)' : (keyMetrics.debtToEquity ?? 0) > 0 ? 'var(--success)' : undefined },
                         { label: 'Current Ratio', value: keyMetrics.currentRatio != null && keyMetrics.currentRatio > 0 ? `${keyMetrics.currentRatio}x` : 'N/A', color: (keyMetrics.currentRatio ?? 0) >= 1.5 ? 'var(--success)' : (keyMetrics.currentRatio ?? 0) >= 1 ? 'var(--warning)' : (keyMetrics.currentRatio ?? 0) > 0 ? 'var(--danger)' : undefined },
                         { label: 'ROE', value: keyMetrics.roe ? `${keyMetrics.roe}%` : 'N/A' },
                     ].map((item, i) => (
@@ -969,7 +969,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         <tbody>
                             {/* Current stock */}
                             <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(99,102,241,0.08)' }}>
-                                <td style={{ padding: '12px 16px', fontWeight: 700 }}>{profile.symbol} ⭐</td>
+                                <td style={{ padding: '12px 16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>{profile.symbol} <Star size={12} style={{ color: 'var(--warning)', fill: 'var(--warning)' }} /></td>
                                 <td style={{ padding: '12px 16px' }}>{formatLargeNumber(profile.marketCap)}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.pe ?? 'N/A'}</td>
                                 <td style={{ padding: '12px 16px' }}>{keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A'}</td>
