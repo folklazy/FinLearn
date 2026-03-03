@@ -11,7 +11,7 @@ import {
     BarChart3, Newspaper, Activity, Users, Star, Lightbulb, AlertTriangle,
     ExternalLink, Calendar, ArrowUpRight, ArrowDownRight, Info,
     ChevronRight, BookOpen, TrendingUp, TrendingDown, X, CheckCircle, AlertCircle as AlertIcon,
-    FileText, Wallet, BarChart2,
+    FileText, Wallet, BarChart2, Globe, MapPin, Briefcase, UserCircle2,
 } from 'lucide-react';
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
@@ -370,23 +370,142 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {/* ===== 3. COMPANY OVERVIEW ===== */}
             <section id="overview" className="glass-card animate-fade-in-up" style={{ padding: '24px', animationDelay: '0.1s', scrollMarginTop: '80px' }}>
                 <h2 className="section-title"><Building2 size={20} /> ภาพรวมบริษัท</h2>
-                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', marginBottom: '20px' }}>
-                    {profile.description}
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                    {[
-                        { label: 'มูลค่าตลาด', value: formatLargeNumber(profile.marketCap), note: profile.marketCapLabel },
-                        { label: 'CEO', value: profile.ceo && profile.ceo !== 'N/A' ? profile.ceo : 'ไม่มีข้อมูล' },
-                        { label: 'พนักงาน', value: profile.employees > 0 ? profile.employees.toLocaleString() + ' คน' : 'ไม่มีข้อมูล' },
-                        { label: 'ก่อตั้ง', value: profile.founded && profile.founded !== 'N/A' ? profile.founded.slice(0, 4) : 'ไม่มีข้อมูล' },
-                        { label: 'สำนักงานใหญ่', value: profile.headquarters || 'ไม่มีข้อมูล' },
-                    ].map((item, i) => (
-                        <div key={i} className="metric-card">
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>{item.label}</div>
-                            <div style={{ fontWeight: 700 }}>{item.value}</div>
-                            {item.note && <div style={{ fontSize: '0.7rem', color: 'var(--primary-light)', marginTop: '2px' }}>{item.note}</div>}
+
+                {/* Description */}
+                {profile.description && (
+                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.92rem', marginBottom: '20px', borderLeft: '3px solid var(--primary)', paddingLeft: '14px' }}>
+                        {profile.description}
+                    </p>
+                )}
+
+                {/* Two-column: Today's price stats + Company facts */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+
+                    {/* Today's trading stats */}
+                    <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px' }}>
+                        <p style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <Activity size={12} /> ข้อมูลการซื้อขายวันนี้
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            {[
+                                { label: 'เปิด', value: formatCurrency(price.open) },
+                                { label: 'ปิดก่อนหน้า', value: formatCurrency(price.previousClose) },
+                                { label: 'สูงสุดวันนี้', value: formatCurrency(price.high), color: 'var(--success)' },
+                                { label: 'ต่ำสุดวันนี้', value: formatCurrency(price.low), color: 'var(--danger)' },
+                                { label: 'ปริมาณซื้อขาย', value: formatVolume(price.volume) },
+                                { label: 'ปริมาณเฉลี่ย', value: formatVolume(price.avgVolume) },
+                            ].map((item, i) => (
+                                <div key={i}>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '2px' }}>{item.label}</div>
+                                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: item.color || 'var(--text-primary)' }}>{item.value}</div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Company facts */}
+                    <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px' }}>
+                        <p style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <Building2 size={12} /> ข้อมูลบริษัท
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {profile.ceo && profile.ceo !== 'N/A' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem' }}>
+                                    <UserCircle2 size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                    <span style={{ color: 'var(--text-muted)', minWidth: '72px' }}>CEO</span>
+                                    <span style={{ fontWeight: 600 }}>{profile.ceo}</span>
+                                </div>
+                            )}
+                            {profile.founded && profile.founded !== 'N/A' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem' }}>
+                                    <Calendar size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                    <span style={{ color: 'var(--text-muted)', minWidth: '72px' }}>ก่อตั้ง</span>
+                                    <span style={{ fontWeight: 600 }}>{profile.founded.slice(0, 4)}</span>
+                                </div>
+                            )}
+                            {profile.employees > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem' }}>
+                                    <Users size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                    <span style={{ color: 'var(--text-muted)', minWidth: '72px' }}>พนักงาน</span>
+                                    <span style={{ fontWeight: 600 }}>{profile.employees.toLocaleString()} คน</span>
+                                </div>
+                            )}
+                            {profile.headquarters && (
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.83rem' }}>
+                                    <MapPin size={14} style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: '2px' }} />
+                                    <span style={{ color: 'var(--text-muted)', minWidth: '72px' }}>สำนักงาน</span>
+                                    <span style={{ fontWeight: 600 }}>{profile.headquarters}</span>
+                                </div>
+                            )}
+                            {profile.exchange && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem' }}>
+                                    <Briefcase size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                    <span style={{ color: 'var(--text-muted)', minWidth: '72px' }}>ตลาด</span>
+                                    <span style={{ fontWeight: 600 }}>{profile.exchange}</span>
+                                </div>
+                            )}
+                            {profile.website && profile.website !== 'N/A' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem' }}>
+                                    <Globe size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                    <span style={{ color: 'var(--text-muted)', minWidth: '72px' }}>เว็บไซต์</span>
+                                    <a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} target="_blank" rel="noopener noreferrer"
+                                        style={{ fontWeight: 600, color: 'var(--primary-light)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {profile.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                                        <ExternalLink size={11} />
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Financial snapshot row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
+                    <div className="metric-card">
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>มูลค่าตลาด</div>
+                        <div style={{ fontWeight: 800, fontSize: '1rem' }}>{formatLargeNumber(profile.marketCap)}</div>
+                        {profile.marketCapLabel && <div style={{ fontSize: '0.68rem', color: 'var(--primary-light)', marginTop: '2px' }}>{profile.marketCapLabel}</div>}
+                    </div>
+                    {keyMetrics.revenue != null && keyMetrics.revenue > 0 && (
+                        <div className="metric-card">
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>รายได้รวม</div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem' }}>{formatLargeNumber(keyMetrics.revenue)}</div>
+                            {keyMetrics.revenueGrowth !== 0 && <div style={{ fontSize: '0.68rem', color: keyMetrics.revenueGrowth >= 0 ? 'var(--success)' : 'var(--danger)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '2px' }}>{keyMetrics.revenueGrowth >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}{keyMetrics.revenueGrowth >= 0 ? '+' : ''}{keyMetrics.revenueGrowth.toFixed(1)}% YoY</div>}
+                        </div>
+                    )}
+                    {keyMetrics.netIncome != null && (
+                        <div className="metric-card">
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>กำไรสุทธิ</div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem', color: keyMetrics.netIncome >= 0 ? 'var(--success)' : 'var(--danger)' }}>{formatLargeNumber(keyMetrics.netIncome)}</div>
+                        </div>
+                    )}
+                    {keyMetrics.profitMargin !== 0 && (
+                        <div className="metric-card">
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Profit Margin</div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem', color: keyMetrics.profitMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>{keyMetrics.profitMargin.toFixed(1)}%</div>
+                        </div>
+                    )}
+                    {keyMetrics.pe != null && (
+                        <div className="metric-card">
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>P/E Ratio</div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem' }}>{keyMetrics.pe.toFixed(1)}</div>
+                            {keyMetrics.peIndustryAvg != null && <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>อุตสาหกรรม {keyMetrics.peIndustryAvg.toFixed(1)}</div>}
+                        </div>
+                    )}
+                    {keyMetrics.eps !== 0 && (
+                        <div className="metric-card">
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>EPS</div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem' }}>${keyMetrics.eps.toFixed(2)}</div>
+                            {keyMetrics.epsGrowth !== 0 && <div style={{ fontSize: '0.68rem', color: keyMetrics.epsGrowth >= 0 ? 'var(--success)' : 'var(--danger)', marginTop: '2px' }}>{keyMetrics.epsGrowth >= 0 ? '+' : ''}{keyMetrics.epsGrowth.toFixed(1)}%</div>}
+                        </div>
+                    )}
+                    {keyMetrics.dividendYield != null && keyMetrics.dividendYield > 0 && (
+                        <div className="metric-card">
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>อัตราปันผล</div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--accent)' }}>{keyMetrics.dividendYield.toFixed(2)}%</div>
+                            {keyMetrics.dividendPerShare != null && <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>${keyMetrics.dividendPerShare.toFixed(2)}/หุ้น</div>}
+                        </div>
+                    )}
                 </div>
             </section>
 
