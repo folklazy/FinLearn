@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Clock, BookOpen, CheckCircle2, ChevronRight, Award } from 'lucide-react';
+import { ArrowLeft, Clock, BookOpen, CheckCircle2, ChevronRight, Award, CheckCircle, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useParams } from 'next/navigation';
 
@@ -220,9 +220,11 @@ export default function LessonDetailPage() {
                                                 border: isCorrect ? '1px solid #4ade80' : isWrong ? '1px solid #f87171' : selected ? '1px solid var(--primary)' : '1px solid transparent',
                                                 color: 'var(--text-secondary)', cursor: quizSubmitted ? 'default' : 'pointer', transition: 'all 0.2s',
                                             }}>
-                                            {opt}
-                                            {isCorrect && ' ✅'}
-                                            {isWrong && ' ❌'}
+                                            <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                                                <span>{opt}</span>
+                                                {isCorrect && <CheckCircle size={14} style={{ color: '#4ade80', flexShrink: 0 }} />}
+                                                {isWrong && <XCircle size={14} style={{ color: '#f87171', flexShrink: 0 }} />}
+                                            </span>
                                         </button>
                                     );
                                 })}
