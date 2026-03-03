@@ -276,7 +276,10 @@ export class StockService {
         const valueScore = pe ? Math.max(1, Math.min(5, 5 - (pe - 15) / 10)) : 3;
         const growthScore = Math.max(1, Math.min(5, 2.5 + revenueGrowthRaw / 10));
         const strengthScore = Math.max(1, Math.min(5, 2 + profitMarginRaw / 10));
-        const dividendScore = Math.max(1, Math.min(5, 1 + divYieldRaw / 5));
+        // If no dividend: score neutral (2.5) for high-growth stocks, mild penalty (1.5) for low-growth — avoids unfairly punishing NVDA/GOOGL/META
+        const dividendScore = divYieldRaw > 0
+            ? Math.max(1, Math.min(5, 1 + divYieldRaw / 5))
+            : revenueGrowthRaw >= 15 ? 2.5 : revenueGrowthRaw >= 5 ? 2.0 : 1.5;
         const riskScore = Math.max(1, Math.min(5, 4 - (debtToEquity ?? 50) / 100));
         const overall = parseFloat(((valueScore + growthScore + strengthScore + dividendScore + riskScore) / 5).toFixed(1));
 
