@@ -72,7 +72,7 @@ export async function getProfile(symbol: string): Promise<YFProfile | null> {
 
         return {
             name,
-            description: (ap as any)?.longBusinessSummary?.slice(0, 300) ?? '',
+            description: (ap as any)?.longBusinessSummary?.slice(0, 800) ?? '',
             sector: ap?.sector ?? '',
             industry: ap?.industry ?? '',
             exchange,

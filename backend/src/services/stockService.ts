@@ -98,7 +98,7 @@ export class StockService {
         const profileIpo       = fmpProfile?.ipoDate            || finnhubProfile?.ipo              || 'N/A';
         const profileHQ        = fmpProfile ? [fmpProfile.city, fmpProfile.state, fmpProfile.country].filter(Boolean).join(', ') : (finnhubProfile?.country || yahooProfile?.headquarters || '');
         const profileCeo       = fmpProfile?.ceo                || yahooProfile?.ceo                || 'N/A';
-        const profileDesc      = fmpProfile?.description?.slice(0, 300) || yahooProfile?.description || `${profileName} เป็นบริษัทในกลุ่ม ${profileSector}`;
+        const profileDesc      = fmpProfile?.description?.slice(0, 800) || yahooProfile?.description || `${profileName} เป็นบริษัทในกลุ่ม ${profileSector} อุตสาหกรรม ${profileIndustry}`;
 
         // Use Finnhub quote for real-time price, fallback to FMP profile, then 0
         const price = finnhubQuote?.c ?? fmpProfile?.price ?? 0;
@@ -290,7 +290,7 @@ export class StockService {
                 name: profileName,
                 symbol,
                 logo: profileLogo,
-                description: `${profileName} เป็นบริษัทในกลุ่ม ${profileSector} อุตสาหกรรม ${profileIndustry}`,
+                description: profileDesc,
                 descriptionEn: profileDesc,
                 sector: profileSector,
                 industry: profileIndustry,
