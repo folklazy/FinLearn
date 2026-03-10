@@ -28,7 +28,7 @@ A bilingual Thai/English stock investment learning platform targeting retail inv
          ▼                         ▼
 ┌──────────────────┐    ┌──────────────────────────────┐
 │  PostgreSQL DB   │    │  External APIs               │
-│  (Neon/Supabase) │    │  FMP → Finnhub → Yahoo       │
+│  (Neon)          │    │  FMP → Finnhub → Yahoo       │
 │                  │    │  Twelve Data (technicals)    │
 │  Users, auth,    │    │                              │
 │  trades,         │◄───│  PostgreSQL cache (TTL)      │
@@ -137,7 +137,7 @@ FinLearn/
 ### Prerequisites
 
 - **Node.js** ≥ 18
-- **PostgreSQL** database — [Neon](https://neon.tech) free tier works perfectly
+- **PostgreSQL** database — project uses [Neon](https://neon.tech) (free tier)
 - API keys (all free tier):
   - [Financial Modeling Prep](https://financialmodelingprep.com/) — primary stock data
   - [Finnhub](https://finnhub.io/) — real-time quotes, peers, news
