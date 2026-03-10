@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, ArrowLeft } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function ForgotPasswordPage() {
+    const { t } = useI18n();
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function ForgotPasswordPage() {
             if (!res.ok) { setError(data.error); return; }
             router.push(`/reset-password?email=${encodeURIComponent(email)}`);
         } catch {
-            setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+            setError(t('login.errGeneric'));
         } finally {
             setLoading(false);
         }
@@ -47,9 +49,9 @@ export default function ForgotPasswordPage() {
 
                 <div className="card-solid" style={{ padding: '32px', borderRadius: 'var(--radius-xl)' }}>
                         <>
-                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>ลืมรหัสผ่าน?</h1>
+                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>{t('forgot.title')}</h1>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '24px' }}>
-                                กรอกอีเมลที่ใช้สมัครสมาชิก เราจะส่งรหัส OTP ไปให้
+                                {t('forgot.desc')}
                             </p>
 
                             {error && (
@@ -61,18 +63,18 @@ export default function ForgotPasswordPage() {
                             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                 <div style={{ position: 'relative' }}>
                                     <Mail size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                                    <input type="email" placeholder="อีเมล" value={email} onChange={e => setEmail(e.target.value)} required
+                                    <input type="email" placeholder={t('login.email')} value={email} onChange={e => setEmail(e.target.value)} required
                                         className="input" style={{ paddingLeft: '40px' }} />
                                 </div>
                                 <button type="submit" disabled={loading} className="btn btn-primary"
                                     style={{ width: '100%', padding: '12px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                    {loading ? 'กำลังส่ง...' : 'ส่งรหัส OTP'}
+                                    {loading ? t('forgot.sending') : t('forgot.submit')}
                                 </button>
                             </form>
 
                             <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '20px' }}>
                                 <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--primary-light)', fontWeight: 500 }}>
-                                    <ArrowLeft size={13} /> กลับไปเข้าสู่ระบบ
+                                    <ArrowLeft size={13} /> {t('forgot.back')}
                                 </Link>
                             </p>
                         </>

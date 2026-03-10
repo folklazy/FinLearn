@@ -4,8 +4,10 @@ import { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { Mail, RefreshCw, CheckCircle, ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { useI18n } from '@/lib/i18n';
 
 function VerifyEmailContent() {
+    const { t } = useI18n();
     const searchParams = useSearchParams();
     const email = searchParams.get('email') ?? '';
 
@@ -58,8 +60,8 @@ function VerifyEmailContent() {
     };
 
     const handleVerify = async (code = otp) => {
-        if (code.length !== 6) { setError('กรุณากรอกรหัส 6 หลักให้ครบ'); return; }
-        if (!email) { setError('ไม่พบอีเมล กรุณาสมัครสมาชิกใหม่'); return; }
+        if (code.length !== 6) { setError(t('verify.err6')); return; }
+        if (!email) { setError(t('verify.errNoEmail')); return; }
         setLoading(true);
         setError('');
         try {
@@ -72,7 +74,7 @@ function VerifyEmailContent() {
             if (!res.ok) { setError(data.error); setDigits(['', '', '', '', '', '']); inputRefs.current[0]?.focus(); return; }
             setSuccess(true);
         } catch {
-            setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+            setError(t('login.errGeneric'));
         } finally {
             setLoading(false);
         }
@@ -94,7 +96,7 @@ function VerifyEmailContent() {
             setCooldown(60);
             inputRefs.current[0]?.focus();
         } catch {
-            setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+            setError(t('login.errGeneric'));
         } finally {
             setResending(false);
         }
@@ -118,12 +120,12 @@ function VerifyEmailContent() {
                             <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                                 <CheckCircle size={32} style={{ color: 'var(--success)' }} />
                             </div>
-                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '10px' }}>ยืนยันอีเมลสำเร็จ!</h1>
+                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '10px' }}>{t('verify.successTitle')}</h1>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.7, marginBottom: '28px' }}>
-                                บัญชีของคุณพร้อมใช้งานแล้ว
+                                {t('verify.successDesc')}
                             </p>
                             <Link href="/login" className="btn btn-primary" style={{ display: 'block', padding: '12px', textAlign: 'center' }}>
-                                เข้าสู่ระบบ
+                                {t('login.submit')}
                             </Link>
                         </>
                     ) : (
@@ -132,9 +134,9 @@ function VerifyEmailContent() {
                                 <Mail size={28} />
                             </div>
 
-                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>ตรวจสอบอีเมลของคุณ</h1>
+                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>{t('verify.title')}</h1>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '4px' }}>
-                                เราส่งรหัส 6 หลักไปที่
+                                {t('verify.sentTo')}
                             </p>
                             <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '28px' }}>
                                 {email || '—'}
@@ -179,19 +181,19 @@ function VerifyEmailContent() {
                                 disabled={loading || otp.length !== 6}
                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'var(--gradient-primary)', border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 600, cursor: (loading || otp.length !== 6) ? 'not-allowed' : 'pointer', opacity: (loading || otp.length !== 6) ? 0.6 : 1, fontFamily: 'inherit', marginBottom: '16px' }}
                             >
-                                {loading ? 'กำลังยืนยัน...' : <><ArrowRight size={16} /> ยืนยันรหัส</>}
+                                {loading ? t('verify.verifying') : <><ArrowRight size={16} /> {t('verify.submit')}</>}
                             </button>
 
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '4px' }}>
-                                ไม่ได้รับรหัส?{' '}
+                                {t('reset.noCode')}{' '}
                                 <button onClick={handleResend} disabled={resending || cooldown > 0}
                                     style={{ background: 'none', border: 'none', color: cooldown > 0 ? 'var(--text-muted)' : 'var(--primary-light)', fontWeight: 500, cursor: cooldown > 0 ? 'default' : 'pointer', fontSize: '0.82rem', fontFamily: 'inherit', padding: 0 }}>
-                                    {resending ? 'กำลังส่ง...' : cooldown > 0 ? `ส่งใหม่ใน ${cooldown}s` : 'ส่งรหัสใหม่'}
+                                    {resending ? t('reset.resending') : cooldown > 0 ? `${t('reset.resendIn')} ${cooldown}s` : t('reset.resend')}
                                     {!resending && cooldown <= 0 && <RefreshCw size={12} style={{ marginLeft: '4px', verticalAlign: 'middle' }} />}
                                 </button>
                             </p>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                <Link href="/login" style={{ color: 'var(--text-muted)' }}>กลับไปหน้าเข้าสู่ระบบ</Link>
+                                <Link href="/login" style={{ color: 'var(--text-muted)' }}>{t('verify.backLogin')}</Link>
                             </p>
                         </>
                     )}

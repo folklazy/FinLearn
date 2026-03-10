@@ -4,13 +4,73 @@
 const BASE = 'https://financialmodelingprep.com/stable';
 const KEY = () => process.env.FMP_API_KEY || '';
 
+// ── Global request throttle (prevents 429 rate-limit) ──
+const MAX_CONCURRENT = 3;
+const DELAY_MS = 200;
+let activeRequests = 0;
+const queue: Array<() => void> = [];
+
+// Track symbols that return 402 (Premium) so we skip them next time
+// Pre-seeded with known premium symbols on FMP free tier
+const premiumPaths = new Set<string>([
+    '/ratios-ttm:AVGO', '/ratios-ttm:BRK-B', '/ratios-ttm:LLY',
+    '/ratios-ttm:MA', '/ratios-ttm:PG', '/ratios-ttm:HD',
+    '/ratios-ttm:ORCL', '/ratios-ttm:WMT', '/ratios-ttm:CRM',
+    '/ratios-ttm:BAC', '/ratios-ttm:MRK', '/ratios-ttm:ABT',
+    '/ratios-ttm:KO', '/ratios-ttm:PEP', '/ratios-ttm:TMO',
+    '/ratios-ttm:CSCO', '/ratios-ttm:ACN', '/ratios-ttm:DHR',
+    '/ratios-ttm:MCD', '/ratios-ttm:TXN', '/ratios-ttm:PM',
+    '/ratios-ttm:NEE', '/ratios-ttm:ADBE', '/ratios-ttm:AMD',
+    '/ratios-ttm:QCOM', '/ratios-ttm:INTC', '/ratios-ttm:MU',
+    '/financial-growth:AVGO', '/financial-growth:BRK-B', '/financial-growth:LLY',
+    '/financial-growth:MA', '/financial-growth:PG', '/financial-growth:HD',
+    '/financial-growth:ORCL', '/financial-growth:WMT', '/financial-growth:CRM',
+    '/financial-growth:AMD', '/financial-growth:QCOM', '/financial-growth:MU',
+]);
+
+function acquireSlot(): Promise<void> {
+    return new Promise(resolve => {
+        if (activeRequests < MAX_CONCURRENT) {
+            activeRequests++;
+            resolve();
+        } else {
+            queue.push(resolve);
+        }
+    });
+}
+
+function releaseSlot() {
+    setTimeout(() => {
+        if (queue.length > 0) {
+            const next = queue.shift()!;
+            next();
+        } else {
+            activeRequests--;
+        }
+    }, DELAY_MS);
+}
+
 async function get<T>(path: string, params: Record<string, string> = {}): Promise<T | null> {
+    // Fast-fail for known premium paths (e.g. /ratios-ttm?symbol=AVGO)
+    const cacheKey = `${path}:${params.symbol ?? ''}`;
+    if (premiumPaths.has(cacheKey)) return null;
+
     const url = new URL(`${BASE}${path}`);
     url.searchParams.set('apikey', KEY());
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
+    await acquireSlot();
     try {
-        const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10000) });
+        let res = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
+        // Retry once on 429 after a short wait
+        if (res.status === 429) {
+            await new Promise(r => setTimeout(r, 600));
+            res = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
+        }
+        if (res.status === 402) {
+            premiumPaths.add(cacheKey);
+            return null;
+        }
         if (!res.ok) {
             console.warn(`[FMP] ${res.status} for ${path}`);
             return null;
@@ -19,6 +79,8 @@ async function get<T>(path: string, params: Record<string, string> = {}): Promis
     } catch (err) {
         console.warn(`[FMP] Error fetching ${path}:`, (err as Error).message);
         return null;
+    } finally {
+        releaseSlot();
     }
 }
 
@@ -75,8 +137,32 @@ export interface FMPKeyMetrics {
 }
 
 export async function getKeyMetrics(symbol: string): Promise<FMPKeyMetrics | null> {
-    const data = await get<FMPKeyMetrics[]>('/key-metrics-ttm', { symbol });
-    return data?.[0] ?? null;
+    // /stable/ratios-ttm has PE, margins, dividend yield, debt ratios
+    const ratiosArr = await get<Record<string, number>[]>('/ratios-ttm', { symbol });
+    const r = ratiosArr?.[0];
+    if (!r) return null;
+
+    // /stable/financial-growth has revenue/EPS growth (best-effort, non-blocking)
+    let g: Record<string, number> | null = null;
+    try {
+        const growthArr = await get<Record<string, number>[]>('/financial-growth', { symbol, period: 'annual', limit: '1' });
+        g = growthArr?.[0] ?? null;
+    } catch { /* growth is optional */ }
+
+    return {
+        revenuePerShareTTM: r.revenuePerShareTTM ?? 0,
+        netIncomePerShareTTM: r.netIncomePerShareTTM ?? 0,
+        peRatioTTM: r.priceToEarningsRatioTTM ?? 0,
+        priceToBookRatioTTM: r.priceToBookRatioTTM ?? 0,
+        dividendYieldTTM: r.dividendYieldTTM ?? 0,
+        dividendPerShareTTM: r.dividendPerShareTTM ?? 0,
+        epsGrowth: g?.epsgrowth ?? 0,
+        roeTTM: 0, // ROE available from key-metrics-ttm; fallback providers handle this
+        debtToEquityTTM: r.debtToEquityRatioTTM ?? 0,
+        currentRatioTTM: r.currentRatioTTM ?? 0,
+        netProfitMarginTTM: r.netProfitMarginTTM ?? 0,
+        revenueGrowth: g?.revenueGrowth ?? 0,
+    };
 }
 
 // ── Income Statement ──

@@ -1,7 +1,7 @@
 {
-  "name": "backend",
+  "name": "finlearn-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "FinLearn API — stock data aggregation, lessons, and caching",
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",

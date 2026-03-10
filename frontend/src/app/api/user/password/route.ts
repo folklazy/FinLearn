@@ -12,9 +12,15 @@ export async function PUT(req: NextRequest) {
 
     const { currentPassword, newPassword } = await req.json();
 
-    if (!newPassword || newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 8 || newPassword.length > 64) {
         return NextResponse.json(
-            { error: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร' },
+            { error: 'รหัสผ่านใหม่ต้องมี 8-64 ตัวอักษร' },
+            { status: 400 },
+        );
+    }
+    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+        return NextResponse.json(
+            { error: 'รหัสผ่านต้องมีตัวอักษรอย่างน้อย 1 ตัว และตัวเลขอย่างน้อย 1 ตัว' },
             { status: 400 },
         );
     }

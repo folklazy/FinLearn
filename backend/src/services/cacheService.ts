@@ -13,6 +13,7 @@ const TTL: Record<string, number> = {
     technicals:      1800,   // 30min - needs freshness
     quote:            120,   // 2min - real-time
     full:             300,   // 5min - assembled StockData
+    popular:          120,   // 2min - popular stocks list
     peers:       24 * 3600,  // 24h - rarely changes
     search:       6 * 3600,  // 6h  - rarely changes
 };

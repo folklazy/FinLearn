@@ -2,21 +2,24 @@
 
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
-
-const LINKS = {
-    main: [
-        { href: '/', label: 'หน้าหลัก' },
-        { href: '/stocks', label: 'หุ้น' },
-        { href: '#', label: 'บทเรียน' },
-    ],
-    resources: [
-        { href: '#', label: 'Glossary' },
-        { href: '#', label: 'คำถามที่พบบ่อย' },
-        { href: '#', label: 'เกี่ยวกับเรา' },
-    ],
-};
+import { useI18n } from '@/lib/i18n';
 
 export default function Footer() {
+    const { t } = useI18n();
+
+    const LINKS = {
+        main: [
+            { href: '/', label: t('footer.home') },
+            { href: '/stocks', label: t('footer.stocks') },
+            { href: '/learn', label: t('footer.lessons') },
+        ],
+        resources: [
+            { href: '#', label: t('footer.glossary') },
+            { href: '#', label: t('footer.faq') },
+            { href: '#', label: t('footer.about') },
+        ],
+    };
+
     return (
         <footer style={{ borderTop: '1px solid var(--border)', padding: '56px 0 32px' }}>
             <div className="container">
@@ -28,14 +31,14 @@ export default function Footer() {
                             <span style={{ fontSize: '1rem', fontWeight: 750, letterSpacing: '-0.02em' }}>Fin<span className="gradient-text">Learn</span></span>
                         </Link>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.65, maxWidth: '200px' }}>
-                            เรียนรู้การลงทุนอย่างมั่นใจ สำหรับนักลงทุนมือใหม่
+                            {t('footer.tagline')}
                         </p>
                     </div>
 
                     {/* Nav columns */}
                     {[
-                        { title: 'เมนู', links: LINKS.main },
-                        { title: 'แหล่งข้อมูล', links: LINKS.resources },
+                        { title: t('footer.menu'), links: LINKS.main },
+                        { title: t('footer.resources'), links: LINKS.resources },
                     ].map(col => (
                         <div key={col.title}>
                             <h4 style={{ color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '14px', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{col.title}</h4>
@@ -57,7 +60,7 @@ export default function Footer() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '14px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.1)', marginBottom: '28px' }}>
                     <AlertTriangle size={14} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: '2px' }} />
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', lineHeight: 1.6 }}>
-                        <strong style={{ color: 'var(--warning)' }}>Disclaimer</strong> — FinLearn เป็นแพลตฟอร์มเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำทางการเงิน กรุณาปรึกษาผู้เชี่ยวชาญก่อนการลงทุนจริง
+                        <strong style={{ color: 'var(--warning)' }}>Disclaimer</strong> — {t('footer.disclaimer')}
                     </p>
                 </div>
 

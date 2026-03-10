@@ -89,6 +89,42 @@ export async function getProfile(symbol: string): Promise<YFProfile | null> {
     }
 }
 
+// ── Lightweight Quote (for batch fallback) ──
+export interface YFQuote {
+    symbol: string;
+    name: string;
+    price: number;
+    change: number;
+    changePercent: number;
+    marketCap: number;
+    sector: string;
+    logo: string;
+}
+
+export async function getQuote(symbol: string): Promise<YFQuote | null> {
+    try {
+        const result: any = await yahooFinance.quoteSummary(symbol, {
+            modules: ['price', 'assetProfile'],
+        });
+        const pr = result?.price;
+        const ap = result?.assetProfile;
+        if (!pr) return null;
+        return {
+            symbol: symbol.toUpperCase(),
+            name: pr?.longName || pr?.shortName || symbol,
+            price: pr?.regularMarketPrice ?? 0,
+            change: pr?.regularMarketChange ?? 0,
+            changePercent: pr?.regularMarketChangePercent ? pr.regularMarketChangePercent * 100 : 0,
+            marketCap: pr?.marketCap ?? 0,
+            sector: ap?.sector ?? '',
+            logo: `https://financialmodelingprep.com/image-stock/${symbol.toUpperCase()}.png`,
+        };
+    } catch (err) {
+        console.warn(`[Yahoo] Quote error for ${symbol}:`, (err as Error).message);
+        return null;
+    }
+}
+
 // ── Key Metrics ──
 export interface YFKeyMetrics {
     pe: number | null;

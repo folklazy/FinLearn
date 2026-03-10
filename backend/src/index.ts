@@ -8,6 +8,7 @@ import path from 'path';
 import stockRoutes from './routes/stocks';
 import healthRoutes from './routes/health';
 import lessonRoutes from './routes/lessons';
+import { StockService } from './services/stockService';
 
 // Load environment variables from monorepo root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -51,6 +52,12 @@ app.listen(PORT, () => {
   📋 S&P 500:    http://localhost:${PORT}/api/stocks/sp500
   ━━━━━━━━━━━━━━━━━━━━━
   `);
+
+    // ── Cache warming: pre-fetch popular stocks in background ──
+    const stockService = new StockService();
+    stockService.getPopularStocks()
+        .then(stocks => console.log(`  ✅ Cache warmed: ${stocks.length} popular stocks ready`))
+        .catch(() => console.warn('  ⚠️ Cache warming failed (will fetch on first request)'));
 });
 
 export default app;

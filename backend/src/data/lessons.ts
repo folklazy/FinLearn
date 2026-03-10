@@ -3,6 +3,8 @@
 export interface LessonSection {
     heading: string;
     content: string;
+    headingEn?: string;
+    contentEn?: string;
 }
 
 export interface Lesson {
@@ -10,13 +12,16 @@ export interface Lesson {
     title: string;
     titleEn: string;
     description: string;
+    descriptionEn?: string;
     category: string;
     difficulty: 'beginner' | 'intermediate' | 'advanced';
     duration: number; // minutes
     icon: string;
+    thumbnail: string;
     sections: LessonSection[];
     keyTakeaways: string[];
-    quiz?: { question: string; options: string[]; answer: number }[];
+    keyTakeawaysEn?: string[];
+    quiz?: { question: string; questionEn?: string; options: string[]; optionsEn?: string[]; answer: number }[];
 }
 
 export interface LessonCategory {
@@ -28,10 +33,10 @@ export interface LessonCategory {
 }
 
 export const LESSON_CATEGORIES: LessonCategory[] = [
-    { id: 'basics', name: 'พื้นฐานการลงทุน', nameEn: 'Investment Basics', icon: '📚', lessonCount: 4 },
-    { id: 'analysis', name: 'การวิเคราะห์หุ้น', nameEn: 'Stock Analysis', icon: '📊', lessonCount: 4 },
-    { id: 'strategy', name: 'กลยุทธ์การลงทุน', nameEn: 'Investment Strategies', icon: '🎯', lessonCount: 3 },
-    { id: 'risk', name: 'การจัดการความเสี่ยง', nameEn: 'Risk Management', icon: '🛡️', lessonCount: 3 },
+    { id: 'basics', name: 'พื้นฐานการลงทุน', nameEn: 'Investment Basics', icon: '📚', lessonCount: 10 },
+    { id: 'analysis', name: 'การวิเคราะห์หุ้น', nameEn: 'Stock Analysis', icon: '📊', lessonCount: 6 },
+    { id: 'strategy', name: 'กลยุทธ์การลงทุน', nameEn: 'Investment Strategies', icon: '🎯', lessonCount: 4 },
+    { id: 'risk', name: 'การจัดการความเสี่ยง', nameEn: 'Risk Management', icon: '🛡️', lessonCount: 5 },
 ];
 
 export const LESSONS: Lesson[] = [
@@ -47,6 +52,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 8,
         icon: '📈',
+        thumbnail: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'หุ้นคืออะไร?',
@@ -86,6 +92,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 10,
         icon: '💰',
+        thumbnail: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'ราคาหุ้นที่คุณเห็นบนหน้าจอ',
@@ -124,6 +131,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 12,
         icon: '🏷️',
+        thumbnail: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'หุ้น Growth (หุ้นเติบโต)',
@@ -158,6 +166,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 15,
         icon: '🚀',
+        thumbnail: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'ขั้นตอนที่ 1: เตรียมเงินสำรองฉุกเฉินก่อน',
@@ -184,6 +193,242 @@ export const LESSONS: Lesson[] = [
         ],
     },
 
+    {
+        id: 'how-stock-market-works',
+        title: 'ตลาดหุ้นทำงานยังไง?',
+        titleEn: 'How Does the Stock Market Work?',
+        description: 'เข้าใจกลไกตลาดหุ้น: เวลาเปิดปิด, Bid/Ask, การจับคู่คำสั่ง และบทบาทของผู้เล่นในตลาด',
+        category: 'basics',
+        difficulty: 'beginner',
+        duration: 12,
+        icon: '🏛️',
+        thumbnail: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'เวลาเปิด-ปิดตลาด',
+                content: '**ตลาดหุ้นสหรัฐ (NYSE / NASDAQ):**\n- 🕘 เปิด: 9:30 AM ET (20:30 เวลาไทย)\n- 🕓 ปิด: 4:00 PM ET (03:00 เวลาไทย)\n- เปิดวันจันทร์-ศุกร์ ปิดวันหยุดนักขัตฤกษ์\n\n**Pre-Market & After-Hours:**\n- Pre-Market: 4:00-9:30 AM ET — ซื้อขายก่อนตลาดเปิด\n- After-Hours: 4:00-8:00 PM ET — ซื้อขายหลังตลาดปิด\n- ⚠️ ช่วงนี้สภาพคล่องต่ำ ราคาอาจผันผวนมาก ไม่แนะนำสำหรับมือใหม่\n\n**ตลาดหุ้นไทย (SET):**\n- เช้า: 10:00-12:30 น.\n- บ่าย: 14:30-16:30 น.',
+            },
+            {
+                heading: 'ใครเป็นคนซื้อขายในตลาด?',
+                content: '**ผู้เล่นหลักในตลาดหุ้น:**\n\n1. **นักลงทุนรายย่อย (Retail Investors)** — คนธรรมดาอย่างเราที่ซื้อขายผ่านแอป เช่น Robinhood, Interactive Brokers\n2. **นักลงทุนสถาบัน (Institutional Investors)** — กองทุน, ธนาคาร, บริษัทประกัน ซื้อขายทีละหลายล้านดอลลาร์\n3. **Market Makers** — บริษัทที่คอยตั้งราคาซื้อ/ขายตลอดเวลา ทำให้ตลาดมีสภาพคล่อง\n4. **โบรกเกอร์ (Broker)** — ตัวกลางที่ช่วยส่งคำสั่งซื้อขายของคุณไปยังตลาด\n\n💡 ปัจจุบันนักลงทุนรายย่อยมีอิทธิพลมากขึ้นมาก เพราะค่าคอมมิชชัน $0 และแอปที่ใช้ง่าย',
+            },
+            {
+                heading: 'Bid / Ask คืออะไร?',
+                content: 'เวลาดูราคาหุ้น คุณจะเห็นสองราคา:\n\n**Bid** = ราคาสูงสุดที่มีคนยินดี **ซื้อ**\n**Ask** = ราคาต่ำสุดที่มีคนยินดี **ขาย**\n**Spread** = ส่วนต่างระหว่าง Bid กับ Ask\n\nตัวอย่าง AAPL:\n- Bid: $199.50 (คนอยากซื้อที่ราคานี้)\n- Ask: $199.55 (คนอยากขายที่ราคานี้)\n- Spread: $0.05\n\n**Spread แคบ** = สภาพคล่องดี ซื้อขายง่าย (หุ้นใหญ่ เช่น AAPL, MSFT)\n**Spread กว้าง** = สภาพคล่องน้อย ซื้อขายยาก (หุ้นเล็ก)\n\n💡 เวลาซื้อด้วย Market Order คุณจะได้ราคา Ask เวลาขายจะได้ราคา Bid',
+            },
+            {
+                heading: 'เมื่อคุณกด "ซื้อ" เกิดอะไรขึ้น?',
+                content: 'ขั้นตอนเบื้องหลังเมื่อคุณซื้อหุ้น:\n\n1. 📱 คุณกด "ซื้อ" ในแอป\n2. 📤 คำสั่งถูกส่งไปยัง **โบรกเกอร์**\n3. 🏛️ โบรกเกอร์ส่งคำสั่งไปที่ **ตลาดหลักทรัพย์**\n4. 🔄 ระบบ **จับคู่** คำสั่งซื้อกับคำสั่งขายที่ตรงกัน\n5. ✅ จับคู่สำเร็จ = **Executed** (ซื้อขายเสร็จ)\n6. 📊 หุ้นเข้าบัญชี (Settlement: **T+1**)\n\n**T+1** หมายถึง หลังซื้อขาย 1 วันทำการ หุ้นจะโอนเข้าบัญชีจริง\n\n💡 ทุกอย่างเกิดขึ้นภายในเสี้ยววินาทีด้วยระบบอิเล็กทรอนิกส์',
+            },
+        ],
+        keyTakeaways: [
+            'ตลาดสหรัฐเปิด 9:30-16:00 ET (20:30-03:00 เวลาไทย)',
+            'Bid = ราคาซื้อ, Ask = ราคาขาย, Spread = ส่วนต่าง',
+            'Spread แคบ = สภาพคล่องดี ซื้อขายง่าย',
+            'การซื้อขาย settle ภายใน T+1 วันทำการ',
+        ],
+        quiz: [
+            { question: 'Bid คืออะไร?', options: ['ราคาที่ผู้ขายตั้ง', 'ราคาสูงสุดที่ผู้ซื้อยินดีจ่าย', 'ราคาเปิดตลาด', 'ราคาเฉลี่ยของวัน'], answer: 1 },
+            { question: 'T+1 หมายถึงอะไร?', options: ['ซื้อได้แค่ 1 หุ้น', 'หุ้น settle ใน 1 วันทำการหลังซื้อขาย', 'ตลาดเปิด 1 ชั่วโมง', 'ค่าคอมมิชชัน 1%'], answer: 1 },
+        ],
+    },
+    {
+        id: 'order-types',
+        title: 'คำสั่งซื้อขายหุ้นมีกี่แบบ?',
+        titleEn: 'Types of Stock Orders',
+        description: 'รู้จักคำสั่งซื้อขาย: Market Order, Limit Order, Stop Order และเมื่อไหร่ควรใช้แบบไหน',
+        category: 'basics',
+        difficulty: 'beginner',
+        duration: 10,
+        icon: '🛒',
+        thumbnail: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'Market Order (คำสั่งซื้อ/ขายทันที)',
+                content: '**Market Order** = ซื้อหรือขายทันที ณ ราคาที่ดีที่สุดในตอนนั้น\n\n**ข้อดี:**\n- ✅ ได้หุ้นทันที 100%\n- ✅ ใช้ง่ายที่สุด เหมาะมือใหม่\n\n**ข้อเสีย:**\n- ❌ ไม่สามารถกำหนดราคาได้\n- ❌ ถ้าหุ้นมีสภาพคล่องต่ำ อาจได้ราคาแย่ (Slippage)\n\n**เมื่อไหร่ใช้:**\n- ต้องการซื้อ/ขายทันที\n- หุ้นตัวใหญ่ที่มีสภาพคล่องสูง (เช่น AAPL, MSFT)\n\nตัวอย่าง: "ซื้อ AAPL 10 หุ้น Market Order" → ได้ทันที ราคาประมาณ Ask',
+            },
+            {
+                heading: 'Limit Order (คำสั่งซื้อ/ขายตามราคาที่กำหนด)',
+                content: '**Limit Order** = ตั้งราคาที่ต้องการ ระบบจะซื้อ/ขายก็ต่อเมื่อราคาถึงที่กำหนด\n\n**Buy Limit:** ตั้งราคาซื้อ **ต่ำกว่า** ราคาปัจจุบัน\nตัวอย่าง: AAPL ราคา $200 → ตั้ง Buy Limit $190 → ซื้อเมื่อราคาลงมาถึง $190\n\n**Sell Limit:** ตั้งราคาขาย **สูงกว่า** ราคาปัจจุบัน\nตัวอย่าง: ถือ AAPL อยู่ → ตั้ง Sell Limit $220 → ขายเมื่อราคาขึ้นถึง $220\n\n**ข้อดี:** ได้ราคาที่ต้องการ\n**ข้อเสีย:** อาจไม่ได้ซื้อ/ขายเลย ถ้าราคาไม่ถึง\n\n💡 **แนะนำสำหรับมือใหม่:** ใช้ Limit Order เพื่อควบคุมราคาที่จ่าย',
+            },
+            {
+                heading: 'Stop Order (คำสั่งหยุดขาดทุน)',
+                content: '**Stop Order** = สั่งขายอัตโนมัติเมื่อราคาลดลงถึงจุดที่กำหนด\n\n**Stop Loss:** ป้องกันขาดทุน\nตัวอย่าง: ซื้อ AAPL $200 → ตั้ง Stop Loss $180 → ถ้าราคาลงถึง $180 จะขายอัตโนมัติ\n\n**Stop Limit:** เหมือน Stop Order แต่เมื่อถึงราคาจะกลายเป็น Limit Order\nตัวอย่าง: Stop $180, Limit $178 → เมื่อราคาถึง $180 จะตั้งขายที่ $178+\n\n**Trailing Stop:** ขยับตามราคาที่ขึ้น\nตัวอย่าง: Trailing Stop 10% → ซื้อ $200 ราคาขึ้น $250 → Stop อยู่ที่ $225\n\n💡 **สำคัญมาก:** ตั้ง Stop Loss ทุกครั้งที่ซื้อหุ้น เพื่อจำกัดการขาดทุน',
+            },
+            {
+                heading: 'Day Order vs GTC',
+                content: '**ระยะเวลาของคำสั่ง:**\n\n**Day Order:**\n- คำสั่งมีผลแค่ **วันเดียว**\n- ถ้าสิ้นวันยังไม่ถูก execute จะถูกยกเลิกอัตโนมัติ\n- เหมาะกับ: เทรดรายวัน\n\n**GTC (Good Till Cancelled):**\n- คำสั่งมีผลจนกว่าจะถูก execute หรือ **คุณยกเลิกเอง**\n- ส่วนใหญ่มีอายุสูงสุด 60-90 วัน\n- เหมาะกับ: ตั้งราคาเป้าหมายรอไว้\n\n**สรุปคำสั่งที่มือใหม่ควรรู้:**\n\n| คำสั่ง | ใช้เมื่อ |\n|--------|----------|\n| Market | ต้องการซื้อ/ขายทันที |\n| Limit | ต้องการกำหนดราคา |\n| Stop Loss | ต้องการจำกัดขาดทุน |\n| GTC | ต้องการรอราคาเป้าหมาย |',
+            },
+        ],
+        keyTakeaways: [
+            'Market Order = ซื้อ/ขายทันที ณ ราคาตลาด',
+            'Limit Order = ซื้อ/ขายที่ราคาที่กำหนดเท่านั้น',
+            'Stop Loss = ขายอัตโนมัติเพื่อจำกัดขาดทุน',
+            'มือใหม่ควรใช้ Limit Order + Stop Loss เสมอ',
+        ],
+        quiz: [
+            { question: 'Limit Order คืออะไร?', options: ['ซื้อทันทีในราคาตลาด', 'ซื้อ/ขายที่ราคาที่กำหนดไว้', 'ยกเลิกคำสั่งอัตโนมัติ', 'ซื้อจำนวนจำกัด'], answer: 1 },
+            { question: 'GTC ย่อมาจากอะไร?', options: ['Get The Cash', 'Good Till Cancelled', 'Go To Close', 'Gain Through Compound'], answer: 1 },
+        ],
+    },
+    {
+        id: 'stock-indices',
+        title: 'ดัชนีหุ้นคืออะไร?',
+        titleEn: 'What Are Stock Indices?',
+        description: 'รู้จัก S&P 500, Dow Jones, NASDAQ และทำไมดัชนีสำคัญสำหรับนักลงทุนทุกคน',
+        category: 'basics',
+        difficulty: 'beginner',
+        duration: 8,
+        icon: '📊',
+        thumbnail: 'https://images.unsplash.com/photo-1535320903710-d946a44a5642?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'ดัชนีหุ้นคืออะไร?',
+                content: '**ดัชนีหุ้น (Stock Index)** คือตัวเลขที่วัดผลรวมของหุ้นกลุ่มหนึ่ง ใช้บอกว่า "ตลาดโดยรวมเป็นยังไง"\n\nเปรียบเหมือน **เทอร์โมมิเตอร์วัดสุขภาพตลาด:**\n- ดัชนีขึ้น 📈 = ตลาดโดยรวมดี หุ้นส่วนใหญ่ขึ้น\n- ดัชนีลง 📉 = ตลาดโดยรวมแย่ หุ้นส่วนใหญ่ลง\n\n💡 เวลาข่าวบอกว่า "ตลาดหุ้นวันนี้ขึ้น 1%" หมายถึงดัชนีขึ้น ไม่ได้หมายความว่าทุกหุ้นขึ้น',
+            },
+            {
+                heading: 'ดัชนีสำคัญของสหรัฐ',
+                content: '**🏆 S&P 500:**\n- หุ้น 500 บริษัทใหญ่ที่สุดในสหรัฐ\n- เป็น "มาตรฐาน" ที่ใช้วัดตลาดมากที่สุด\n- ผลตอบแทนเฉลี่ย ~10%/ปี (ย้อนหลัง 50+ ปี)\n- ตัวอย่าง: AAPL, MSFT, GOOGL, AMZN, NVDA\n\n**📈 Dow Jones Industrial Average (DJIA):**\n- หุ้น 30 บริษัทชั้นนำ Blue-Chip\n- ดัชนีที่เก่าแก่ที่สุด (เริ่มปี 1896)\n- ตัวอย่าง: AAPL, MSFT, JPM, JNJ, V\n\n**💻 NASDAQ Composite:**\n- หุ้นทั้งหมดในตลาด NASDAQ (~3,000+ บริษัท)\n- เน้นหุ้นเทคโนโลยี\n- NASDAQ-100 = 100 บริษัทใหญ่สุดที่ไม่ใช่การเงิน',
+            },
+            {
+                heading: 'ดัชนีหุ้นไทยและดัชนีอื่นๆ',
+                content: '**🇹🇭 ดัชนีหุ้นไทย:**\n- **SET Index** — ดัชนีหลักของตลาดหุ้นไทย\n- **SET50** — 50 หุ้นใหญ่ที่สุดในตลาดไทย\n- **SET100** — 100 หุ้นใหญ่ที่สุด\n- **mai Index** — ดัชนีตลาดหุ้นขนาดกลาง-เล็ก\n\n**🌍 ดัชนีสำคัญอื่นๆ:**\n- **Nikkei 225** — ญี่ปุ่น\n- **FTSE 100** — อังกฤษ\n- **DAX** — เยอรมนี\n- **Hang Seng** — ฮ่องกง\n- **Shanghai Composite** — จีน',
+            },
+            {
+                heading: 'ทำไมต้องดูดัชนี?',
+                content: '**1. วัดสุขภาพตลาดโดยรวม:**\n- ถ้า S&P 500 ลง 2% แต่หุ้นคุณลงแค่ 0.5% → หุ้นคุณแข็งแกร่งกว่าตลาด\n\n**2. เปรียบเทียบผลงานของคุณ (Benchmark):**\n- ถ้าพอร์ตคุณได้ 8%/ปี แต่ S&P 500 ได้ 12% → คุณแพ้ตลาด\n- ถ้าได้ 15% → คุณชนะตลาด! 🎉\n\n**3. ลงทุนผ่านกองทุนดัชนี (Index Fund):**\n- ซื้อ SPY หรือ VOO = ลงทุนใน S&P 500 ทั้ง 500 หุ้น\n- ซื้อ QQQ = ลงทุนใน NASDAQ-100\n- วิธีง่ายที่สุดในการเริ่มต้นลงทุน!\n\n💡 Warren Buffett แนะนำให้คนทั่วไปลงทุนในกองทุนดัชนี S&P 500',
+            },
+        ],
+        keyTakeaways: [
+            'ดัชนีหุ้นวัดผลรวมของหุ้นกลุ่มหนึ่ง ใช้วัดสุขภาพตลาด',
+            'S&P 500 = 500 หุ้นใหญ่สุด เป็นมาตรฐานของตลาดสหรัฐ',
+            'ใช้ดัชนีเป็น Benchmark เปรียบเทียบผลงานพอร์ต',
+            'ลงทุนในกองทุนดัชนี (SPY, VOO, QQQ) เป็นวิธีเริ่มต้นที่ง่ายที่สุด',
+        ],
+        quiz: [
+            { question: 'S&P 500 ประกอบด้วยหุ้นกี่บริษัท?', options: ['50', '100', '500', '1,000'], answer: 2 },
+            { question: 'SPY คืออะไร?', options: ['แอปซื้อขายหุ้น', 'กองทุนดัชนี S&P 500', 'ดัชนีหุ้นไทย', 'บริษัทเทคโนโลยี'], answer: 1 },
+        ],
+    },
+    {
+        id: 'etf-and-funds',
+        title: 'ETF และกองทุนรวมคืออะไร?',
+        titleEn: 'ETFs & Mutual Funds',
+        description: 'รู้จัก ETF กองทุนรวม ต่างกันยังไง? เหมาะกับใคร? และ ETF ยอดนิยมที่มือใหม่ควรรู้',
+        category: 'basics',
+        difficulty: 'beginner',
+        duration: 12,
+        icon: '🧩',
+        thumbnail: 'https://images.unsplash.com/photo-1553729459-afe8f2e2ba58?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'ETF คืออะไร?',
+                content: '**ETF (Exchange-Traded Fund)** คือกองทุนที่ซื้อขายในตลาดหุ้นได้เหมือนหุ้นทั่วไป\n\n**เปรียบเทียบง่ายๆ:**\n- ซื้อหุ้น AAPL = ซื้อแอปเปิ้ล **1 ลูก**\n- ซื้อ ETF อย่าง SPY = ซื้อ **ตะกร้าผลไม้** ที่มีแอปเปิ้ล 500 ลูก!\n\nเมื่อซื้อ ETF 1 หน่วย คุณจะได้ถือหุ้นหลายบริษัทพร้อมกัน โดยไม่ต้องซื้อทีละตัว\n\n**ข้อดี:**\n- ✅ กระจายความเสี่ยงอัตโนมัติ\n- ✅ ซื้อขายง่ายเหมือนหุ้น\n- ✅ ค่าธรรมเนียมต่ำมาก (0.03-0.20%/ปี)\n- ✅ เหมาะมือใหม่มากที่สุด',
+            },
+            {
+                heading: 'ETF ยอดนิยมที่มือใหม่ควรรู้',
+                content: '**📈 กองทุนดัชนี:**\n- **SPY / VOO** — S&P 500 (500 หุ้นใหญ่สุดในสหรัฐ)\n- **QQQ** — NASDAQ-100 (เน้นเทคโนโลยี)\n- **VTI** — ตลาดหุ้นสหรัฐทั้งหมด\n- **VXUS** — หุ้นนอกสหรัฐทั่วโลก\n\n**💰 กองทุนปันผล:**\n- **VYM** — หุ้นปันผลสูง\n- **SCHD** — หุ้นปันผลเติบโต\n\n**🏢 กองทุนเฉพาะกลุ่ม:**\n- **XLK** — เทคโนโลยี\n- **XLF** — การเงิน\n- **XLV** — สุขภาพ\n\n💡 เริ่มต้นด้วย **VOO + QQQ** ก็เพียงพอสำหรับมือใหม่',
+            },
+            {
+                heading: 'กองทุนรวม (Mutual Fund) คืออะไร?',
+                content: '**กองทุนรวม** คล้าย ETF แต่มีข้อแตกต่าง:\n\n| | ETF | กองทุนรวม |\n|---|-----|----------|\n| ซื้อขาย | ตลอดวัน เหมือนหุ้น | วันละ 1 ครั้ง (NAV สิ้นวัน) |\n| ราคาขั้นต่ำ | ราคา 1 หน่วย ($100-500) | อาจกำหนดขั้นต่ำ $1,000+ |\n| ค่าธรรมเนียม | ต่ำมาก (0.03-0.20%) | สูงกว่า (0.50-1.50%) |\n| ภาษี | ประหยัดกว่า | อาจเสียภาษีมากกว่า |\n| ความยืดหยุ่น | สูง | น้อยกว่า |\n\n**กองทุนรวมในไทย:**\n- KFLTFDIV, SCBSET, BBLAM, K-USA — กองทุนหุ้นยอดนิยมในไทย\n- ลงทุนได้ผ่านแอปธนาคาร',
+            },
+            {
+                heading: 'ETF vs หุ้นรายตัว — เลือกอะไรดี?',
+                content: '**เลือก ETF ถ้า:**\n- 🟢 เพิ่งเริ่มต้น ยังไม่รู้จะเลือกหุ้นตัวไหน\n- 🟢 ไม่มีเวลาวิเคราะห์หุ้นรายตัว\n- 🟢 ต้องการกระจายความเสี่ยง\n- 🟢 ลงทุนแบบ DCA ระยะยาว\n\n**เลือกหุ้นรายตัว ถ้า:**\n- 🟡 พร้อมทำการบ้าน วิเคราะห์งบการเงิน\n- 🟡 มั่นใจในบริษัทที่เลือก\n- 🟡 ต้องการผลตอบแทนสูงกว่าตลาด\n\n**คำแนะนำ:**\n- เริ่มต้น 70% ETF + 30% หุ้นรายตัวที่เข้าใจ\n- ค่อยๆ เพิ่มสัดส่วนหุ้นรายตัวเมื่อมีความมั่นใจมากขึ้น',
+            },
+        ],
+        keyTakeaways: [
+            'ETF = กองทุนที่ซื้อขายได้เหมือนหุ้น กระจายความเสี่ยงอัตโนมัติ',
+            'VOO / SPY = ลงทุนใน S&P 500 ทั้ง 500 หุ้น',
+            'ETF ค่าธรรมเนียมต่ำกว่ากองทุนรวม',
+            'มือใหม่เริ่มด้วย ETF + หุ้นรายตัวเล็กน้อย',
+        ],
+        quiz: [
+            { question: 'ETF ย่อมาจากอะไร?', options: ['Electronic Transfer Fund', 'Exchange-Traded Fund', 'Equity Trading Fee', 'External Tax Form'], answer: 1 },
+            { question: 'VOO คืออะไร?', options: ['หุ้นบริษัท Voo', 'กองทุนดัชนี S&P 500', 'แอปซื้อขายหุ้น', 'สกุลเงินดิจิทัล'], answer: 1 },
+        ],
+    },
+    {
+        id: 'reading-stock-charts',
+        title: 'อ่านกราฟหุ้นเบื้องต้น',
+        titleEn: 'Reading Stock Charts for Beginners',
+        description: 'เข้าใจกราฟแท่งเทียน กราฟเส้น Volume bars และ Timeframe สำหรับมือใหม่',
+        category: 'basics',
+        difficulty: 'beginner',
+        duration: 10,
+        icon: '📉',
+        thumbnail: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'กราฟเส้น (Line Chart)',
+                content: '**กราฟเส้น** เป็นกราฟแบบง่ายที่สุด แสดงราคาปิดของหุ้นเชื่อมต่อกันเป็นเส้น\n\n**อ่านยังไง:**\n- แกน X (แนวนอน) = วันที่/เวลา\n- แกน Y (แนวตั้ง) = ราคาหุ้น\n- เส้นขึ้น 📈 = ราคาเพิ่มขึ้น\n- เส้นลง 📉 = ราคาลดลง\n\n**ข้อดี:** ดูง่าย เห็นแนวโน้มชัดเจน\n**ข้อเสีย:** ไม่เห็นรายละเอียด (ราคาเปิด, สูงสุด, ต่ำสุด)\n\n💡 กราฟเส้นเหมาะสำหรับดูภาพรวมแนวโน้มระยะยาว',
+            },
+            {
+                heading: 'กราฟแท่งเทียน (Candlestick Chart)',
+                content: '**กราฟแท่งเทียน** แสดงข้อมูลมากกว่ากราฟเส้น:\n\nแต่ละแท่งบอก 4 อย่าง:\n- **Open** — ราคาเปิด (จุดเริ่มต้นของแท่ง)\n- **Close** — ราคาปิด (จุดสิ้นสุดของแท่ง)\n- **High** — ราคาสูงสุด (ปลายไส้เทียนด้านบน)\n- **Low** — ราคาต่ำสุด (ปลายไส้เทียนด้านล่าง)\n\n**สี:**\n- 🟢 **แท่งเขียว/กลวง** = Close > Open (ราคาขึ้น)\n- 🔴 **แท่งแดง/ทึบ** = Close < Open (ราคาลง)\n\n**ตัวแท่ง (Body)** = ช่วงราคา Open ถึง Close\n**ไส้เทียน (Wick/Shadow)** = ช่วง High และ Low',
+            },
+            {
+                heading: 'Volume คืออะไร?',
+                content: '**Volume** = จำนวนหุ้นที่ถูกซื้อขายในช่วงเวลานั้น\n\n**แสดงเป็นแท่ง** อยู่ด้านล่างกราฟราคา:\n- แท่ง Volume สูง = มีคนซื้อขายเยอะ\n- แท่ง Volume ต่ำ = มีคนซื้อขายน้อย\n\n**ทำไม Volume สำคัญ?**\n\n1. **ยืนยันแนวโน้ม:**\n   - ราคาขึ้น + Volume สูง = ขาขึ้นแข็งแกร่ง ✅\n   - ราคาขึ้น + Volume ต่ำ = ขาขึ้นอ่อนแอ ⚠️\n\n2. **บ่งบอกจุดกลับตัว:**\n   - Volume พุ่งสูงผิดปกติ = อาจมีเหตุการณ์สำคัญ\n\n3. **วัดสภาพคล่อง:**\n   - Volume สูง = ซื้อขายง่าย Spread แคบ',
+            },
+            {
+                heading: 'Timeframe (กรอบเวลา)',
+                content: '**Timeframe** คือระยะเวลาที่แต่ละแท่งเทียนแทน:\n\n| Timeframe | แต่ละแท่ง = | เหมาะกับ |\n|-----------|------------|----------|\n| 1 นาที | 1 นาที | Day Trader |\n| 5 นาที | 5 นาที | Day Trader |\n| 1 ชั่วโมง | 1 ชั่วโมง | Swing Trader |\n| 1 วัน (Daily) | 1 วัน | นักลงทุนทั่วไป |\n| 1 สัปดาห์ (Weekly) | 1 สัปดาห์ | นักลงทุนระยะยาว |\n| 1 เดือน (Monthly) | 1 เดือน | ดูภาพรวมใหญ่ |\n\n**แนะนำสำหรับมือใหม่:**\n- ใช้ **Daily** สำหรับดูรายละเอียด\n- ใช้ **Weekly/Monthly** สำหรับดูแนวโน้มใหญ่\n- ❌ อย่าไปดูกราฟ 1 นาที จะเครียดและตัดสินใจผิด!',
+            },
+        ],
+        keyTakeaways: [
+            'กราฟเส้น = ดูง่าย เห็นแนวโน้มชัด',
+            'แท่งเทียน = เขียว (ขึ้น), แดง (ลง), แสดง Open/Close/High/Low',
+            'Volume สูง + ราคาขึ้น = สัญญาณที่ดี',
+            'มือใหม่ใช้ Daily/Weekly chart อย่าดูกราฟสั้นเกินไป',
+        ],
+        quiz: [
+            { question: 'แท่งเทียนสีเขียวหมายถึง?', options: ['ราคาลง', 'ราคาปิดสูงกว่าราคาเปิด', 'Volume สูง', 'หุ้นน่าซื้อ'], answer: 1 },
+            { question: 'Volume สูง + ราคาขึ้น หมายถึง?', options: ['ขาขึ้นอ่อนแอ', 'ขาขึ้นแข็งแกร่ง', 'ตลาดจะลง', 'ควรขายทันที'], answer: 1 },
+        ],
+    },
+    {
+        id: 'investment-terms',
+        title: 'คำศัพท์การลงทุนที่ต้องรู้',
+        titleEn: 'Must-Know Investment Terms',
+        description: 'รวมคำศัพท์สำคัญที่มือใหม่ต้องเข้าใจ: Bull/Bear, Long/Short, Margin, Earnings และอื่นๆ',
+        category: 'basics',
+        difficulty: 'beginner',
+        duration: 15,
+        icon: '📖',
+        thumbnail: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'Bull Market / Bear Market',
+                content: '**🐂 Bull Market (ตลาดกระทิง):**\n- ตลาดขาขึ้น ราคาหุ้นเพิ่มขึ้นต่อเนื่อง (20%+)\n- นักลงทุนมีความมั่นใจ อยากซื้อ\n- เศรษฐกิจมักจะดี\n\n**🐻 Bear Market (ตลาดหมี):**\n- ตลาดขาลง ราคาหุ้นลดลงต่อเนื่อง (20%+)\n- นักลงทุนกลัว อยากขาย\n- เศรษฐกิจมักจะชะลอตัว\n\n**คำที่เกี่ยวข้อง:**\n- **Bullish** = มองว่าราคาจะขึ้น (เป็นบวก)\n- **Bearish** = มองว่าราคาจะลง (เป็นลบ)\n- **Correction** = ตลาดลง 10-20% (ปรับฐาน)\n- **Crash** = ตลาดลงเร็วและแรงมาก (>20% ในเวลาสั้น)',
+            },
+            {
+                heading: 'Long / Short',
+                content: '**📈 Long (ซื้อก่อน):**\n- ซื้อหุ้นเพราะคิดว่าราคาจะ **ขึ้น**\n- "ซื้อถูก ขายแพง"\n- ตัวอย่าง: ซื้อ AAPL $200 → ขาย $250 → กำไร $50\n- นี่คือวิธีที่คนส่วนใหญ่ลงทุน\n\n**📉 Short Selling (ขายก่อน):**\n- ยืมหุ้นมาขายก่อน เพราะคิดว่าราคาจะ **ลง**\n- "ขายแพง ซื้อคืนถูก"\n- ตัวอย่าง: Short TSLA $300 → ซื้อคืน $200 → กำไร $100\n\n**⚠️ Short Selling เสี่ยงมาก:**\n- ขาดทุนได้ไม่จำกัด (ราคาขึ้นได้ไม่มีเพดาน)\n- ❌ **ไม่แนะนำสำหรับมือใหม่เด็ดขาด**\n- ต้องมี Margin Account',
+            },
+            {
+                heading: 'Margin / Leverage',
+                content: '**Margin** = การกู้เงินจากโบรกเกอร์เพื่อซื้อหุ้น\n\nตัวอย่าง: มีเงิน $10,000 ใช้ Margin 2x\n→ ซื้อหุ้นได้ $20,000\n→ ถ้าหุ้นขึ้น 10% = กำไร $2,000 (20% ของเงินต้น) 🎉\n→ ถ้าหุ้นลง 10% = ขาดทุน $2,000 (20% ของเงินต้น) 😱\n\n**Leverage** = ตัวคูณ (2x, 3x, 5x...)\n- ยิ่ง Leverage สูง ยิ่งเสี่ยง\n\n**Margin Call:**\n- เมื่อหุ้นลงมาก โบรกเกอร์จะ "เรียก Margin" บังคับให้เติมเงินหรือขายหุ้น\n\n🚫 **กฎเหล็ก:** มือใหม่ห้ามใช้ Margin เด็ดขาด! ลงทุนด้วยเงินที่มีเท่านั้น',
+            },
+            {
+                heading: 'คำศัพท์สำคัญอื่นๆ',
+                content: '**เกี่ยวกับผลประกอบการ:**\n- **Earnings** = รายงานผลกำไร/ขาดทุนของบริษัท (ออกทุกไตรมาส)\n- **EPS** = กำไรต่อหุ้น (Earnings Per Share)\n- **Revenue** = รายได้ทั้งหมดของบริษัท\n- **Profit Margin** = อัตรากำไรสุทธิ\n\n**เกี่ยวกับเงินปันผล:**\n- **Dividend** = เงินที่บริษัทจ่ายให้ผู้ถือหุ้น\n- **Dividend Yield** = เงินปันผลต่อปี ÷ ราคาหุ้น\n- **Ex-Dividend Date** = วันที่ต้องถือหุ้นก่อนวันนี้ถึงจะได้ปันผล\n\n**เกี่ยวกับตลาด:**\n- **Volatility** = ความผันผวนของราคา\n- **Liquidity** = สภาพคล่อง (ซื้อขายง่ายแค่ไหน)\n- **Portfolio** = พอร์ตการลงทุน (หุ้นทั้งหมดที่ถือ)\n- **Benchmark** = มาตรฐานเปรียบเทียบ (เช่น S&P 500)',
+            },
+        ],
+        keyTakeaways: [
+            'Bull = ขาขึ้น, Bear = ขาลง',
+            'Long = ซื้อก่อน (ราคาขึ้นกำไร), Short = ขายก่อน (ราคาลงกำไร)',
+            'Margin = กู้เงินซื้อหุ้น — มือใหม่ห้ามใช้!',
+            'EPS, Dividend Yield, Volatility เป็นคำที่ต้องเข้าใจ',
+        ],
+        quiz: [
+            { question: 'Bear Market คืออะไร?', options: ['ตลาดขึ้นมากกว่า 20%', 'ตลาดลงมากกว่า 20%', 'ตลาดปิดทำการ', 'ตลาดเปิดใหม่'], answer: 1 },
+            { question: 'Margin Call คืออะไร?', options: ['โทรศัพท์จากโบรกเกอร์เชิญลงทุน', 'บังคับเติมเงินหรือขายหุ้นเมื่อขาดทุนมาก', 'คำสั่งซื้อหุ้นพิเศษ', 'ค่าธรรมเนียมรายเดือน'], answer: 1 },
+            { question: 'Ex-Dividend Date สำคัญอย่างไร?', options: ['วันที่หุ้นเริ่มซื้อขาย', 'ต้องถือหุ้นก่อนวันนี้ถึงจะได้ปันผล', 'วันที่บริษัทประกาศงบ', 'วันที่ตลาดปิด'], answer: 1 },
+        ],
+    },
+
     // ═══════════════════════════════════
     // Category: analysis
     // ═══════════════════════════════════
@@ -196,6 +441,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 10,
         icon: '🔢',
+        thumbnail: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'PE Ratio คืออะไร?',
@@ -230,6 +476,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'intermediate',
         duration: 15,
         icon: '📋',
+        thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'งบกำไรขาดทุน (Income Statement)',
@@ -260,6 +507,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'intermediate',
         duration: 12,
         icon: '📉',
+        thumbnail: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'เทคนิคอลคืออะไร?',
@@ -294,6 +542,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'intermediate',
         duration: 8,
         icon: '⚖️',
+        thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'ปัจจัยพื้นฐาน (Fundamental Analysis)',
@@ -314,6 +563,86 @@ export const LESSONS: Lesson[] = [
             'ใช้ทั้งสองร่วมกันให้ผลลัพธ์ดีที่สุด',
         ],
     },
+    {
+        id: 'valuation-models',
+        title: 'การประเมินมูลค่าหุ้นขั้นสูง',
+        titleEn: 'Advanced Stock Valuation',
+        description: 'เรียนรู้โมเดล DCF, Comparable Analysis และ Sum-of-the-Parts สำหรับประเมินมูลค่าที่แท้จริงของหุ้น',
+        category: 'analysis',
+        difficulty: 'advanced',
+        duration: 20,
+        icon: '🧮',
+        thumbnail: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'Intrinsic Value คืออะไร?',
+                content: '**Intrinsic Value (มูลค่าที่แท้จริง)** คือราคาที่หุ้นควรจะเป็น ตามพื้นฐานของบริษัท\n\n**หลักการ:**\n- ถ้า Intrinsic Value > ราคาตลาด → หุ้น **Undervalued** (น่าซื้อ)\n- ถ้า Intrinsic Value < ราคาตลาด → หุ้น **Overvalued** (แพงไป)\n\n**Margin of Safety:**\n- Benjamin Graham (อาจารย์ของ Warren Buffett) แนะนำ: ซื้อเมื่อราคาต่ำกว่า Intrinsic Value อย่างน้อย **20-30%**\n- เป็น "เบาะนิรภัย" ป้องกันกรณีวิเคราะห์ผิด\n\n**3 โมเดลหลักในการหา Intrinsic Value:**\n1. DCF (Discounted Cash Flow)\n2. Comparable Analysis\n3. Sum-of-the-Parts',
+            },
+            {
+                heading: 'DCF (Discounted Cash Flow)',
+                content: '**DCF** คือการคำนวณมูลค่าปัจจุบันของ **กระแสเงินสดที่บริษัทจะสร้างในอนาคต**\n\n**แนวคิด:** เงิน $100 ในอีก 5 ปี มีค่าน้อยกว่า $100 วันนี้\n\n**สูตรหลัก:**\nIntrinsic Value = Σ (FCFₜ / (1+r)ᵗ) + Terminal Value / (1+r)ⁿ\n\n**ขั้นตอน:**\n1. **ประมาณ Free Cash Flow (FCF)** ในอีก 5-10 ปีข้างหน้า\n2. **เลือก Discount Rate (r)** — ส่วนใหญ่ใช้ WACC (8-12%)\n3. **คำนวณ Terminal Value** — มูลค่าหลังจากปีที่ 10 เป็นต้นไป\n4. **หารทั้งหมดด้วย จำนวนหุ้น** = Intrinsic Value ต่อหุ้น\n\n**ตัวอย่าง Apple:**\n- FCF ปีนี้: $100B, เติบโต 5%/ปี\n- Discount Rate: 10%\n- Terminal Growth: 3%\n- จำนวนหุ้น: 15B\n→ Intrinsic Value ≈ $180-200/หุ้น\n\n**ข้อจำกัด:**\n- ขึ้นอยู่กับสมมติฐาน (เปลี่ยน 1% ผลต่างมาก)\n- ไม่เหมาะกับบริษัทที่ยังไม่ทำกำไร (Startup)',
+            },
+            {
+                heading: 'Comparable Analysis (เปรียบเทียบ)',
+                content: '**Comparable Analysis** คือการเปรียบเทียบ **อัตราส่วนทางการเงิน** ของบริษัทกับคู่แข่งในอุตสาหกรรมเดียวกัน\n\n**อัตราส่วนที่ใช้บ่อย:**\n\n| อัตราส่วน | สูตร | ใช้กับ |\n|-----------|------|--------|\n| **P/E** | ราคา ÷ EPS | ทั่วไป |\n| **EV/EBITDA** | Enterprise Value ÷ EBITDA | เปรียบเทียบข้ามโครงสร้างทุน |\n| **P/S** | ราคา ÷ Revenue per Share | บริษัทขาดทุน |\n| **P/B** | ราคา ÷ Book Value | ธนาคาร, อสังหาริมทรัพย์ |\n| **PEG** | P/E ÷ Growth Rate | พิจารณาการเติบโต |\n\n**วิธีทำ:**\n1. หา **Peer Group** — บริษัทคู่แข่งขนาดใกล้เคียง (เช่น AAPL vs MSFT vs GOOGL)\n2. คำนวณ **ค่าเฉลี่ย** ของอัตราส่วน\n3. ถ้าหุ้นเป้าหมายมี P/E **ต่ำกว่า** ค่าเฉลี่ย → อาจเป็น Value\n\n**ข้อดี:** ง่ายกว่า DCF, ใช้ข้อมูลจริง\n**ข้อเสีย:** ทุกบริษัทในกลุ่มอาจ Overvalued พร้อมกัน',
+            },
+            {
+                heading: 'Enterprise Value (EV) และ WACC',
+                content: '**Enterprise Value (EV):**\n\nEV = Market Cap + หนี้สิน − เงินสด\n\n**ทำไมใช้ EV?**\n- Market Cap บอกแค่มูลค่าส่วนของผู้ถือหุ้น\n- EV บอก **มูลค่าทั้งหมด** ของธุรกิจ (รวมหนี้)\n- ทำให้เปรียบเทียบบริษัทที่มีหนี้ต่างกันได้\n\n**WACC (Weighted Average Cost of Capital):**\n\nWACC = (E/V × Re) + (D/V × Rd × (1−Tax))\n\n- **Re** = Cost of Equity (ผลตอบแทนที่ผู้ถือหุ้นคาดหวัง)\n- **Rd** = Cost of Debt (ดอกเบี้ยเงินกู้)\n- **E/V** = สัดส่วนทุน, **D/V** = สัดส่วนหนี้\n\n**WACC ยิ่งต่ำ → Intrinsic Value ยิ่งสูง**\n\n💡 ส่วนใหญ่ WACC อยู่ที่ 8-12% สำหรับบริษัทขนาดใหญ่\n⚠️ บริษัทที่มีหนี้มากจะมี WACC สูงกว่า → มูลค่าต่ำกว่า',
+            },
+        ],
+        keyTakeaways: [
+            'Intrinsic Value = มูลค่าที่แท้จริงของหุ้น ตามพื้นฐาน',
+            'DCF ประเมินจากกระแสเงินสดในอนาคต — ขึ้นอยู่กับสมมติฐาน',
+            'Comparable Analysis เปรียบเทียบ P/E, EV/EBITDA กับคู่แข่ง',
+            'ซื้อเมื่อราคาต่ำกว่า Intrinsic Value 20-30% (Margin of Safety)',
+        ],
+        quiz: [
+            { question: 'DCF ย่อมาจากอะไร?', options: ['Direct Cash Fund', 'Discounted Cash Flow', 'Dividend Capital Formula', 'Debt Coverage Factor'], answer: 1 },
+            { question: 'Enterprise Value คำนวณอย่างไร?', options: ['Market Cap + เงินสด', 'Market Cap + หนี้ − เงินสด', 'Revenue × PE', 'กำไร × จำนวนหุ้น'], answer: 1 },
+            { question: 'Margin of Safety คืออะไร?', options: ['กำไรขั้นต่ำที่ยอมรับได้', 'ส่วนต่างระหว่าง Intrinsic Value กับราคาที่ซื้อ', 'จุด Stop Loss', 'เงินสำรองฉุกเฉิน'], answer: 1 },
+        ],
+    },
+    {
+        id: 'macro-economics',
+        title: 'เศรษฐกิจมหภาคกับตลาดหุ้น',
+        titleEn: 'Macroeconomics & the Stock Market',
+        description: 'เข้าใจว่าดอกเบี้ย เงินเฟ้อ GDP และนโยบาย Fed ส่งผลต่อราคาหุ้นอย่างไร',
+        category: 'analysis',
+        difficulty: 'advanced',
+        duration: 18,
+        icon: '🌐',
+        thumbnail: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'Fed และดอกเบี้ย',
+                content: '**Federal Reserve (Fed)** คือธนาคารกลางสหรัฐ ทำหน้าที่กำหนดนโยบายการเงิน\n\n**Federal Funds Rate (FFR):**\n- อัตราดอกเบี้ยที่ Fed กำหนด\n- มีผลต่อดอกเบี้ยทั้งระบบ (สินเชื่อบ้าน, รถยนต์, บัตรเครดิต)\n\n**ดอกเบี้ยกับหุ้น:**\n- 📉 **ดอกเบี้ยขึ้น → หุ้นมักลง**\n  - ต้นทุนกู้เงินของบริษัทเพิ่ม → กำไรลด\n  - พันธบัตรให้ผลตอบแทนสูงขึ้น → คนย้ายเงินจากหุ้นไปพันธบัตร\n  - Discount Rate สูงขึ้น → Intrinsic Value ของหุ้นลดลง\n\n- 📈 **ดอกเบี้ยลง → หุ้นมักขึ้น**\n  - ต้นทุนกู้เงินถูก → บริษัทขยายตัวง่าย\n  - พันธบัตรให้ผลตอบแทนน้อย → คนย้ายเงินมาหุ้น\n\n**FOMC Meeting:**\n- ประชุม 8 ครั้ง/ปี ตัดสินใจเรื่องดอกเบี้ย\n- วันประชุม FOMC ตลาดจะผันผวนมาก\n\n💡 ติดตาม **Fed Dot Plot** เพื่อดูแนวโน้มดอกเบี้ยในอนาคต',
+            },
+            {
+                heading: 'เงินเฟ้อ (Inflation)',
+                content: '**Inflation** = ราคาสินค้าและบริการเพิ่มขึ้นเมื่อเวลาผ่านไป\n\n**ตัวชี้วัดเงินเฟ้อ:**\n- **CPI (Consumer Price Index)** — วัดราคาสินค้าอุปโภคบริโภค\n- **PCE (Personal Consumption Expenditures)** — ตัวที่ Fed ใช้ดูมากที่สุด\n- **Core Inflation** — ไม่รวมอาหารและพลังงาน (ผันผวนน้อยกว่า)\n\n**เงินเฟ้อกับหุ้น:**\n- เงินเฟ้อ **ปานกลาง (2-3%)** → ดีสำหรับหุ้น ธุรกิจขึ้นราคาสินค้าได้\n- เงินเฟ้อ **สูง (>5%)** → แย่สำหรับหุ้น Fed จะขึ้นดอกเบี้ย\n- **Deflation** (เงินฝืด) → แย่มาก เศรษฐกิจชะงัก\n\n**หุ้นที่ทนเงินเฟ้อได้ดี:**\n- พลังงาน, สินค้าโภคภัณฑ์\n- อสังหาริมทรัพย์ (REITs)\n- บริษัทที่มี Pricing Power (เช่น Apple, Coca-Cola)\n\n**หุ้นที่เจ็บหนัก:**\n- หุ้น Growth (PE สูง) — Discount Rate สูงขึ้นกระทบมาก\n- หุ้นเทคโนโลยีที่ยังไม่ทำกำไร',
+            },
+            {
+                heading: 'GDP และ Recession',
+                content: '**GDP (Gross Domestic Product)** = มูลค่ารวมของสินค้าและบริการที่ประเทศผลิตได้\n\n**GDP กับตลาดหุ้น:**\n- GDP โต → เศรษฐกิจดี → บริษัทขายของได้ → หุ้นมักขึ้น\n- GDP หด → เศรษฐกิจแย่ → บริษัทขายของไม่ออก → หุ้นมักลง\n\n**Recession (ภาวะถดถอย):**\n- GDP หดตัว **2 ไตรมาสติดต่อกัน**\n- ตลาดหุ้นมักลง 20-40%\n- แต่ตลาดมักจะ **ลงก่อน** Recession 6-9 เดือน และ **ขึ้นก่อน** Recession จบ\n\n**Economic Cycle (วัฏจักรเศรษฐกิจ):**\n1. 📈 **Expansion** — เศรษฐกิจเติบโต หุ้นขึ้น\n2. 🏔️ **Peak** — จุดสูงสุด ทุกอย่างดูดี\n3. 📉 **Contraction** — เศรษฐกิจชะลอ หุ้นลง\n4. 🏜️ **Trough** — จุดต่ำสุด → โอกาสซื้อหุ้นราคาถูก\n\n💡 ตลาดหุ้นเป็น **Leading Indicator** — เคลื่อนไหวล่วงหน้าก่อนเศรษฐกิจจริง',
+            },
+            {
+                heading: 'ตัวเลขเศรษฐกิจที่ต้องติดตาม',
+                content: '**📊 ตัวเลขสำคัญสำหรับนักลงทุน:**\n\n| ตัวเลข | ออกเมื่อ | ผลต่อตลาด |\n|--------|---------|------------|\n| **Non-Farm Payrolls** | ศุกร์แรกของเดือน | การจ้างงานนอกภาคเกษตร |\n| **CPI** | กลางเดือน | เงินเฟ้อ |\n| **FOMC Statement** | 8 ครั้ง/ปี | นโยบายดอกเบี้ย |\n| **GDP** | รายไตรมาส | การเติบโตเศรษฐกิจ |\n| **PMI** | ต้นเดือน | สุขภาพภาคการผลิต |\n| **Consumer Confidence** | สิ้นเดือน | ความเชื่อมั่นผู้บริโภค |\n\n**Yield Curve:**\n- **Normal** (พันธบัตรยาวให้ดอกเบี้ยสูงกว่าสั้น) → เศรษฐกิจปกติ\n- **Inverted** (พันธบัตรสั้นให้ดอกเบี้ยสูงกว่ายาว) → สัญญาณ Recession!\n- Inverted Yield Curve ทำนาย Recession ได้แม่นมากในอดีต\n\n💡 ใช้ **Economic Calendar** เช่น investing.com ติดตามตัวเลขเหล่านี้',
+            },
+        ],
+        keyTakeaways: [
+            'ดอกเบี้ยขึ้น → หุ้นมักลง, ดอกเบี้ยลง → หุ้นมักขึ้น',
+            'เงินเฟ้อปานกลาง (2-3%) ดี แต่เงินเฟ้อสูงทำให้ Fed ขึ้นดอกเบี้ย',
+            'ตลาดหุ้นเป็น Leading Indicator เคลื่อนไหวล่วงหน้าก่อนเศรษฐกิจจริง',
+            'Inverted Yield Curve เป็นสัญญาณ Recession ที่แม่นยำ',
+        ],
+        quiz: [
+            { question: 'เมื่อ Fed ขึ้นดอกเบี้ย ตลาดหุ้นมักจะ?', options: ['ขึ้นเสมอ', 'ลง เพราะต้นทุนกู้เงินเพิ่ม', 'ไม่มีผล', 'ขึ้นเฉพาะหุ้นเทค'], answer: 1 },
+            { question: 'Recession คืออะไร?', options: ['ตลาดหุ้นลง 10%', 'GDP หดตัว 2 ไตรมาสติดต่อกัน', 'เงินเฟ้อสูงกว่า 5%', 'อัตราว่างงานสูงกว่า 10%'], answer: 1 },
+            { question: 'Inverted Yield Curve บ่งบอกอะไร?', options: ['เศรษฐกิจกำลังจะเฟื่องฟู', 'สัญญาณ Recession ข้างหน้า', 'ดอกเบี้ยจะลง', 'เงินเฟ้อจะหายไป'], answer: 1 },
+        ],
+    },
 
     // ═══════════════════════════════════
     // Category: strategy
@@ -327,6 +656,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 8,
         icon: '📅',
+        thumbnail: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'DCA คืออะไร?',
@@ -357,6 +687,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 10,
         icon: '🧺',
+        thumbnail: 'https://images.unsplash.com/photo-1553729459-afe8f2e2ba58?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'Diversification คืออะไร?',
@@ -387,6 +718,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 10,
         icon: '⏳',
+        thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'พลังของดอกเบี้ยทบต้น (Compound Interest)',
@@ -408,6 +740,46 @@ export const LESSONS: Lesson[] = [
             'อดทนและไม่ตกใจกับความผันผวนระยะสั้น',
         ],
     },
+    {
+        id: 'options-trading',
+        title: 'Options Trading เบื้องต้น',
+        titleEn: 'Introduction to Options Trading',
+        description: 'เข้าใจ Call/Put Options, Greeks, กลยุทธ์พื้นฐาน และความเสี่ยงของ Options สำหรับนักลงทุนที่มีประสบการณ์',
+        category: 'strategy',
+        difficulty: 'advanced',
+        duration: 20,
+        icon: '🎲',
+        thumbnail: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'Options คืออะไร?',
+                content: '**Options (ออปชั่น)** คือสัญญาที่ให้ **สิทธิ** (แต่ไม่ใช่ข้อผูกมัด) ในการซื้อหรือขายหุ้นในราคาที่กำหนด ภายในระยะเวลาที่กำหนด\n\n**องค์ประกอบของ Options:**\n- **Underlying** — หุ้นอ้างอิง (เช่น AAPL)\n- **Strike Price** — ราคาที่กำหนดในสัญญา\n- **Expiration Date** — วันหมดอายุของสัญญา\n- **Premium** — ราคาของ Options (ค่าสัญญา)\n- **Contract Size** — 1 สัญญา = 100 หุ้น\n\n**2 ประเภทหลัก:**\n- 📈 **Call Option** — สิทธิในการ **ซื้อ** หุ้น\n- 📉 **Put Option** — สิทธิในการ **ขาย** หุ้น\n\n⚠️ **Options มีความเสี่ยงสูงมาก** — เงินที่จ่ายค่า Premium อาจหายไปทั้งหมดเมื่อ Options หมดอายุ',
+            },
+            {
+                heading: 'Call Option และ Put Option',
+                content: '**📈 Call Option (สิทธิซื้อ):**\n\nซื้อ Call เมื่อคิดว่าราคาหุ้นจะ **ขึ้น**\n\nตัวอย่าง: AAPL ราคา $200\n- ซื้อ Call Strike $210, หมดอายุ 30 วัน, Premium $5\n- ค่าใช้จ่าย: $5 × 100 หุ้น = **$500**\n- ถ้า AAPL ขึ้นเป็น $230 → กำไร = ($230-$210-$5) × 100 = **$1,500**\n- ถ้า AAPL ยังอยู่ที่ $200 → ขาดทุน **$500** (ทั้งหมดที่จ่าย)\n\n**📉 Put Option (สิทธิขาย):**\n\nซื้อ Put เมื่อคิดว่าราคาหุ้นจะ **ลง** (หรือใช้ป้องกันพอร์ต)\n\nตัวอย่าง: ถือ AAPL ราคา $200\n- ซื้อ Put Strike $190, Premium $4\n- ค่าใช้จ่าย: $4 × 100 = **$400**\n- ถ้า AAPL ลงเป็น $160 → Put ป้องกันคุณจากขาดทุนที่ต่ำกว่า $190\n- เหมือน **ประกันภัย** สำหรับพอร์ตของคุณ\n\n💡 **Protective Put** = ซื้อ Put เพื่อป้องกันหุ้นที่ถืออยู่ — เหมือนซื้อประกัน',
+            },
+            {
+                heading: 'Options Greeks',
+                content: '**Greeks** คือตัวเลขที่บอกว่า ราคา Options จะเปลี่ยนแปลงอย่างไร:\n\n**🔺 Delta (Δ):**\n- ราคา Options เปลี่ยนเท่าไหร่ เมื่อราคาหุ้นเปลี่ยน $1\n- Call: Delta 0 ถึง 1 (เช่น 0.5 = หุ้นขึ้น $1, Options ขึ้น $0.50)\n- Put: Delta 0 ถึง -1\n\n**⏰ Theta (Θ):**\n- การสูญเสียมูลค่าตามเวลา (Time Decay)\n- Options **เสียมูลค่าทุกวัน** ที่ใกล้หมดอายุ\n- ⚠️ ศัตรูหมายเลข 1 ของคนซื้อ Options\n\n**📊 Gamma (Γ):**\n- อัตราการเปลี่ยนแปลงของ Delta\n- Gamma สูง = Delta เปลี่ยนเร็ว (ใกล้หมดอายุ)\n\n**📈 Vega (V):**\n- ผลของ Volatility ต่อราคา Options\n- Volatility สูง → Options แพงขึ้น\n- Volatility ต่ำ → Options ถูกลง\n\n**Implied Volatility (IV):**\n- ความผันผวนที่ตลาดคาดการณ์\n- IV สูง = Options แพง (เช่น ก่อนประกาศงบ)\n- IV ต่ำ = Options ถูก',
+            },
+            {
+                heading: 'กลยุทธ์ Options พื้นฐาน',
+                content: '**1. Covered Call (ขาย Call ทับหุ้นที่ถือ):**\n- ถือ 100 หุ้น AAPL + ขาย 1 Call\n- ได้ Premium เป็นรายได้เสริม\n- เสี่ยง: ถ้าหุ้นขึ้นเกิน Strike ต้องขายหุ้นไป\n- **เหมาะกับ:** สร้างรายได้จากหุ้นที่ถืออยู่\n\n**2. Protective Put (ซื้อ Put ป้องกัน):**\n- ถือหุ้น + ซื้อ Put\n- จำกัดขาดทุน ไม่ว่าหุ้นลงเท่าไหร่\n- เสียค่า Premium เป็นค่าประกัน\n- **เหมาะกับ:** ป้องกันพอร์ตช่วงไม่แน่นอน\n\n**3. Long Straddle (ซื้อทั้ง Call และ Put):**\n- ซื้อ Call + Put Strike เดียวกัน\n- กำไรเมื่อราคาเคลื่อนที่มาก ไม่ว่าขึ้นหรือลง\n- ขาดทุนเมื่อราคาไม่ค่อยเปลี่ยน\n- **เหมาะกับ:** ก่อนเหตุการณ์สำคัญ (Earnings, FOMC)\n\n🚫 **สิ่งที่มือใหม่ไม่ควรทำ:**\n- ❌ ขาย Naked Options (เสี่ยงไม่จำกัด)\n- ❌ ซื้อ Options ใกล้หมดอายุ (Time Decay สูงมาก)\n- ❌ ใช้เงินมากกว่า 5% ของพอร์ตกับ Options',
+            },
+        ],
+        keyTakeaways: [
+            'Call = สิทธิซื้อ (หวังราคาขึ้น), Put = สิทธิขาย (หวังราคาลง)',
+            'Options หมดอายุเป็น 0 ได้ — เสี่ยงเสียเงินทั้งหมดที่จ่าย',
+            'Theta กินมูลค่า Options ทุกวัน — เวลาเป็นศัตรู',
+            'เริ่มด้วย Covered Call หรือ Protective Put ก่อนกลยุทธ์ซับซ้อน',
+        ],
+        quiz: [
+            { question: 'Call Option ให้สิทธิอะไร?', options: ['สิทธิในการขายหุ้น', 'สิทธิในการซื้อหุ้นในราคาที่กำหนด', 'สิทธิในการรับเงินปันผล', 'สิทธิในการยืมหุ้น'], answer: 1 },
+            { question: 'Theta หมายถึงอะไร?', options: ['การเปลี่ยนแปลงราคาตามหุ้น', 'การสูญเสียมูลค่าตามเวลา', 'ผลของ Volatility', 'อัตราการเปลี่ยน Delta'], answer: 1 },
+            { question: 'Covered Call คืออะไร?', options: ['ซื้อ Call โดยไม่ถือหุ้น', 'ขาย Call ทับหุ้นที่ถืออยู่เพื่อรับ Premium', 'ซื้อ Call + Put พร้อมกัน', 'ขาย Put เพื่อซื้อหุ้นราคาถูก'], answer: 1 },
+        ],
+    },
 
     // ═══════════════════════════════════
     // Category: risk
@@ -421,6 +793,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 10,
         icon: '⚠️',
+        thumbnail: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'ความเสี่ยง ≠ อันตราย',
@@ -451,6 +824,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'intermediate',
         duration: 8,
         icon: '🛑',
+        thumbnail: 'https://images.unsplash.com/photo-1535320903710-d946a44a5642?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'Stop Loss คืออะไร?',
@@ -477,6 +851,7 @@ export const LESSONS: Lesson[] = [
         difficulty: 'beginner',
         duration: 10,
         icon: '🚫',
+        thumbnail: 'https://images.unsplash.com/photo-1450101499163-c8848e968838?w=800&h=500&fit=crop',
         sections: [
             {
                 heading: 'ข้อผิดพลาด #1: ลงทุนตามกระแส (FOMO)',
@@ -500,6 +875,86 @@ export const LESSONS: Lesson[] = [
             'กระจายพอร์ต อย่าใส่ไข่ในตะกร้าใบเดียว',
             'อย่าขายตอนตกใจ ตลาดลงเป็นเรื่องปกติ',
             'ตั้ง Stop Loss ทุกครั้ง ตัดขาดทุน ปล่อยกำไรวิ่ง',
+        ],
+    },
+    {
+        id: 'investment-psychology',
+        title: 'จิตวิทยาการลงทุน',
+        titleEn: 'Investment Psychology',
+        description: 'เข้าใจอคติทางจิตวิทยาที่ทำให้นักลงทุนตัดสินใจผิดพลาด และวิธีควบคุมอารมณ์ในการลงทุน',
+        category: 'risk',
+        difficulty: 'beginner',
+        duration: 12,
+        icon: '🧠',
+        thumbnail: 'https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'FOMO — กลัวตกรถ',
+                content: '**FOMO (Fear of Missing Out)** = กลัวพลาดโอกาส\n\nอาการ:\n- เห็นหุ้นขึ้น 50% ใน 1 สัปดาห์ → อยากซื้อตาม\n- เห็นคนอื่นรวยจากหุ้น Meme → กลัวตกรถ\n- ซื้อโดยไม่ได้วิเคราะห์ เพราะ "ทุกคนซื้อกัน"\n\n**ตัวอย่างจริง:**\n- GameStop (GME) ปี 2021 ขึ้นจาก $20 → $480 → ลงกลับมา $40\n- คนที่ซื้อตอนจุดสูงสุดเพราะ FOMO ขาดทุนกว่า 90%\n\n**วิธีแก้:**\n- ถามตัวเอง: "ถ้าไม่มีใครพูดถึง ฉันจะซื้อไหม?"\n- มีแผนการลงทุนล่วงหน้า อย่าตัดสินใจเพราะอารมณ์\n- จำไว้: หุ้นที่ขึ้นเร็วมักลงเร็วเท่ากัน',
+            },
+            {
+                heading: 'FUD — กลัวจนเกินไป',
+                content: '**FUD (Fear, Uncertainty, Doubt)** = ความกลัว ความไม่แน่ใจ ความสงสัย\n\nอาการ:\n- ข่าวร้าย 1 ชิ้น → ขายทุกอย่าง\n- อ่านความเห็นในโซเชียล → กลัวจนไม่กล้าลงทุน\n- "ตลาดจะ Crash!" → ถอนเงินออกทั้งหมด\n\n**ความจริง:**\n- ตลาดหุ้นสหรัฐ **ขึ้นมาตลอด** ในระยะยาว (50+ ปี)\n- ทุกครั้งที่มี Crash ตลาดฟื้นตัวกลับมาเสมอ\n- ข่าว "ตลาดจะพัง" มีทุกปี แต่ S&P 500 ยังให้ผลตอบแทนเฉลี่ย ~10%/ปี\n\n**วิธีแก้:**\n- แยกข้อเท็จจริงออกจากความคิดเห็น\n- ดูข้อมูลระยะยาว ไม่ใช่ข่าวรายวัน\n- มีเงินสำรองฉุกเฉิน จะกลัวน้อยลง',
+            },
+            {
+                heading: 'อคติที่พบบ่อยในนักลงทุน',
+                content: '**1. Confirmation Bias (อคติยืนยัน):**\n- มองหาแต่ข้อมูลที่สนับสนุนสิ่งที่เชื่อ\n- ตัวอย่าง: ซื้อ TSLA แล้วอ่านแต่ข่าวดีของ Tesla ไม่สนข่าวร้าย\n- วิธีแก้: หาข้อมูลฝั่งตรงข้ามเสมอ ก่อนตัดสินใจ\n\n**2. Loss Aversion (กลัวขาดทุน):**\n- ความเจ็บปวดจากการขาดทุน $100 > ความสุขจากกำไร $100\n- ทำให้ถือหุ้นขาดทุนนานเกิน หวังว่าจะกลับมา\n- วิธีแก้: ตั้ง Stop Loss ล่วงหน้า ยอมตัดขาดทุน\n\n**3. Anchoring (ยึดติดราคา):**\n- "เคยราคา $200 ตอนนี้ $100 ถูกมาก!"\n- แต่จริงๆ หุ้นอาจลงเพราะพื้นฐานเปลี่ยน\n- วิธีแก้: ดูปัจจัยพื้นฐาน ไม่ใช่ราคาในอดีต\n\n**4. Recency Bias (อคติเหตุการณ์ล่าสุด):**\n- ตลาดขึ้นต่อเนื่อง → คิดว่าจะขึ้นตลอดไป\n- ตลาดลง 1 สัปดาห์ → คิดว่าจะลงไปเรื่อยๆ\n- วิธีแก้: ดูข้อมูลย้อนหลังหลายปี ไม่ใช่แค่สัปดาห์ล่าสุด',
+            },
+            {
+                heading: 'วิธีควบคุมอารมณ์ในการลงทุน',
+                content: '**📋 1. มีแผนเป็นลายลักษณ์อักษร:**\n- เขียนว่า: ซื้อหุ้นอะไร ทำไม ราคาเท่าไหร่ จะขายเมื่อไหร่\n- เมื่อมีแผน จะไม่ตัดสินใจจากอารมณ์\n\n**📅 2. ลงทุนแบบ DCA:**\n- ลงทุนทุกเดือน จำนวนเท่ากัน ไม่สนราคา\n- ลดอารมณ์ตื่นเต้น/ตกใจ ออกไป\n\n**🚫 3. อย่าดูพอร์ตบ่อยเกินไป:**\n- ดูทุกวัน = เครียดง่าย ตัดสินใจผิด\n- ดูสัปดาห์ละครั้งหรือเดือนละครั้งก็พอ\n\n**📰 4. จำกัดการอ่านข่าว:**\n- ข่าวหุ้นออกแบบมาให้ตื่นเต้น/ตกใจ\n- อ่านแค่งบไตรมาส + ข่าวสำคัญ\n\n**🧘 5. จำกฎ 24 ชั่วโมง:**\n- ก่อนซื้อ/ขายหุ้น รอ 24 ชั่วโมง\n- ถ้ายังคิดเหมือนเดิม ค่อยทำ',
+            },
+        ],
+        keyTakeaways: [
+            'FOMO ทำให้ซื้อแพง — อย่าซื้อเพราะทุกคนซื้อ',
+            'FUD ทำให้ขายตอนถูก — ตลาดลงเป็นเรื่องปกติ',
+            'รู้จักอคติของตัวเอง: Confirmation, Loss Aversion, Anchoring',
+            'มีแผน + DCA + อย่าดูพอร์ตบ่อย = ควบคุมอารมณ์ได้',
+        ],
+        quiz: [
+            { question: 'FOMO คืออะไร?', options: ['กลัวตลาดจะพัง', 'กลัวพลาดโอกาส อยากซื้อตามกระแส', 'กลยุทธ์การลงทุน', 'วิธีวิเคราะห์หุ้น'], answer: 1 },
+            { question: 'Loss Aversion หมายถึง?', options: ['กลัวตลาด Crash', 'ความเจ็บปวดจากการขาดทุนมากกว่าความสุขจากกำไร', 'ไม่ยอมลงทุนเลย', 'ซื้อหุ้นมากเกินไป'], answer: 1 },
+            { question: 'กฎ 24 ชั่วโมง คืออะไร?', options: ['ซื้อขายภายใน 24 ชม.', 'รอ 24 ชม. ก่อนตัดสินใจซื้อ/ขาย', 'ดูราคาทุก 24 ชม.', 'ขายภายใน 24 ชม. หลังซื้อ'], answer: 1 },
+        ],
+    },
+    {
+        id: 'taxes-and-fees',
+        title: 'ภาษีและค่าธรรมเนียมการลงทุน',
+        titleEn: 'Investment Taxes & Fees',
+        description: 'เข้าใจภาษีจากกำไรหุ้น เงินปันผล ค่าคอมมิชชัน และวิธีลดค่าใช้จ่ายในการลงทุน',
+        category: 'risk',
+        difficulty: 'beginner',
+        duration: 10,
+        icon: '🧾',
+        thumbnail: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=500&fit=crop',
+        sections: [
+            {
+                heading: 'ภาษีจากกำไรหุ้น (Capital Gains Tax)',
+                content: '**เมื่อคุณขายหุ้นได้กำไร ต้องเสียภาษี:**\n\n**🇺🇸 หุ้นสหรัฐ:**\n- **Short-term** (ถือน้อยกว่า 1 ปี) = เสียภาษีเหมือนรายได้ปกติ (10-37%)\n- **Long-term** (ถือมากกว่า 1 ปี) = อัตราพิเศษ (0%, 15%, หรือ 20%)\n\n💡 **ถือหุ้นมากกว่า 1 ปี เสียภาษีถูกกว่ามาก!**\n\n**🇹🇭 หุ้นไทย:**\n- กำไรจากการขายหุ้นในตลาด SET **ไม่ต้องเสียภาษี** สำหรับบุคคลธรรมดา\n- แต่กำไรจากหุ้นต่างประเทศ ต้องนำมารวมคำนวณภาษีเงินได้\n\n**ข้อควรจำ:**\n- ขาดทุนสามารถนำมาหักกับกำไรได้ (Tax Loss Harvesting)\n- เก็บหลักฐานการซื้อขายไว้ เพื่อยื่นภาษี',
+            },
+            {
+                heading: 'ภาษีจากเงินปันผล (Dividend Tax)',
+                content: '**🇺🇸 หุ้นสหรัฐ:**\n- **Qualified Dividends** = อัตราเดียวกับ Long-term Capital Gains (0-20%)\n- **Non-qualified Dividends** = เสียภาษีเหมือนรายได้ปกติ\n- สำหรับคนไทยที่ลงทุนหุ้นสหรัฐ: จะถูกหัก **Withholding Tax 30%** ณ ที่จ่าย\n- ถ้ายื่น W-8BEN กับโบรกเกอร์ จะลดเหลือ **15%**\n\n💡 **อย่าลืมยื่นแบบ W-8BEN** เพื่อลดภาษีปันผลจากหุ้นสหรัฐ!\n\n**🇹🇭 หุ้นไทย:**\n- เงินปันผลถูกหัก ณ ที่จ่าย **10%**\n- เลือกได้: ให้หักไว้ 10% (Final Tax) หรือนำไปรวมคำนวณภาษีเงินได้\n- ถ้ารายได้ต่ำ อาจได้คืนภาษีถ้าเอาไปรวมยื่น',
+            },
+            {
+                heading: 'ค่าธรรมเนียมการซื้อขาย',
+                content: '**ค่าใช้จ่ายที่กินกำไรของคุณ:**\n\n**1. ค่าคอมมิชชัน (Commission):**\n- โบรกเกอร์สหรัฐส่วนใหญ่ = **$0** (Robinhood, Schwab, Fidelity)\n- โบรกเกอร์ไทย = **0.10-0.25%** ต่อครั้ง\n- Interactive Brokers = $0 หรือ $1 ต่อคำสั่ง\n\n**2. Spread:**\n- ส่วนต่างระหว่าง Bid/Ask ก็เป็นค่าใช้จ่ายแฝง\n- หุ้นใหญ่ Spread แคบ หุ้นเล็ก Spread กว้าง\n\n**3. ค่าธรรมเนียมกองทุน (Expense Ratio):**\n- ETF: 0.03-0.20%/ปี (ถูกมาก)\n- กองทุนรวม Active: 0.50-1.50%/ปี\n- ดูเหมือนน้อย แต่สะสม 30 ปี = หลายแสนบาท!\n\n**4. ค่าแปลงสกุลเงิน:**\n- ถ้าลงทุนหุ้นสหรัฐจากไทย = เสีย 0.2-1.0% ค่าแลกเงิน',
+            },
+            {
+                heading: 'วิธีลดค่าใช้จ่ายในการลงทุน',
+                content: '**💡 เคล็ดลับลดค่าใช้จ่าย:**\n\n**1. เลือกโบรกเกอร์ค่าคอมมิชชัน $0:**\n- สหรัฐ: Schwab, Fidelity, Robinhood\n- ไทย: เปรียบเทียบค่าคอมฯ ก่อนเลือก\n\n**2. ซื้อ ETF ค่าธรรมเนียมต่ำ:**\n- VOO (0.03%) แทน กองทุนรวม (1%+)\n- ลดค่าใช้จ่าย = เพิ่มผลตอบแทนสุทธิ\n\n**3. อย่าเทรดบ่อย:**\n- ซื้อขายทุกวัน = เสียค่า Spread + ภาษี Short-term\n- ซื้อแล้วถือยาว = ประหยัดกว่ามาก\n\n**4. ถือมากกว่า 1 ปี (หุ้นสหรัฐ):**\n- ภาษี Long-term ถูกกว่า Short-term มาก\n\n**5. Tax Loss Harvesting:**\n- ขายหุ้นที่ขาดทุนเพื่อหักกับกำไร → ลดภาษี\n- ซื้อหุ้นคล้ายกันกลับมาทดแทน\n\n**6. ยื่น W-8BEN:**\n- ลดภาษีหัก ณ ที่จ่ายปันผลจาก 30% เหลือ 15%',
+            },
+        ],
+        keyTakeaways: [
+            'ถือหุ้นมากกว่า 1 ปี เสียภาษี Capital Gains น้อยกว่า',
+            'ยื่น W-8BEN ลดภาษีปันผลหุ้นสหรัฐจาก 30% เหลือ 15%',
+            'เลือก ETF ค่าธรรมเนียมต่ำ อย่าเทรดบ่อย',
+            'Expense Ratio ดูน้อยแต่สะสมระยะยาวเป็นเงินมหาศาล',
+        ],
+        quiz: [
+            { question: 'Long-term Capital Gains Tax ใช้เมื่อถือหุ้นนานเท่าไหร่?', options: ['1 เดือน', '6 เดือน', 'มากกว่า 1 ปี', '5 ปี'], answer: 2 },
+            { question: 'W-8BEN ช่วยเรื่องอะไร?', options: ['ลดค่าคอมมิชชัน', 'ลดภาษีหัก ณ ที่จ่ายปันผลหุ้นสหรัฐ', 'เปิดบัญชี Margin', 'ซื้อ ETF ราคาถูก'], answer: 1 },
+            { question: 'ค่าธรรมเนียม ETF (Expense Ratio) ที่ดีควรเป็นเท่าไหร่?', options: ['ต่ำกว่า 0.20%', '0.50-1.00%', '1.00-2.00%', 'มากกว่า 2.00%'], answer: 0 },
         ],
     },
 ];

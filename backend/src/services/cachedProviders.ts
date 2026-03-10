@@ -206,4 +206,7 @@ export const yahoo = {
 
     getFinancials: (symbol: string) =>
         cached('yahoo', 'financials', symbol, () => rawYahoo.getFinancials(symbol), symbol),
+
+    getQuote: (symbol: string) =>
+        cached('yahoo', 'quote', symbol, () => rawYahoo.getQuote(symbol), symbol),
 };

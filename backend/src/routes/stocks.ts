@@ -19,6 +19,20 @@ router.get('/search', async (req: Request, res: Response) => {
     }
 });
 
+// GET /api/stocks/batch?symbols=AAPL,MSFT,NVDA — lightweight batch fetch
+router.get('/batch', async (req: Request, res: Response) => {
+    try {
+        const raw = (req.query.symbols as string) || '';
+        const symbols = raw.split(',').map(s => s.trim()).filter(Boolean);
+        if (!symbols.length) { res.json([]); return; }
+        const stocks = await stockService.getStocksBatch(symbols);
+        res.json(stocks);
+    } catch (error) {
+        console.error('Batch stocks error:', error);
+        res.status(500).json({ error: 'Failed to get batch stocks' });
+    }
+});
+
 // GET /api/stocks/popular — top 20 S&P 500 by market cap
 router.get('/popular', async (_req: Request, res: Response) => {
     try {

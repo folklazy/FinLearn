@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function RegisterPage() {
+    const { t } = useI18n();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -19,12 +21,16 @@ export default function RegisterPage() {
         setError('');
 
         if (password !== confirmPassword) {
-            setError('รหัสผ่านไม่ตรงกัน');
+            setError(t('reg.errMismatch'));
             return;
         }
 
-        if (password.length < 6) {
-            setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+        if (password.length < 8 || password.length > 64) {
+            setError(t('reg.errLength'));
+            return;
+        }
+        if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+            setError(t('reg.errMix'));
             return;
         }
 
@@ -40,14 +46,13 @@ export default function RegisterPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.error || 'เกิดข้อผิดพลาด');
+                setError(data.error || t('login.errGeneric'));
                 return;
             }
 
-            // Redirect to verify-email page (must verify before login)
             window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
         } catch {
-            setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+            setError(t('login.errGeneric'));
         } finally {
             setLoading(false);
         }
@@ -69,8 +74,8 @@ export default function RegisterPage() {
                         <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 800, color: 'white' }}>F</div>
                         <span style={{ fontSize: '1.2rem', fontWeight: 750, letterSpacing: '-0.02em' }}>Fin<span className="gradient-text">Learn</span></span>
                     </Link>
-                    <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '28px', marginBottom: '6px' }}>สร้างบัญชีใหม่</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>เริ่มต้นเรียนรู้การลงทุนอย่างชาญฉลาด</p>
+                    <h1 style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '28px', marginBottom: '6px' }}>{t('reg.title')}</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>{t('reg.subtitle')}</p>
                 </div>
 
                 <div className="card-solid" style={{ padding: '32px', borderRadius: 'var(--radius-xl)' }}>
@@ -84,12 +89,12 @@ export default function RegisterPage() {
                             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                         </svg>
-                        สมัครด้วย Google
+                        {t('reg.google')}
                     </button>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '22px 0' }}>
                         <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>หรือ</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>{t('login.or')}</span>
                         <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
                     </div>
 
@@ -101,17 +106,17 @@ export default function RegisterPage() {
                         )}
                         <div style={{ position: 'relative' }}>
                             <User size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                            <input type="text" placeholder="ชื่อที่แสดง" value={name} onChange={e => setName(e.target.value)} required
+                            <input type="text" placeholder={t('reg.name')} value={name} onChange={e => setName(e.target.value)} required
                                 className="input" style={{ paddingLeft: '40px' }} />
                         </div>
                         <div style={{ position: 'relative' }}>
                             <Mail size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                            <input type="email" placeholder="อีเมล" value={email} onChange={e => setEmail(e.target.value)} required
+                            <input type="email" placeholder={t('login.email')} value={email} onChange={e => setEmail(e.target.value)} required
                                 className="input" style={{ paddingLeft: '40px' }} />
                         </div>
                         <div style={{ position: 'relative' }}>
                             <Lock size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                            <input type={showPassword ? 'text' : 'password'} placeholder="รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)" value={password} onChange={e => setPassword(e.target.value)} required
+                            <input type={showPassword ? 'text' : 'password'} placeholder={t('login.password')} value={password} onChange={e => setPassword(e.target.value)} required
                                 className="input" style={{ paddingLeft: '40px', paddingRight: '42px' }} />
                             <button type="button" onClick={() => setShowPassword(!showPassword)}
                                 style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}>
@@ -120,17 +125,22 @@ export default function RegisterPage() {
                         </div>
                         <div style={{ position: 'relative' }}>
                             <Lock size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                            <input type={showPassword ? 'text' : 'password'} placeholder="ยืนยันรหัสผ่าน" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required
+                            <input type={showPassword ? 'text' : 'password'} placeholder={t('reg.confirmPassword')} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required
                                 className="input" style={{ paddingLeft: '40px' }} />
                         </div>
+                        <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)', fontSize: '0.78rem', lineHeight: 1.7 }}>
+                            <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>{t('reg.pwdRequire')}</p>
+                            <p style={{ color: password.length >= 8 && password.length <= 64 ? 'var(--success)' : 'var(--text-muted)', margin: 0 }}>• {t('reg.pwdLength')}</p>
+                            <p style={{ color: /[a-zA-Z]/.test(password) && /[0-9]/.test(password) ? 'var(--success)' : 'var(--text-muted)', margin: 0 }}>• {t('reg.pwdMix')}</p>
+                        </div>
                         <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '2px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
-                            {loading ? 'กำลังสร้างบัญชี...' : 'สร้างบัญชี'}
+                            {loading ? t('reg.loading') : t('reg.submit')}
                         </button>
                     </form>
 
                     <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '22px' }}>
-                        มีบัญชีอยู่แล้ว?{' '}
-                        <Link href="/login" style={{ color: 'var(--primary-light)', fontWeight: 600 }}>เข้าสู่ระบบ</Link>
+                        {t('reg.hasAccount')}{' '}
+                        <Link href="/login" style={{ color: 'var(--primary-light)', fontWeight: 600 }}>{t('login.submit')}</Link>
                     </p>
                 </div>
             </div>

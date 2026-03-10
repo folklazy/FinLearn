@@ -7,28 +7,30 @@ import {
     User, GraduationCap, Target, Shield, ChevronRight, ChevronLeft,
     BookOpen, TrendingUp, Coins, BarChart3, Zap, Check, Sparkles
 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
-const experienceLevels = [
-    { value: 'BEGINNER', label: 'มือใหม่', desc: 'เพิ่งเริ่มเรียนรู้การลงทุน', icon: BookOpen },
-    { value: 'INTERMEDIATE', label: 'มีประสบการณ์', desc: 'เข้าใจพื้นฐานแล้ว อยากรู้ลึกขึ้น', icon: TrendingUp },
-    { value: 'ADVANCED', label: 'เชี่ยวชาญ', desc: 'มีประสบการณ์ลงทุนจริง', icon: Zap },
+const experienceLevelsData = [
+    { value: 'BEGINNER', labelKey: 'onboard.exp.beginner', descKey: 'onboard.exp.beginnerDesc', icon: BookOpen },
+    { value: 'INTERMEDIATE', labelKey: 'onboard.exp.intermediate', descKey: 'onboard.exp.intermediateDesc', icon: TrendingUp },
+    { value: 'ADVANCED', labelKey: 'onboard.exp.advanced', descKey: 'onboard.exp.advancedDesc', icon: Zap },
 ];
 
-const primaryGoals = [
-    { value: 'LEARN_BASICS', label: 'เรียนรู้พื้นฐาน', desc: 'เข้าใจหลักการลงทุนเบื้องต้น', icon: BookOpen },
-    { value: 'VALUE', label: 'ลงทุนแบบ Value', desc: 'หาหุ้นราคาถูกกว่ามูลค่าจริง', icon: Target },
-    { value: 'GROWTH', label: 'ลงทุนแบบ Growth', desc: 'หาหุ้นเติบโตสูง', icon: TrendingUp },
-    { value: 'DIVIDEND', label: 'รับเงินปันผล', desc: 'เน้นรายได้สม่ำเสมอ', icon: Coins },
-    { value: 'TRADING_EDU', label: 'เรียนรู้การเทรด', desc: 'ศึกษาการซื้อขายระยะสั้น', icon: BarChart3 },
+const primaryGoalsData = [
+    { value: 'LEARN_BASICS', labelKey: 'onboard.goal.basics', descKey: 'onboard.goal.basicsDesc', icon: BookOpen },
+    { value: 'VALUE', labelKey: 'onboard.goal.value', descKey: 'onboard.goal.valueDesc', icon: Target },
+    { value: 'GROWTH', labelKey: 'onboard.goal.growth', descKey: 'onboard.goal.growthDesc', icon: TrendingUp },
+    { value: 'DIVIDEND', labelKey: 'onboard.goal.dividend', descKey: 'onboard.goal.dividendDesc', icon: Coins },
+    { value: 'TRADING_EDU', labelKey: 'onboard.goal.trading', descKey: 'onboard.goal.tradingDesc', icon: BarChart3 },
 ];
 
-const riskLevels = [
-    { value: 'LOW', label: 'ต่ำ', desc: 'ชอบความปลอดภัย ยอมรับผลตอบแทนน้อย', color: '#22c55e' },
-    { value: 'MEDIUM', label: 'ปานกลาง', desc: 'รับความเสี่ยงได้บ้าง เพื่อผลตอบแทนที่ดีขึ้น', color: '#f59e0b' },
-    { value: 'HIGH', label: 'สูง', desc: 'ยอมรับความผันผวน เพื่อโอกาสผลตอบแทนสูง', color: '#ef4444' },
+const riskLevelsData = [
+    { value: 'LOW', labelKey: 'onboard.risk.low', descKey: 'onboard.risk.lowDesc', color: '#22c55e' },
+    { value: 'MEDIUM', labelKey: 'onboard.risk.medium', descKey: 'onboard.risk.mediumDesc', color: '#f59e0b' },
+    { value: 'HIGH', labelKey: 'onboard.risk.high', descKey: 'onboard.risk.highDesc', color: '#ef4444' },
 ];
 
 export default function OnboardingPage() {
+    const { t } = useI18n();
     const { data: session, status } = useSession();
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -134,15 +136,15 @@ export default function OnboardingPage() {
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-4">
                         <Sparkles className="w-4 h-4" />
-                        ขั้นตอนที่ {step} จาก 2
+                        {t('onboard.step')} {step} {t('onboard.of')} 2
                     </div>
                     <h1 className="text-2xl font-bold text-white">
-                        {step === 1 ? 'บอกเราเกี่ยวกับตัวคุณ' : 'ตั้งค่าการลงทุน'}
+                        {step === 1 ? t('onboard.title1') : t('onboard.title2')}
                     </h1>
                     <p className="text-gray-400 mt-2">
                         {step === 1
-                            ? 'เพื่อปรับเนื้อหาให้เหมาะกับคุณ'
-                            : 'ปรับแต่งประสบการณ์ Simulator (ข้ามได้)'}
+                            ? t('onboard.desc1')
+                            : t('onboard.desc2')}
                     </p>
                 </div>
 
@@ -159,13 +161,13 @@ export default function OnboardingPage() {
                             {/* Display Name */}
                             <div>
                                 <label className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <User className="w-4 h-4" /> ชื่อที่แสดง
+                                    <User className="w-4 h-4" /> {t('onboard.displayName')}
                                 </label>
                                 <input
                                     type="text"
                                     value={displayName}
                                     onChange={(e) => setDisplayName(e.target.value)}
-                                    placeholder={session.user.name || 'ชื่อของคุณ'}
+                                    placeholder={session.user.name || t('onboard.yourName')}
                                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/25 transition-all"
                                 />
                             </div>
@@ -173,10 +175,10 @@ export default function OnboardingPage() {
                             {/* Experience Level */}
                             <div>
                                 <label className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                    <GraduationCap className="w-4 h-4" /> ระดับประสบการณ์
+                                    <GraduationCap className="w-4 h-4" /> {t('onboard.expLevel')}
                                 </label>
                                 <div className="space-y-2 mt-2">
-                                    {experienceLevels.map((level) => {
+                                    {experienceLevelsData.map((level) => {
                                         const Icon = level.icon;
                                         const selected = experienceLevel === level.value;
                                         return (
@@ -192,8 +194,8 @@ export default function OnboardingPage() {
                                                     <Icon className="w-4 h-4" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-medium text-sm">{level.label}</p>
-                                                    <p className="text-xs text-gray-500">{level.desc}</p>
+                                                    <p className="font-medium text-sm">{t(level.labelKey)}</p>
+                                                    <p className="text-xs text-gray-500">{t(level.descKey)}</p>
                                                 </div>
                                                 {selected && <Check className="w-5 h-5 text-indigo-400" />}
                                             </button>
@@ -205,10 +207,10 @@ export default function OnboardingPage() {
                             {/* Primary Goal */}
                             <div>
                                 <label className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                    <Target className="w-4 h-4" /> เป้าหมายหลัก
+                                    <Target className="w-4 h-4" /> {t('onboard.goal')}
                                 </label>
                                 <div className="grid grid-cols-1 gap-2 mt-2">
-                                    {primaryGoals.map((goal) => {
+                                    {primaryGoalsData.map((goal) => {
                                         const Icon = goal.icon;
                                         const selected = primaryGoal === goal.value;
                                         return (
@@ -224,8 +226,8 @@ export default function OnboardingPage() {
                                                     <Icon className="w-4 h-4" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-medium text-sm">{goal.label}</p>
-                                                    <p className="text-xs text-gray-500">{goal.desc}</p>
+                                                    <p className="font-medium text-sm">{t(goal.labelKey)}</p>
+                                                    <p className="text-xs text-gray-500">{t(goal.descKey)}</p>
                                                 </div>
                                                 {selected && <Check className="w-5 h-5 text-emerald-400" />}
                                             </button>
@@ -246,11 +248,11 @@ export default function OnboardingPage() {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                         </svg>
-                                        กำลังบันทึก...
+                                        {t('onboard.saving')}
                                     </span>
                                 ) : (
                                     <>
-                                        ถัดไป <ChevronRight className="w-5 h-5" />
+                                        {t('onboard.next')} <ChevronRight className="w-5 h-5" />
                                     </>
                                 )}
                             </button>
@@ -260,10 +262,10 @@ export default function OnboardingPage() {
                             {/* Risk Level */}
                             <div>
                                 <label className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                    <Shield className="w-4 h-4" /> ระดับความเสี่ยงที่รับได้
+                                    <Shield className="w-4 h-4" /> {t('onboard.riskLevel')}
                                 </label>
                                 <div className="space-y-2 mt-2">
-                                    {riskLevels.map((risk) => {
+                                    {riskLevelsData.map((risk) => {
                                         const selected = riskLevel === risk.value;
                                         return (
                                             <button
@@ -283,8 +285,8 @@ export default function OnboardingPage() {
                                                     style={{ background: risk.color }}
                                                 />
                                                 <div className="flex-1">
-                                                    <p className="font-medium text-sm">{risk.label}</p>
-                                                    <p className="text-xs text-gray-500">{risk.desc}</p>
+                                                    <p className="font-medium text-sm">{t(risk.labelKey)}</p>
+                                                    <p className="text-xs text-gray-500">{t(risk.descKey)}</p>
                                                 </div>
                                                 {selected && <Check className="w-5 h-5" style={{ color: risk.color }} />}
                                             </button>
@@ -296,7 +298,7 @@ export default function OnboardingPage() {
                             {/* Starting Cash */}
                             <div>
                                 <label className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <Coins className="w-4 h-4" /> ทุนเริ่มต้น Simulator (USD)
+                                    <Coins className="w-4 h-4" /> {t('onboard.startCash')}
                                 </label>
                                 <div className="grid grid-cols-3 gap-2 mt-2">
                                     {['10000', '50000', '100000'].map((amount) => (
@@ -317,7 +319,7 @@ export default function OnboardingPage() {
                                     value={startingCash}
                                     onChange={(e) => setStartingCash(e.target.value)}
                                     className="w-full mt-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/25 transition-all"
-                                    placeholder="หรือกรอกจำนวนเอง"
+                                    placeholder={t('onboard.orEnter')}
                                 />
                             </div>
 
@@ -327,7 +329,7 @@ export default function OnboardingPage() {
                                     onClick={() => setStep(1)}
                                     className="flex-1 py-3 rounded-xl font-semibold text-gray-300 bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                                 >
-                                    <ChevronLeft className="w-5 h-5" /> ย้อนกลับ
+                                    <ChevronLeft className="w-5 h-5" /> {t('onboard.goBack')}
                                 </button>
                                 <button
                                     onClick={handleStep2}
@@ -341,7 +343,7 @@ export default function OnboardingPage() {
                                         </svg>
                                     ) : (
                                         <>
-                                            เริ่มใช้งาน <Sparkles className="w-5 h-5" />
+                                            {t('onboard.start')} <Sparkles className="w-5 h-5" />
                                         </>
                                     )}
                                 </button>
@@ -352,7 +354,7 @@ export default function OnboardingPage() {
                                 onClick={handleSkip}
                                 className="w-full text-center text-sm text-gray-500 hover:text-gray-300 transition-colors"
                             >
-                                ข้ามขั้นตอนนี้
+                                {t('onboard.skip')}
                             </button>
                         </div>
                     )}

@@ -170,8 +170,10 @@ export interface ScoreRating {
 
 export interface BeginnerTips {
     goodFor: string[];     // Thai tips
+    goodForEn: string[];   // English tips
     cautionFor: string[];  // Thai warnings
-    relatedLessons: { title: string; url: string }[];
+    cautionForEn: string[];// English warnings
+    relatedLessons: { title: string; titleEn: string; url: string }[];
 }
 
 export interface SearchResult {

@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { ArrowRight, BarChart3, BookOpen, Shield, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, BarChart3, BookOpen, Shield, Sparkles, Star, TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatPercent } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface PopularStock {
   symbol: string; name: string; logo: string; sector: string;
@@ -25,50 +26,28 @@ const FALLBACK: PopularStock[] = [
 
 export default function HomePage() {
   const { data: session, status } = useSession();
+  const { t } = useI18n();
   const [stocks, setStocks] = useState<PopularStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWatchlist, setIsWatchlist] = useState(false);
   const [watchlistEmpty, setWatchlistEmpty] = useState(false);
+  const [watchlistSet, setWatchlistSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (status === 'loading') return;
 
     if (session?.user) {
-      // Logged in: try to load watchlist
+      // Logged in: try to load watchlist via lightweight batch endpoint
       fetch('/api/watchlist')
         .then(r => r.ok ? r.json() : { symbols: [] })
         .then(async ({ symbols }: { symbols: string[] }) => {
+          if (symbols?.length) setWatchlistSet(new Set(symbols.map(s => s.toUpperCase())));
           if (!symbols || symbols.length === 0) {
             setWatchlistEmpty(true);
             return api.getPopularStocks();
           }
           setIsWatchlist(true);
-          // Fetch details for each symbol in parallel
-          const results = await Promise.all(
-            symbols.map(sym =>
-              fetch(`${API_BASE}/api/stocks/${sym}`)
-                .then(r => r.ok ? r.json() : null)
-                .catch(() => null)
-            )
-          );
-          return results
-            .filter(Boolean)
-            .map((d: Record<string, unknown>) => {
-              const profile = (d.profile ?? {}) as Record<string, unknown>;
-              const priceData = (d.price ?? {}) as Record<string, unknown>;
-              const scores = (d.scores ?? {}) as Record<string, unknown>;
-              return {
-                symbol: String(d.symbol ?? profile.symbol ?? ''),
-                name: String(profile.name ?? d.name ?? ''),
-                logo: String(profile.logo ?? d.logo ?? ''),
-                sector: String(profile.sector ?? d.sector ?? ''),
-                price: Number(priceData.current ?? d.price ?? 0),
-                change: Number(priceData.change ?? d.change ?? 0),
-                changePercent: Number(priceData.changePercent ?? d.changePercent ?? 0),
-                marketCap: Number(profile.marketCap ?? d.marketCap ?? 0),
-                overallScore: Number(scores.overall ?? d.overallScore ?? 0),
-              };
-            }) as PopularStock[];
+          return api.getStocksBatch(symbols);
         })
         .then(data => setStocks(data?.length ? data : FALLBACK))
         .catch(() => setStocks(FALLBACK))
@@ -84,217 +63,317 @@ export default function HomePage() {
 
   const displayStocks = stocks.length > 0 ? stocks : FALLBACK;
 
+  const toggleWatchlist = async (symbol: string) => {
+    if (!session?.user) return;
+    const sym = symbol.toUpperCase();
+    const removing = watchlistSet.has(sym);
+    setWatchlistSet(prev => {
+      const next = new Set(prev);
+      if (removing) next.delete(sym); else next.add(sym);
+      return next;
+    });
+    try {
+      if (removing) {
+        await fetch(`/api/watchlist/${sym}`, { method: 'DELETE' });
+      } else {
+        await fetch('/api/watchlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol: sym }) });
+      }
+    } catch {
+      setWatchlistSet(prev => {
+        const next = new Set(prev);
+        if (removing) next.add(sym); else next.delete(sym);
+        return next;
+      });
+    }
+  };
+
   return (
     <div>
       {/* ─── Ticker Strip ─── */}
-      <div style={{ borderBottom: '1px solid var(--border)', padding: '8px 0', background: 'var(--bg-secondary)' }}>
-        <div className="ticker-wrap">
-          <div className="ticker-inner" style={{ gap: '0' }}>
-            {[...displayStocks, ...displayStocks].map((s, i) => (
-              <Link key={i} href={`/stocks/${s.symbol}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '0 28px', fontSize: '0.8rem' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.symbol}</span>
-                <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(s.price)}</span>
-                <span className={s.change >= 0 ? 'num-up' : 'num-down'} style={{ fontWeight: 600 }}>
-                  {formatPercent(s.changePercent)}
-                </span>
-                <span style={{ color: 'var(--border-light)', margin: '0 4px' }}>·</span>
+      <div className="ticker-strip">
+        <div className="ticker-track">
+          {(() => {
+            const MIN_ITEMS = 12;
+            let normalized = [...displayStocks];
+            while (normalized.length < MIN_ITEMS) normalized = [...normalized, ...displayStocks];
+            normalized = normalized.slice(0, Math.max(MIN_ITEMS, displayStocks.length));
+            const tripled = [...normalized, ...normalized, ...normalized];
+            return tripled.map((s, i) => (
+              <Link key={i} href={`/stocks/${s.symbol}`} className="ticker-item">
+                <span className="ticker-symbol">{s.symbol}</span>
+                <span className="ticker-price">{formatCurrency(s.price)}</span>
+                <span className={`ticker-change ${s.change >= 0 ? 'up' : 'down'}`}>{formatPercent(s.changePercent)}</span>
               </Link>
-            ))}
-          </div>
+            ));
+          })()}
         </div>
       </div>
 
-      {/* ─── Hero ─── */}
-      <section style={{ position: 'relative', overflow: 'hidden', padding: '100px 24px 120px' }}>
-        {/* Ambient glow */}
+      {/* ═══ Hero ═══ */}
+      <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 24px 96px' }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: '800px', height: '500px', background: 'radial-gradient(ellipse, rgba(124,108,240,0.07) 0%, transparent 70%)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '700px', height: '400px', background: 'radial-gradient(ellipse, rgba(124,108,240,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
         </div>
 
-        <div style={{ maxWidth: '720px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <div className="animate-fade-up">
-            <span className="badge badge-primary" style={{ marginBottom: '24px' }}>
-              <Sparkles size={12} /> เรียนรู้ฟรี · ไม่มีความเสี่ยง
+        <div style={{ maxWidth: '680px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <div className="animate-fade-up" style={{ marginBottom: '20px' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.04em',
+              padding: '6px 14px', borderRadius: '100px',
+              background: 'rgba(124,108,240,0.08)', border: '1px solid rgba(124,108,240,0.15)',
+              color: 'var(--primary-light)',
+            }}>
+              <Sparkles size={11} /> {t('hero.badge')}
             </span>
           </div>
 
           <h1 className="animate-fade-up delay-1" style={{
-            fontSize: 'clamp(2.6rem, 5vw, 4rem)', fontWeight: 800,
-            lineHeight: 1.1, letterSpacing: '-0.03em', marginBottom: '20px'
+            fontSize: 'clamp(2.4rem, 5vw, 3.6rem)', fontWeight: 800,
+            lineHeight: 1.08, letterSpacing: '-0.035em', marginBottom: '18px',
           }}>
-            เข้าใจหุ้นง่ายๆ<br />
-            <span className="gradient-text">ลงทุนอย่างมั่นใจ</span>
+            {t('hero.title1')}<br />
+            <span className="gradient-text">{t('hero.title2')}</span>
           </h1>
 
           <p className="animate-fade-up delay-2" style={{
-            fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7,
-            maxWidth: '500px', margin: '0 auto 36px'
+            fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.7,
+            maxWidth: '460px', margin: '0 auto 32px',
           }}>
-            ข้อมูลหุ้นแบบเข้าใจง่าย งบการเงินแบบ Visual
-            และ Portfolio Simulator สำหรับมือใหม่
+            {t('hero.subtitle')}
           </p>
 
-          <div className="animate-fade-up delay-3" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="animate-fade-up delay-3" style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {session?.user ? (
               <>
-                <Link href="/stocks" className="btn btn-primary" style={{ padding: '13px 28px' }}><BarChart3 size={16} /> สำรวจหุ้น</Link>
-                <Link href="/settings" className="btn btn-secondary" style={{ padding: '13px 28px' }}>ตั้งค่าโปรไฟล์</Link>
+                <Link href="/stocks" className="btn btn-primary" style={{ padding: '12px 26px', fontSize: '0.88rem' }}><BarChart3 size={15} /> {t('hero.exploreStocks')}</Link>
+                <Link href="/portfolio" className="btn btn-secondary" style={{ padding: '12px 26px', fontSize: '0.88rem' }}>{t('portfolio.simulator')}</Link>
               </>
             ) : (
               <>
-                <Link href="/register" className="btn btn-primary" style={{ padding: '13px 28px' }}>เริ่มต้นฟรี <ArrowRight size={15} /></Link>
-                <Link href="/stocks" className="btn btn-secondary" style={{ padding: '13px 28px' }}><BarChart3 size={16} /> ดูหุ้น</Link>
+                <Link href="/register" className="btn btn-primary" style={{ padding: '12px 26px', fontSize: '0.88rem' }}>{t('hero.startFree')} <ArrowRight size={14} /></Link>
+                <Link href="/stocks" className="btn btn-secondary" style={{ padding: '12px 26px', fontSize: '0.88rem' }}><BarChart3 size={15} /> {t('hero.viewStocks')}</Link>
               </>
             )}
           </div>
 
-          {/* Stats */}
+          {/* Stats strip */}
           <div className="animate-fade-up delay-4" style={{
-            display: 'flex', justifyContent: 'center', gap: '56px', marginTop: '72px', flexWrap: 'wrap'
+            display: 'inline-flex', gap: '0', marginTop: '52px',
+            background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+            borderRadius: '14px', overflow: 'hidden',
           }}>
             {[
-              { value: '50+', label: 'หุ้นให้ศึกษา' },
-              { value: '20+', label: 'บทเรียน' },
-              { value: 'ฟรี', label: 'ไม่มีค่าใช้จ่าย' },
+              { value: '50+', label: t('hero.stat.stocks') },
+              { value: '25+', label: t('hero.stat.lessons') },
+              { value: '$100K', label: t('hero.stat.simulated') },
             ].map(({ value, label }, i) => (
-              <div key={i} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{value}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{label}</div>
+              <div key={i} style={{
+                padding: '16px 28px', textAlign: 'center',
+                borderLeft: i > 0 ? '1px solid var(--border)' : 'none',
+              }}>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 500 }}>{label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── Featured Stocks ─── */}
-      <section className="section" style={{ paddingTop: '0' }}>
+      {/* ═══ Featured Stocks ═══ */}
+      <section className="section" style={{ paddingTop: 0 }}>
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
-            <div>
-              <p style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--primary-light)', marginBottom: '8px' }}>
-                {isWatchlist ? 'My Watchlist' : 'Popular Stocks'}
-              </p>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {isWatchlist ? <><Star size={20} style={{ color: 'var(--primary-light)' }} /> Watchlist ของคุณ</> : 'หุ้นยอดนิยม'}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '3px', height: '20px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+                {isWatchlist ? 'Watchlist' : t('stocks.popular')}
               </h2>
+              {isWatchlist && <Star size={14} fill="#facc15" style={{ color: '#facc15' }} />}
               {watchlistEmpty && (
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Watchlist ว่างเปล่า — แสดงหุ้นยอดนิยมแทน •{' '}
-                  <Link href="/stocks" style={{ color: 'var(--primary-light)' }}>เพิ่มหุ้น</Link>
-                </p>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {t('stocks.watchlistEmpty')} <Link href="/stocks" style={{ color: 'var(--primary-light)' }}>{t('stocks.addStocks')}</Link>
+                </span>
               )}
             </div>
-            <Link href={isWatchlist ? '/watchlist' : '/stocks'} className="btn btn-ghost" style={{ gap: '6px', fontSize: '0.82rem' }}>
-              {isWatchlist ? 'ดูพอร์ต' : 'ดูทั้งหมด'} <ArrowRight size={14} />
+            <Link href={isWatchlist ? '/watchlist' : '/stocks'} style={{
+              fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '3px',
+              padding: '6px 12px', borderRadius: '100px', background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+              textDecoration: 'none', transition: 'border-color 0.15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+            >
+              {isWatchlist ? t('stocks.viewWatchlist') : t('stocks.viewAll')} <ChevronRight size={13} />
             </Link>
           </div>
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '160px' }} />)}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton" style={{ height: '140px', borderRadius: '14px' }} />)}
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-              {displayStocks.slice(0, 6).map((stock, i) => (
-                <Link key={stock.symbol} href={`/stocks/${stock.symbol}`}>
-                  <div className={`card-solid animate-fade-up delay-${Math.min(i + 1, 6)}`}
-                    style={{ padding: '22px', cursor: 'pointer' }}>
-                    {/* Top row */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fff', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <img src={stock.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          ) : (() => {
+            const items = isWatchlist ? displayStocks : displayStocks.slice(0, 6);
+            const needsScroll = items.length > 6;
+            return (
+              <div className={needsScroll ? 'homepage-scroll' : undefined}
+                style={needsScroll ? { maxHeight: '520px', overflowY: 'auto', paddingRight: '4px' } : undefined}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  {items.map((stock, i) => {
+                    const isUp = stock.change >= 0;
+                    const inWL = watchlistSet.has(stock.symbol.toUpperCase());
+                    return (
+                      <Link key={stock.symbol} href={`/stocks/${stock.symbol}`} style={{ textDecoration: 'none' }}>
+                        <div className={`animate-fade-up delay-${Math.min(i + 1, 6)}`}
+                          style={{
+                            padding: '18px 20px', height: '100%', display: 'flex', flexDirection: 'column', gap: '12px',
+                            background: 'var(--bg-card-solid)', border: '1px solid var(--border)', borderRadius: '14px',
+                            cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+                        >
+                          {/* Top: Logo + Info + Star */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                              width: '38px', height: '38px', borderRadius: '10px',
+                              background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden',
+                            }}>
+                              {stock.logo ? (
+                                <Image src={stock.logo} alt="" width={22} height={22} unoptimized style={{ objectFit: 'contain' }} />
+                              ) : (
+                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)' }}>{stock.symbol.slice(0, 2)}</span>
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.92rem', letterSpacing: '-0.01em' }}>{stock.symbol}</div>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.name}</div>
+                            </div>
+                            {session?.user && (
+                              <button
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWatchlist(stock.symbol); }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0, color: inWL ? '#facc15' : 'var(--text-muted)', transition: 'color 0.15s', display: 'flex' }}
+                                onMouseEnter={e => { if (!inWL) e.currentTarget.style.color = '#facc15'; }}
+                                onMouseLeave={e => { if (!inWL) e.currentTarget.style.color = 'var(--text-muted)'; }}
+                                aria-label={inWL ? t('stocks.removeWatchlist') : t('stocks.addWatchlist')}
+                              >
+                                <Star size={15} fill={inWL ? '#facc15' : 'none'} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Bottom: Price + Change */}
+                          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
+                              {formatCurrency(stock.price)}
+                            </span>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '3px',
+                              fontSize: '0.74rem', fontWeight: 700,
+                              padding: '3px 10px', borderRadius: '100px',
+                              background: isUp ? 'rgba(52,211,153,0.08)' : 'rgba(251,113,133,0.08)',
+                              color: isUp ? 'var(--success)' : 'var(--danger)',
+                            }}>
+                              {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                              {formatPercent(stock.changePercent)}
+                            </span>
+                          </div>
+
+                          {/* Sector + Score */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              {stock.sector || 'Technology'}
+                            </span>
+                            {stock.overallScore > 0 && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ width: '40px', height: '3px', borderRadius: '100px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                                  <div style={{ width: `${(stock.overallScore / 5) * 100}%`, height: '100%', borderRadius: '100px', background: 'var(--gradient-primary)', transition: 'width 0.8s var(--ease)' }} />
+                                </div>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary-light)' }}>{stock.overallScore.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem', letterSpacing: '-0.01em' }}>{stock.symbol}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{stock.name}</div>
-                        </div>
-                      </div>
-                      <span style={{
-                        fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: '100px',
-                        background: stock.change >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)',
-                        color: stock.change >= 0 ? 'var(--success)' : 'var(--danger)'
-                      }}>
-                        {formatPercent(stock.changePercent)}
-                      </span>
-                    </div>
-                    {/* Price */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                        {formatCurrency(stock.price)}
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Score</div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary-light)' }}>{stock.overallScore}/5</div>
-                      </div>
-                    </div>
-                    {/* Progress */}
-                    <div className="progress-bar" style={{ marginTop: '14px' }}>
-                      <div className="progress-fill" style={{ width: `${(stock.overallScore / 5) * 100}%` }} />
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
-      {/* ─── Features ─── */}
-      <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
+      {/* ═══ Features ═══ */}
+      <section className="section">
         <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <p style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--primary-light)', marginBottom: '10px' }}>Why FinLearn</p>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '10px' }}>ออกแบบมาเพื่อมือใหม่</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto' }}>
-              เครื่องมือทุกอย่างที่คุณต้องการเพื่อเริ่มต้นเรียนรู้การลงทุน
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }}>
+            <div style={{ width: '3px', height: '20px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
+            <div>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{t('features.title')}</h2>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{t('features.subtitle')}</p>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             {[
-              { Icon: BarChart3, title: 'ข้อมูลเข้าใจง่าย', desc: 'งบการเงินแบบ Visual ตัวเลขพร้อมคำอธิบาย ไม่ต้องเป็นนักบัญชีก็เข้าใจได้', accent: 'var(--primary)' },
-              { Icon: Shield, title: 'ปลอดภัย ไม่เสียเงินจริง', desc: 'ทดลองสร้างพอร์ตจำลอง ฝึกตัดสินใจลงทุนโดยไม่มีความเสี่ยงใดๆ', accent: 'var(--success)' },
-              { Icon: BookOpen, title: 'เรียนรู้ step-by-step', desc: 'บทเรียนตั้งแต่พื้นฐานถึงขั้นสูง พร้อม Quiz ทดสอบความเข้าใจ', accent: 'var(--accent)' },
-            ].map(({ Icon, title, desc, accent }, i) => (
-              <div key={i} className="card-solid" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{
-                  width: '44px', height: '44px', borderRadius: '12px',
-                  background: `color-mix(in srgb, ${accent} 10%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${accent} 15%, transparent)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent
-                }}>
-                  <Icon size={20} />
+              { Icon: BarChart3, title: t('features.data.title'), desc: t('features.data.desc'), accent: '#7c6cf0', href: '/stocks' },
+              { Icon: Shield, title: t('features.sim.title'), desc: t('features.sim.desc'), accent: '#34d399', href: '/portfolio' },
+              { Icon: BookOpen, title: t('features.learn.title'), desc: t('features.learn.desc'), accent: '#c4b5fd', href: '/learn' },
+            ].map(({ Icon, title, desc, accent, href }, i) => (
+              <Link key={i} href={href} style={{ textDecoration: 'none' }}>
+                <div className={`animate-fade-up delay-${i + 1}`} style={{
+                  padding: '24px', borderRadius: '14px',
+                  background: 'var(--bg-card-solid)', border: '1px solid var(--border)',
+                  transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer', height: '100%',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '10px',
+                    background: `${accent}12`, border: `1px solid ${accent}20`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: accent, marginBottom: '16px',
+                  }}>
+                    <Icon size={18} />
+                  </div>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>{title}</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.65 }}>{desc}</p>
+                  <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600, color: accent }}>
+                    {t('features.start')} <ChevronRight size={13} />
+                  </div>
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '8px' }}>{title}</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.7 }}>{desc}</p>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── CTA ─── */}
+      {/* ═══ CTA ═══ */}
       {!session?.user && (
-        <section className="section" style={{ paddingBottom: '100px' }}>
+        <section className="section" style={{ paddingBottom: '80px' }}>
           <div className="container">
             <div style={{
-              background: 'var(--gradient-subtle)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-xl)', padding: '64px 40px', textAlign: 'center',
-              position: 'relative', overflow: 'hidden'
+              background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+              borderRadius: '18px', padding: '48px 32px', textAlign: 'center',
+              position: 'relative', overflow: 'hidden',
             }}>
-              <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '260px', height: '260px', background: 'radial-gradient(circle, rgba(124,108,240,0.08), transparent 70%)', borderRadius: '50%' }} />
+              <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '400px', height: '200px', background: 'radial-gradient(ellipse, rgba(124,108,240,0.06), transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', zIndex: 1 }}>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '12px' }}>พร้อมเริ่มเรียนรู้แล้วหรือยัง?</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '32px' }}>
-                  สมัครฟรี ไม่มีค่าใช้จ่าย ไม่ต้องใส่บัตรเครดิต
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '10px', letterSpacing: '-0.02em' }}>{t('cta.title')}</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '24px' }}>
+                  {t('cta.subtitle')}
                 </p>
-                <Link href="/register" className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '0.95rem' }}>
-                  เริ่มต้นฟรีเลย <ArrowRight size={16} />
+                <Link href="/register" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '12px 28px', borderRadius: '100px',
+                  background: 'var(--primary)', color: '#fff',
+                  fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
+                  transition: 'opacity 0.15s',
+                }}>
+                  {t('hero.startFree')} <ArrowRight size={15} />
                 </Link>
               </div>
             </div>

@@ -1,11 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { LESSONS, LESSON_CATEGORIES } from '../data/lessons';
+import { LESSONS_EN } from '../data/lessonsEn';
 
 const router = Router();
 
 // GET /api/lessons — all lessons (summary only)
 router.get('/', (_req: Request, res: Response) => {
-    const summaries = LESSONS.map(({ sections, quiz, ...rest }) => rest);
+    const summaries = LESSONS.map(({ sections, quiz, ...rest }) => {
+        const en = LESSONS_EN[rest.id];
+        return { ...rest, descriptionEn: en?.descriptionEn || rest.descriptionEn };
+    });
     res.json({ categories: LESSON_CATEGORIES, lessons: summaries });
 });
 
@@ -21,7 +25,27 @@ router.get('/:id', (req: Request, res: Response) => {
         res.status(404).json({ error: 'Lesson not found' });
         return;
     }
-    res.json(lesson);
+    const en = LESSONS_EN[lesson.id];
+    if (en) {
+        const merged = {
+            ...lesson,
+            descriptionEn: en.descriptionEn,
+            keyTakeawaysEn: en.keyTakeawaysEn,
+            sections: lesson.sections.map((s, i) => ({
+                ...s,
+                headingEn: en.sections[i]?.headingEn || s.headingEn,
+                contentEn: en.sections[i]?.contentEn || s.contentEn,
+            })),
+            quiz: lesson.quiz?.map((q, i) => ({
+                ...q,
+                questionEn: en.quiz?.[i]?.questionEn || q.questionEn,
+                optionsEn: en.quiz?.[i]?.optionsEn || q.optionsEn,
+            })),
+        };
+        res.json(merged);
+    } else {
+        res.json(lesson);
+    }
 });
 
 export default router;

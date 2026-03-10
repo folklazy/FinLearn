@@ -10,8 +10,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
         }
 
-        if (password.length < 6) {
-            return NextResponse.json({ error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' }, { status: 400 });
+        if (password.length < 8 || password.length > 64) {
+            return NextResponse.json({ error: 'รหัสผ่านต้องมี 8-64 ตัวอักษร' }, { status: 400 });
+        }
+        if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+            return NextResponse.json({ error: 'รหัสผ่านต้องมีตัวอักษรอย่างน้อย 1 ตัว และตัวเลขอย่างน้อย 1 ตัว' }, { status: 400 });
         }
 
         const resetToken = await prisma.passwordResetToken.findFirst({

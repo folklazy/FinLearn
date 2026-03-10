@@ -56,6 +56,7 @@ export const SP500_CONSTITUENTS: SP500Stock[] = [
     { symbol: 'AKAM', name: 'Akamai Technologies', sector: 'Information Technology' },
     // ── Communication Services ──
     { symbol: 'GOOGL', name: 'Alphabet Inc. Class A', sector: 'Communication Services' },
+    { symbol: 'GOOG', name: 'Alphabet Inc. Class C', sector: 'Communication Services' },
     { symbol: 'META', name: 'Meta Platforms Inc.', sector: 'Communication Services' },
     { symbol: 'NFLX', name: 'Netflix Inc.', sector: 'Communication Services' },
     { symbol: 'DIS', name: 'Walt Disney Company', sector: 'Communication Services' },

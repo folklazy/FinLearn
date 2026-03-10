@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, LogIn, LogOut, User, Settings, ChevronDown } from 'lucide-react';
+import { Search, Menu, X, LogIn, LogOut, User, Settings, ChevronDown, Globe } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { api } from '@/lib/api';
+import { useI18n, Locale } from '@/lib/i18n';
 
 interface SearchResult {
     symbol: string;
@@ -15,15 +16,17 @@ interface SearchResult {
     logo?: string;
 }
 
-const NAV_LINKS = [
-    { href: '/', label: 'หน้าหลัก' },
-    { href: '/stocks', label: 'หุ้น' },
-    { href: '/learn', label: 'บทเรียน' },
-    { href: '/watchlist', label: 'พอร์ต', authOnly: true },
+const NAV_KEYS: { href: string; key: string }[] = [
+    { href: '/', key: 'nav.home' },
+    { href: '/stocks', key: 'nav.stocks' },
+    { href: '/learn', key: 'nav.learn' },
+    { href: '/watchlist', key: 'nav.watchlist' },
+    { href: '/portfolio', key: 'nav.portfolio' },
 ];
 
 export default function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -33,8 +36,12 @@ export default function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
     const { data: session, status } = useSession();
+    const { t, locale, setLocale } = useI18n();
+    const [langMenu, setLangMenu] = useState(false);
+    const langRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Debounced live search
@@ -61,20 +68,49 @@ export default function Navbar() {
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [searchQuery]);
 
-    // Close dropdown on outside click
+    // Close menus on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) setUserMenu(false);
-            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) setShowDropdown(false);
+            if (langRef.current && !langRef.current.contains(e.target as Node)) setLangMenu(false);
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+                setSearchOpen(false);
+                setSearchQuery('');
+            }
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    // Keyboard shortcut: Cmd/Ctrl + K to open search
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setSearchOpen(prev => !prev);
+                setTimeout(() => searchInputRef.current?.focus(), 50);
+            }
+            if (e.key === 'Escape') {
+                setSearchOpen(false);
+                setSearchQuery('');
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, []);
+
+    // Auto-focus search input when opened
+    useEffect(() => {
+        if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
+    }, [searchOpen]);
+
     const navigateToStock = (symbol: string) => {
         router.push(`/stocks/${symbol}`);
         setSearchQuery('');
         setShowDropdown(false);
+        setSearchOpen(false);
         setActiveIndex(-1);
         setMobileOpen(false);
     };
@@ -87,6 +123,7 @@ export default function Navbar() {
             router.push(`/stocks?q=${encodeURIComponent(searchQuery)}`);
             setSearchQuery('');
             setShowDropdown(false);
+            setSearchOpen(false);
             setMobileOpen(false);
         }
     };
@@ -95,123 +132,115 @@ export default function Navbar() {
         if (!showDropdown || searchResults.length === 0) return;
         if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => Math.min(p + 1, searchResults.length - 1)); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => Math.max(p - 1, -1)); }
-        else if (e.key === 'Escape') { setShowDropdown(false); setActiveIndex(-1); }
+        else if (e.key === 'Escape') { setShowDropdown(false); setActiveIndex(-1); setSearchOpen(false); }
     };
 
     const isActive = (href: string) => href !== '#' && (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
+    const userInitial = session?.user?.name?.[0]?.toUpperCase() || session?.user?.email?.[0]?.toUpperCase() || 'U';
+
     return (
-        <nav style={{
-            position: 'sticky', top: 0, zIndex: 'var(--z-navbar)' as unknown as number,
-            background: 'rgba(14,15,20,0.82)',
-            backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-            borderBottom: '1px solid var(--border)',
-        }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '60px' }}>
+        <nav className="navbar">
+            <div className="navbar-inner">
+                <div className="navbar-content">
 
-                    {/* ── Logo ── */}
-                    <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                        <div style={{
-                            width: '32px', height: '32px', borderRadius: '9px',
-                            background: 'var(--gradient-primary)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '15px', fontWeight: 800, color: 'white',
-                        }}>F</div>
-                        <span style={{ fontSize: '1.1rem', fontWeight: 750, letterSpacing: '-0.02em' }}>
-                            Fin<span className="gradient-text">Learn</span>
-                        </span>
-                    </Link>
+                    {/* ── Left: Logo + Links ── */}
+                    <div className="navbar-left">
+                        <Link href="/" className="navbar-logo">
+                            <div className="navbar-logo-mark">F</div>
+                            <span className="navbar-logo-text">
+                                Fin<span className="gradient-text">Learn</span>
+                            </span>
+                        </Link>
 
-                    {/* ── Desktop links ── */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} className="hidden-mobile">
-                        {NAV_LINKS.filter(link => !link.authOnly || !!session).map(link => (
-                            <Link key={link.href} href={link.href} style={{
-                                padding: '7px 14px', borderRadius: '8px', fontSize: '0.84rem',
-                                fontWeight: isActive(link.href) ? 600 : 450,
-                                color: isActive(link.href) ? 'var(--text-primary)' : 'var(--text-muted)',
-                                background: isActive(link.href) ? 'rgba(124,108,240,0.08)' : 'transparent',
-                                transition: 'all 0.2s var(--ease)',
-                            }}
-                                onMouseOver={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}}
-                                onMouseOut={e => { if (!isActive(link.href)) { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}}
-                            >{link.label}</Link>
-                        ))}
+                        <div className="navbar-separator" />
+
+                        <div className="navbar-links hidden-mobile">
+                            {NAV_KEYS.map(link => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`navbar-link${isActive(link.href) ? ' active' : ''}`}
+                                >
+                                    {t(link.key)}
+                                </Link>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* ── Right side ── */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="hidden-mobile">
+                    {/* ── Right: Search + Auth ── */}
+                    <div className="navbar-right hidden-mobile">
                         {/* Search */}
                         <div ref={searchContainerRef} style={{ position: 'relative' }}>
-                            <form onSubmit={handleSearch} style={{ position: 'relative' }}>
-                                {searchLoading ? (
-                                    <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', border: '2px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-                                ) : (
-                                    <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                                )}
-                                <input type="text" value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    onFocus={() => { if (searchResults.length > 0) setShowDropdown(true); }}
-                                    placeholder="ค้นหาหุ้น..."
-                                    className="input"
-                                    style={{ width: '200px', padding: '7px 12px 7px 34px', fontSize: '0.82rem', borderRadius: '9px', background: 'var(--bg-secondary)', transition: 'width 0.2s' }}
-                                />
-                            </form>
+                            {searchOpen ? (
+                                <form onSubmit={handleSearch} className="navbar-search-expanded">
+                                    <Search size={14} className="navbar-search-icon" />
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder={t('nav.searchPlaceholder')}
+                                        className="navbar-search-input"
+                                        autoFocus
+                                    />
+                                    {searchLoading && <div className="navbar-search-spinner" />}
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSearchOpen(false); setSearchQuery(''); setShowDropdown(false); }}
+                                        className="navbar-search-close"
+                                        aria-label={t('nav.searchClose')}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </form>
+                            ) : (
+                                <button
+                                    onClick={() => setSearchOpen(true)}
+                                    className="navbar-search-trigger"
+                                    aria-label={`${t('nav.searchPlaceholder')} (⌘K)`}
+                                >
+                                    <Search size={15} />
+                                    <span className="navbar-search-hint">{t('nav.search')}</span>
+                                    <kbd className="navbar-kbd">⌘K</kbd>
+                                </button>
+                            )}
 
                             {/* Search Dropdown */}
                             {showDropdown && searchResults.length > 0 && (
-                                <div className="animate-scale-in" role="listbox" aria-label="ผลการค้นหา" style={{
-                                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                                    minWidth: '340px', background: 'var(--bg-elevated)',
-                                    border: '1px solid var(--border)', borderRadius: '12px',
-                                    boxShadow: '0 16px 48px rgba(0,0,0,0.4)', zIndex: 'var(--z-dropdown)' as unknown as number, overflow: 'hidden',
-                                }}>
-                                    <div style={{ padding: '6px 12px 4px', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
-                                        ผลการค้นหา — {searchResults.length} รายการ
+                                <div className="navbar-dropdown" role="listbox" aria-label={t('nav.searchResults')}>
+                                    <div className="navbar-dropdown-header">
+                                        {t('nav.searchResults')} {searchResults.length} {t('nav.searchItems')}
                                     </div>
                                     {searchResults.slice(0, 8).map((result, idx) => (
-                                        <button key={result.symbol}
+                                        <button
+                                            key={result.symbol}
                                             onClick={() => navigateToStock(result.symbol)}
                                             onMouseEnter={() => setActiveIndex(idx)}
-                                            style={{
-                                                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-                                                padding: '10px 14px', background: idx === activeIndex ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                                border: 'none', cursor: 'pointer', color: 'var(--text-primary)',
-                                                textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.1s',
-                                                borderBottom: idx < Math.min(searchResults.length, 8) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                                            }}
+                                            className={`navbar-dropdown-item${idx === activeIndex ? ' active' : ''}`}
                                         >
-                                            {/* Logo */}
-                                            <div style={{ width: '34px', height: '34px', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-secondary)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <img src={result.logo || `https://financialmodelingprep.com/image-stock/${result.symbol}.png`}
+                                            <div className="navbar-dropdown-logo">
+                                                <img
+                                                    src={result.logo || `https://financialmodelingprep.com/image-stock/${result.symbol}.png`}
                                                     alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     onError={(e) => {
                                                         e.currentTarget.style.display = 'none';
-                                                        e.currentTarget.parentElement!.innerHTML = `<span style="font-size:0.75rem;font-weight:700;color:var(--primary-light)">${result.symbol.slice(0, 3)}</span>`;
+                                                        e.currentTarget.parentElement!.innerHTML = `<span style="font-size:0.7rem;font-weight:700;color:var(--text-muted)">${result.symbol.slice(0, 3)}</span>`;
                                                     }}
                                                 />
                                             </div>
-                                            {/* Name + exchange */}
                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {result.name}
-                                                </div>
-                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                <div className="navbar-dropdown-name">{result.name}</div>
+                                                <div className="navbar-dropdown-meta">
                                                     {result.exchange ? `${result.exchange}:${result.symbol}` : result.symbol}
                                                 </div>
                                             </div>
-                                            {/* Sector */}
-                                            {result.sector && (
-                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0, maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {result.sector}
-                                                </span>
-                                            )}
                                         </button>
                                     ))}
                                     {searchResults.length > 8 && (
-                                        <div style={{ padding: '8px 14px', fontSize: '0.72rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-                                            + {searchResults.length - 8} รายการเพิ่มเติม · กด Enter เพื่อดูทั้งหมด
+                                        <div className="navbar-dropdown-footer">
+                                            + {searchResults.length - 8} {t('nav.searchMore')}
                                         </div>
                                     )}
                                 </div>
@@ -220,128 +249,165 @@ export default function Navbar() {
 
                         {/* Auth */}
                         {status === 'loading' ? (
-                            <div className="skeleton" style={{ width: '80px', height: '34px', borderRadius: '9px' }} />
+                            <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
                         ) : session?.user ? (
                             <div ref={menuRef} style={{ position: 'relative' }}>
                                 <button
                                     onClick={() => setUserMenu(!userMenu)}
-                                    aria-label="เมนูผู้ใช้"
+                                    className={`navbar-avatar-btn${userMenu ? ' active' : ''}`}
+                                    aria-label={t('nav.userMenu')}
                                     aria-expanded={userMenu}
                                     aria-haspopup="true"
-                                    style={{
-                                    display: 'flex', alignItems: 'center', gap: '7px',
-                                    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                                    borderRadius: '9px', padding: '5px 10px 5px 6px',
-                                    color: 'var(--text-primary)', cursor: 'pointer', minHeight: '44px',
-                                    transition: 'border-color 0.2s var(--ease)', fontFamily: 'inherit',
-                                }}
-                                    onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--border-light)')}
-                                    onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                                 >
                                     {session.user.image ? (
-                                        <img src={session.user.image} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                                        <img src={session.user.image} alt="" className="navbar-avatar-img" />
                                     ) : (
-                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <User size={13} color="white" />
-                                        </div>
+                                        <div className="navbar-avatar-fallback">{userInitial}</div>
                                     )}
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 500, maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {session.user.name || 'User'}
-                                    </span>
-                                    <ChevronDown size={13} style={{ color: 'var(--text-muted)', transition: 'transform 0.2s', transform: userMenu ? 'rotate(180deg)' : 'none' }} />
+                                    <span className="navbar-avatar-name">{session.user.name || t('nav.account')}</span>
+                                    <ChevronDown size={13} className={`navbar-avatar-chevron${userMenu ? ' open' : ''}`} />
                                 </button>
 
                                 {userMenu && (
-                                    <div className="animate-scale-in" role="menu" style={{
-                                        position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                                        minWidth: '200px', background: 'var(--bg-elevated)',
-                                        border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                                        padding: '6px', boxShadow: 'var(--shadow-lg)', zIndex: 'var(--z-dropdown)' as unknown as number,
-                                    }}>
-                                        <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
-                                            <p style={{ fontSize: '0.82rem', fontWeight: 600 }}>{session.user.name}</p>
-                                            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>{session.user.email}</p>
+                                    <div className="navbar-user-dropdown animate-scale-in" role="menu">
+                                        <div className="navbar-user-info">
+                                            <p className="navbar-user-name">{session.user.name || 'User'}</p>
+                                            <p className="navbar-user-email">{session.user.email}</p>
                                         </div>
-                                        <Link href="/settings" onClick={() => setUserMenu(false)} style={{
-                                            display: 'flex', alignItems: 'center', gap: '8px',
-                                            padding: '8px 12px', borderRadius: '8px',
-                                            color: 'var(--text-secondary)', fontSize: '0.82rem',
-                                            transition: 'all 0.15s',
-                                        }}
-                                            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                                            onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                                        ><Settings size={15} /> ตั้งค่าบัญชี</Link>
-                                        <button onClick={() => { signOut({ callbackUrl: '/' }); setUserMenu(false); }} style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
-                                            padding: '8px 12px', borderRadius: '8px',
-                                            background: 'none', border: 'none', fontFamily: 'inherit',
-                                            color: 'var(--danger)', cursor: 'pointer', fontSize: '0.82rem',
-                                            transition: 'background 0.15s',
-                                        }}
-                                            onMouseOver={e => (e.currentTarget.style.background = 'var(--danger-bg)')}
-                                            onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
-                                        ><LogOut size={15} /> ออกจากระบบ</button>
+                                        <div className="navbar-user-menu-items">
+                                            <Link href="/settings" onClick={() => setUserMenu(false)} className="navbar-user-menu-item">
+                                                <Settings size={15} /> {t('nav.settings')}
+                                            </Link>
+                                            <button
+                                                onClick={() => { signOut({ callbackUrl: '/' }); setUserMenu(false); }}
+                                                className="navbar-user-menu-item danger"
+                                            >
+                                                <LogOut size={15} /> {t('nav.logout')}
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <Link href="/login" className="btn btn-primary" style={{ padding: '7px 18px', fontSize: '0.82rem', gap: '6px' }}>
-                                <LogIn size={14} /> เข้าสู่ระบบ
+                            <Link href="/login" className="navbar-login-btn primary">
+                                <LogIn size={15} /> {t('nav.login')}
                             </Link>
                         )}
+
+                        {/* Language Selector */}
+                        <div ref={langRef} style={{ position: 'relative' }}>
+                            <button
+                                onClick={() => setLangMenu(!langMenu)}
+                                className="navbar-lang-btn"
+                                aria-label="Language"
+                                aria-expanded={langMenu}
+                            >
+                                <Globe size={14} />
+                                <span style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase' }}>{locale}</span>
+                            </button>
+                            {langMenu && (
+                                <div className="navbar-lang-dropdown animate-scale-in">
+                                    {(['th', 'en'] as Locale[]).map(l => (
+                                        <button
+                                            key={l}
+                                            onClick={() => { setLocale(l); setLangMenu(false); }}
+                                            className={`navbar-lang-option${locale === l ? ' active' : ''}`}
+                                        >
+                                            <span style={{ fontSize: '1rem' }}>{l === 'th' ? '🇹🇭' : '🇺🇸'}</span>
+                                            <span>{l === 'th' ? 'ไทย' : 'English'}</span>
+                                            {locale === l && <span style={{ marginLeft: 'auto', color: 'var(--primary-light)', fontSize: '0.8rem' }}>✓</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* ── Mobile toggle ── */}
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        aria-label={mobileOpen ? 'ปิดเมนู' : 'เปิดเมนู'}
+                        aria-label={mobileOpen ? t('nav.closeMenu') : t('nav.openMenu')}
                         aria-expanded={mobileOpen}
                         aria-controls="mobile-menu"
-                        className="show-mobile"
-                        style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '10px', minWidth: '44px', minHeight: '44px', borderRadius: '8px' }}>
-                        {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+                        className="navbar-mobile-toggle show-mobile"
+                    >
+                        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
                 </div>
 
                 {/* ── Mobile menu ── */}
                 {mobileOpen && (
-                    <div id="mobile-menu" style={{ padding: '12px 0 16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <form onSubmit={handleSearch} style={{ position: 'relative', marginBottom: '4px' }}>
-                            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="ค้นหาหุ้น..." className="input"
-                                style={{ paddingLeft: '34px', fontSize: '0.85rem', background: 'var(--bg-secondary)' }} />
+                    <div id="mobile-menu" className="navbar-mobile-menu">
+                        <form onSubmit={handleSearch} className="navbar-mobile-search">
+                            <Search size={14} className="navbar-mobile-search-icon" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder={t('nav.searchPlaceholder')}
+                                className="input"
+                                style={{ paddingLeft: '36px', fontSize: '0.88rem' }}
+                            />
                         </form>
-                        {NAV_LINKS.filter(link => !link.authOnly || !!session).map(link => (
-                            <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
-                                style={{
-                                    padding: '10px 8px', borderRadius: '8px', fontSize: '0.88rem',
-                                    fontWeight: isActive(link.href) ? 600 : 400,
-                                    color: isActive(link.href) ? 'var(--primary-light)' : 'var(--text-secondary)',
-                                }}>{link.label}</Link>
-                        ))}
-                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '4px' }}>
+
+                        <div className="navbar-mobile-links">
+                            {NAV_KEYS.map(link => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className={`navbar-mobile-link${isActive(link.href) ? ' active' : ''}`}
+                                >
+                                    {t(link.key)}
+                                </Link>
+                            ))}
+                        </div>
+
+                        {/* Mobile Language Selector */}
+                        <div style={{ display: 'flex', gap: '6px', padding: '0 16px', marginTop: '8px' }}>
+                            {(['th', 'en'] as Locale[]).map(l => (
+                                <button
+                                    key={l}
+                                    onClick={() => { setLocale(l); }}
+                                    style={{
+                                        flex: 1, padding: '8px', borderRadius: '8px', cursor: 'pointer',
+                                        fontFamily: 'inherit', fontSize: '0.8rem', fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        background: locale === l ? 'var(--primary)' : 'var(--bg-elevated)',
+                                        color: locale === l ? '#fff' : 'var(--text-secondary)',
+                                        border: locale === l ? '1px solid var(--primary)' : '1px solid var(--border)',
+                                        transition: 'all 0.15s',
+                                    }}
+                                >
+                                    {l === 'th' ? '🇹🇭 ไทย' : '🇺🇸 EN'}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="navbar-mobile-footer">
                             {session?.user ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 8px' }}>
+                                <>
+                                    <div className="navbar-mobile-user">
                                         {session.user.image ? (
-                                            <img src={session.user.image} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
-                                        ) : <User size={18} style={{ color: 'var(--text-muted)' }} />}
-                                        <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{session.user.name || session.user.email}</span>
+                                            <img src={session.user.image} alt="" className="navbar-avatar-img" style={{ width: '28px', height: '28px' }} />
+                                        ) : (
+                                            <div className="navbar-avatar-fallback" style={{ width: '28px', height: '28px', fontSize: '0.75rem' }}>{userInitial}</div>
+                                        )}
+                                        <span>{session.user.name || session.user.email}</span>
                                     </div>
-                                    <Link href="/settings" onClick={() => setMobileOpen(false)}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 8px', color: 'var(--text-secondary)', fontSize: '0.88rem', borderRadius: '8px' }}>
-                                        <Settings size={15} /> ตั้งค่าบัญชี
+                                    <Link href="/settings" onClick={() => setMobileOpen(false)} className="navbar-mobile-link">
+                                        <Settings size={15} /> {t('nav.settings')}
                                     </Link>
-                                    <button onClick={() => { signOut({ callbackUrl: '/' }); setMobileOpen(false); }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 8px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.88rem', fontFamily: 'inherit' }}>
-                                        <LogOut size={15} /> ออกจากระบบ
+                                    <button
+                                        onClick={() => { signOut({ callbackUrl: '/' }); setMobileOpen(false); }}
+                                        className="navbar-mobile-link danger"
+                                    >
+                                        <LogOut size={15} /> {t('nav.logout')}
                                     </button>
-                                </div>
+                                </>
                             ) : (
-                                <Link href="/login" onClick={() => setMobileOpen(false)} className="btn btn-primary"
-                                    style={{ width: '100%', justifyContent: 'center', gap: '6px' }}>
-                                    <LogIn size={15} /> เข้าสู่ระบบ
+                                <Link href="/login" onClick={() => setMobileOpen(false)} className="navbar-login-btn primary" style={{ width: '100%', justifyContent: 'center' }}>
+                                    <LogIn size={15} /> {t('nav.login')}
                                 </Link>
                             )}
                         </div>

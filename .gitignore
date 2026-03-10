@@ -56,3 +56,8 @@ coverage/
 *.tgz
 .vercel
 .turbo
+*.bak
+*.tmp
+
+# Prisma generated client (regenerated via prisma generate)
+**/node_modules/.prisma/
