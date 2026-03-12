@@ -9,12 +9,12 @@ import {
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
+/* ── Data ── */
 const expData = [
     { value: 'BEGINNER', lk: 'onboard.exp.beginner', dk: 'onboard.exp.beginnerDesc', icon: BookOpen },
     { value: 'INTERMEDIATE', lk: 'onboard.exp.intermediate', dk: 'onboard.exp.intermediateDesc', icon: TrendingUp },
     { value: 'ADVANCED', lk: 'onboard.exp.advanced', dk: 'onboard.exp.advancedDesc', icon: Zap },
 ];
-
 const goalData = [
     { value: 'LEARN_BASICS', lk: 'onboard.goal.basics', dk: 'onboard.goal.basicsDesc', icon: BookOpen },
     { value: 'VALUE', lk: 'onboard.goal.value', dk: 'onboard.goal.valueDesc', icon: Target },
@@ -22,14 +22,19 @@ const goalData = [
     { value: 'DIVIDEND', lk: 'onboard.goal.dividend', dk: 'onboard.goal.dividendDesc', icon: Coins },
     { value: 'TRADING_EDU', lk: 'onboard.goal.trading', dk: 'onboard.goal.tradingDesc', icon: BarChart3 },
 ];
-
 const riskData = [
-    { value: 'LOW', lk: 'onboard.risk.low', dk: 'onboard.risk.lowDesc', color: '#22c55e' },
-    { value: 'MEDIUM', lk: 'onboard.risk.medium', dk: 'onboard.risk.mediumDesc', color: '#f59e0b' },
-    { value: 'HIGH', lk: 'onboard.risk.high', dk: 'onboard.risk.highDesc', color: '#ef4444' },
+    { value: 'LOW', lk: 'onboard.risk.low', dk: 'onboard.risk.lowDesc', color: '#34d399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.25)' },
+    { value: 'MEDIUM', lk: 'onboard.risk.medium', dk: 'onboard.risk.mediumDesc', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.25)' },
+    { value: 'HIGH', lk: 'onboard.risk.high', dk: 'onboard.risk.highDesc', color: '#fb7185', bg: 'rgba(251,113,133,0.08)', border: 'rgba(251,113,133,0.25)' },
 ];
-
 const cashPresets = ['10000', '50000', '100000'];
+
+/* ── Shared inline-style helpers (match globals.css tokens) ── */
+const S = {
+    tile: { background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', transition: 'all .15s var(--ease)' } as React.CSSProperties,
+    tileSel: { background: 'rgba(124,108,240,0.10)', border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-md)', transition: 'all .15s var(--ease)' } as React.CSSProperties,
+    label: { color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.05em', marginBottom: 10 },
+};
 
 export default function OnboardingPage() {
     const { t, locale } = useI18n();
@@ -44,8 +49,8 @@ export default function OnboardingPage() {
     const [startingCash, setStartingCash] = useState('100000');
 
     if (status === 'loading') return (
-        <div className="min-h-screen flex items-center justify-center" style={{ background: '#0e0e0e' }}>
-            <div className="w-4 h-4 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+        <div style={{ minHeight: 'calc(100vh - 56px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 18, height: 18, border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />
         </div>
     );
     if (!session?.user) { router.push('/login'); return null; }
@@ -106,198 +111,187 @@ export default function OnboardingPage() {
     } as Record<number, string[]>;
 
     return (
-        <div className="min-h-screen flex" style={{ background: '#0e0e0e' }}>
+        <div style={{ display: 'flex', minHeight: 'calc(100vh - 56px)' }}>
 
-            {/* ── LEFT ── */}
+            {/* ── LEFT PANEL ── */}
             <aside
-                className="hidden lg:flex flex-col justify-between shrink-0 px-8 py-8"
-                style={{ width: '280px', background: '#080808', borderRight: '1px solid rgba(255,255,255,0.04)' }}
+                className="hidden lg:flex"
+                style={{
+                    width: 280, flexShrink: 0, flexDirection: 'column', justifyContent: 'space-between',
+                    padding: '32px 28px', background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)',
+                }}
             >
-                <span className="text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: '#2a2a2a' }}>
-                    fin.learn
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    FinLearn
                 </span>
 
-                <div className="space-y-5">
-                    <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ background: 'rgba(34,197,94,0.08)' }}
-                    >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div style={{
+                        width: 36, height: 36, borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(124,108,240,0.10)', border: '1px solid rgba(124,108,240,0.2)',
+                    }}>
                         {step === 1
-                            ? <GraduationCap className="w-4 h-4" style={{ color: '#22c55e' }} />
-                            : <BarChart2 className="w-4 h-4" style={{ color: '#22c55e' }} />}
+                            ? <GraduationCap size={16} style={{ color: 'var(--primary-light)' }} />
+                            : <BarChart2 size={16} style={{ color: 'var(--primary-light)' }} />}
                     </div>
                     <div>
-                        <h2 className="text-[13px] font-medium" style={{ color: '#999' }}>
+                        <h2 style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
                             {step === 1 ? t('onboard.title1') : t('onboard.title2')}
                         </h2>
-                        <p className="mt-1 text-[12px] leading-relaxed" style={{ color: '#3a3a3a' }}>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                             {step === 1 ? t('onboard.desc1') : t('onboard.desc2')}
                         </p>
                     </div>
-                    <ul className="space-y-2.5">
+                    <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, listStyle: 'none', padding: 0 }}>
                         {features[step].map((f, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                                <Check className="w-3 h-3 mt-0.5 shrink-0" style={{ color: '#22c55e' }} />
-                                <span className="text-[11px] leading-snug" style={{ color: '#444' }}>{f}</span>
+                            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                <Check size={12} style={{ color: 'var(--primary-light)', marginTop: 3, flexShrink: 0 }} />
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{f}</span>
                             </li>
                         ))}
                     </ul>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {[1, 2].map((s) => (
-                        <div
-                            key={s}
-                            className="h-[2px] rounded-full transition-all duration-300"
-                            style={{ width: step === s ? '20px' : '8px', background: step >= s ? '#22c55e' : 'rgba(255,255,255,0.06)' }}
-                        />
+                        <div key={s} style={{
+                            height: 3, borderRadius: 100, transition: 'all .3s var(--ease)',
+                            width: step === s ? 22 : 8,
+                            background: step >= s ? 'var(--primary)' : 'var(--border)',
+                        }} />
                     ))}
-                    <span className="text-[10px] ml-1" style={{ color: '#2a2a2a' }}>{step}/2</span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginLeft: 2 }}>{step}/2</span>
                 </div>
             </aside>
 
-            {/* ── RIGHT ── */}
-            <main className="flex-1 flex flex-col items-center justify-center px-5 py-10 overflow-y-auto">
-                <div className="w-full max-w-[420px]">
+            {/* ── RIGHT PANEL ── */}
+            <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', overflowY: 'auto' }}>
+                <div style={{ width: '100%', maxWidth: 440 }}>
 
                     {/* Mobile bar */}
-                    <div className="lg:hidden flex items-center justify-between mb-6">
-                        <span className="text-[10px] tracking-[0.25em] uppercase" style={{ color: '#2a2a2a' }}>fin.learn</span>
-                        <span className="text-[10px]" style={{ color: '#333' }}>{step}/2</span>
+                    <div className="lg:hidden" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>FinLearn</span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{step}/2</span>
                     </div>
 
-                    {/* Heading */}
-                    <p className="text-[10px] font-semibold tracking-[0.2em] uppercase" style={{ color: '#22c55e' }}>
+                    {/* Step badge */}
+                    <span className="badge badge-primary" style={{ marginBottom: 12, fontSize: '0.72rem' }}>
                         {t('onboard.step')} {step} {t('onboard.of')} 2
-                    </p>
-                    <h1 className="mt-1 text-xl font-semibold tracking-tight" style={{ color: '#e0e0e0' }}>
+                    </span>
+
+                    <h1 style={{ fontSize: '1.35rem', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text-primary)', marginBottom: 0 }}>
                         {step === 1 ? t('onboard.title1') : t('onboard.title2')}
                     </h1>
+                    <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: 6, marginBottom: 28 }}>
+                        {step === 1 ? t('onboard.desc1') : t('onboard.desc2')}
+                    </p>
 
                     {step === 1 ? (
-                        <div className="mt-6 space-y-6">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-                            {/* Experience — 3 col */}
+                            {/* Experience — 3 col tiles */}
                             <div>
-                                <label className="text-[10px] font-semibold tracking-[0.15em] uppercase mb-2 block" style={{ color: '#444' }}>
-                                    {t('onboard.expLevel')}
-                                </label>
-                                <div className="grid grid-cols-3 gap-1.5">
+                                <div style={S.label}>{t('onboard.expLevel')}</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                                     {expData.map(({ value, lk, dk, icon: Icon }) => {
                                         const sel = experienceLevel === value;
                                         return (
-                                            <button
-                                                key={value}
-                                                onClick={() => setExperienceLevel(value)}
-                                                className="relative flex flex-col items-center gap-1.5 py-4 rounded-xl transition-all duration-100"
-                                                style={sel
-                                                    ? { background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.3)' }
-                                                    : { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                                            <button key={value} onClick={() => setExperienceLevel(value)}
+                                                style={{ ...(sel ? S.tileSel : S.tile), padding: '18px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', position: 'relative' }}
                                             >
-                                                {sel && <Check className="absolute top-2 right-2 w-2.5 h-2.5" style={{ color: '#22c55e' }} />}
-                                                <Icon className="w-4 h-4" style={{ color: sel ? '#22c55e' : '#333' }} />
-                                                <span className="text-[11px] font-medium" style={{ color: sel ? '#ddd' : '#555' }}>{t(lk)}</span>
-                                                <span className="text-[9px] px-1 text-center leading-tight" style={{ color: '#333' }}>{t(dk)}</span>
+                                                {sel && <Check size={11} style={{ position: 'absolute', top: 8, right: 8, color: 'var(--primary-light)' }} />}
+                                                <Icon size={18} style={{ color: sel ? 'var(--primary-light)' : 'var(--text-muted)' }} />
+                                                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: sel ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{t(lk)}</span>
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.3 }}>{t(dk)}</span>
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Goal */}
+                            {/* Goal — rows */}
                             <div>
-                                <label className="text-[10px] font-semibold tracking-[0.15em] uppercase mb-2 block" style={{ color: '#444' }}>
-                                    {t('onboard.goal')}
-                                </label>
-                                <div className="space-y-1">
+                                <div style={S.label}>{t('onboard.goal')}</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                     {goalData.map(({ value, lk, dk, icon: Icon }) => {
                                         const sel = primaryGoal === value;
                                         return (
-                                            <button
-                                                key={value}
-                                                onClick={() => setPrimaryGoal(value)}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-100"
-                                                style={sel
-                                                    ? { background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.25)' }
-                                                    : { background: 'transparent', border: '1px solid rgba(255,255,255,0.05)' }}
+                                            <button key={value} onClick={() => setPrimaryGoal(value)}
+                                                style={{
+                                                    ...(sel ? S.tileSel : { ...S.tile, background: 'transparent' }),
+                                                    padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left',
+                                                }}
                                             >
-                                                <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: sel ? '#22c55e' : '#333' }} />
-                                                <span className="flex-1 text-[12px]" style={{ color: sel ? '#ddd' : '#777' }}>
-                                                    {t(lk)}
-                                                    <span className="ml-1.5 text-[10px]" style={{ color: '#333' }}>{t(dk)}</span>
-                                                </span>
-                                                {sel && <Check className="w-3 h-3 shrink-0" style={{ color: '#22c55e' }} />}
+                                                <Icon size={15} style={{ color: sel ? 'var(--primary-light)' : 'var(--text-muted)', flexShrink: 0 }} />
+                                                <div style={{ flex: 1 }}>
+                                                    <span style={{ fontSize: '0.82rem', fontWeight: 550, color: sel ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{t(lk)}</span>
+                                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 8 }}>{t(dk)}</span>
+                                                </div>
+                                                {sel && <Check size={14} style={{ color: 'var(--primary-light)', flexShrink: 0 }} />}
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Next */}
-                            <button
-                                onClick={handleStep1}
-                                disabled={!step1Ok || loading}
-                                className="w-full flex items-center justify-center gap-1.5 py-3 rounded-lg text-[13px] font-semibold transition-all"
+                            {/* CTA */}
+                            <button onClick={handleStep1} disabled={!step1Ok || loading}
+                                className="btn"
                                 style={step1Ok && !loading
-                                    ? { background: '#22c55e', color: '#080808' }
-                                    : { background: 'rgba(255,255,255,0.03)', color: '#2a2a2a', cursor: 'not-allowed', border: '1px solid rgba(255,255,255,0.05)' }}
+                                    ? { width: '100%', background: 'var(--gradient-primary)', color: '#fff', boxShadow: '0 2px 12px rgba(124,108,240,0.25)' }
+                                    : { width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'not-allowed', border: '1px solid var(--border)' }}
                             >
                                 {loading
-                                    ? <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    : <>{t('onboard.next')}<ChevronRight className="w-3.5 h-3.5" /></>}
+                                    ? <span style={{ width: 16, height: 16, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />
+                                    : <>{t('onboard.next')}<ChevronRight size={16} /></>}
                             </button>
                         </div>
                     ) : (
-                        <div className="mt-6 space-y-6">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-                            {/* Risk — 3 col */}
+                            {/* Risk — 3 col tiles */}
                             <div>
-                                <label className="text-[10px] font-semibold tracking-[0.15em] uppercase mb-2 block" style={{ color: '#444' }}>
-                                    {t('onboard.riskLevel')}
-                                </label>
-                                <div className="grid grid-cols-3 gap-1.5">
-                                    {riskData.map(({ value, lk, dk, color }) => {
+                                <div style={S.label}>{t('onboard.riskLevel')}</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                                    {riskData.map(({ value, lk, dk, color, bg, border }) => {
                                         const sel = riskLevel === value;
                                         return (
-                                            <button
-                                                key={value}
-                                                onClick={() => setRiskLevel(value)}
-                                                className="relative flex flex-col items-center gap-2 py-4 rounded-xl transition-all duration-100"
-                                                style={sel
-                                                    ? { background: `${color}0d`, border: `1px solid ${color}40` }
-                                                    : { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                                            <button key={value} onClick={() => setRiskLevel(value)}
+                                                style={{
+                                                    ...(sel
+                                                        ? { background: bg, border: `1px solid ${border}`, borderRadius: 'var(--radius-md)', transition: 'all .15s var(--ease)' }
+                                                        : S.tile),
+                                                    padding: '18px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', position: 'relative',
+                                                }}
                                             >
-                                                {sel && <Check className="absolute top-2 right-2 w-2.5 h-2.5" style={{ color }} />}
-                                                <div
-                                                    className="w-6 h-6 rounded-full flex items-center justify-center"
-                                                    style={{ background: sel ? `${color}1a` : 'rgba(255,255,255,0.03)' }}
-                                                >
-                                                    <div className="w-2 h-2 rounded-full" style={{ background: sel ? color : '#222' }} />
+                                                {sel && <Check size={11} style={{ position: 'absolute', top: 8, right: 8, color }} />}
+                                                <div style={{
+                                                    width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    background: sel ? `${bg}` : 'rgba(255,255,255,0.04)',
+                                                }}>
+                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: sel ? color : 'var(--text-muted)' }} />
                                                 </div>
-                                                <span className="text-[11px] font-medium" style={{ color: sel ? '#ddd' : '#555' }}>{t(lk)}</span>
-                                                <span className="text-[9px] px-1 text-center leading-tight" style={{ color: '#333' }}>{t(dk)}</span>
+                                                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: sel ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{t(lk)}</span>
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.3 }}>{t(dk)}</span>
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Cash */}
+                            {/* Cash presets */}
                             <div>
-                                <label className="text-[10px] font-semibold tracking-[0.15em] uppercase mb-2 block" style={{ color: '#444' }}>
-                                    {t('onboard.startCash')}
-                                </label>
-                                <div className="grid grid-cols-3 gap-1.5 mb-2">
+                                <div style={S.label}>{t('onboard.startCash')}</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
                                     {cashPresets.map((amt) => {
                                         const sel = startingCash === amt;
                                         return (
-                                            <button
-                                                key={amt}
-                                                onClick={() => setStartingCash(amt)}
-                                                className="py-2.5 rounded-lg text-[12px] font-medium transition-all"
-                                                style={sel
-                                                    ? { background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }
-                                                    : { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', color: '#555' }}
+                                            <button key={amt} onClick={() => setStartingCash(amt)}
+                                                style={{
+                                                    ...(sel ? S.tileSel : S.tile),
+                                                    padding: '10px 0', textAlign: 'center', fontSize: '0.82rem', fontWeight: 550, cursor: 'pointer',
+                                                    color: sel ? 'var(--primary-light)' : 'var(--text-secondary)',
+                                                }}
                                             >
                                                 ${Number(amt).toLocaleString()}
                                             </button>
@@ -305,44 +299,32 @@ export default function OnboardingPage() {
                                     })}
                                 </div>
                                 <input
-                                    type="number"
-                                    value={startingCash}
+                                    type="number" value={startingCash}
                                     onChange={(e) => setStartingCash(e.target.value)}
                                     placeholder={t('onboard.orEnter')}
-                                    className="w-full px-3 py-2.5 rounded-lg text-[12px] outline-none"
-                                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', color: '#ccc', caretColor: '#22c55e', transition: 'border-color .15s' }}
-                                    onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(34,197,94,0.4)')}
-                                    onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}
+                                    className="input"
+                                    style={{ fontSize: '0.82rem' }}
                                 />
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setStep(1)}
-                                    className="flex items-center gap-1 px-3 py-3 rounded-lg text-[12px] font-medium transition-all"
-                                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', color: '#555' }}
-                                >
-                                    <ChevronLeft className="w-3.5 h-3.5" />{t('onboard.goBack')}
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <button onClick={() => setStep(1)} className="btn btn-secondary" style={{ gap: 4 }}>
+                                    <ChevronLeft size={16} />{t('onboard.goBack')}
                                 </button>
-                                <button
-                                    onClick={handleStep2}
-                                    disabled={loading}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-lg text-[13px] font-semibold transition-all"
-                                    style={{ background: '#22c55e', color: '#080808' }}
+                                <button onClick={handleStep2} disabled={loading}
+                                    className="btn btn-primary" style={{ flex: 1 }}
                                 >
                                     {loading
-                                        ? <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                        ? <span style={{ width: 16, height: 16, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />
                                         : t('onboard.start')}
                                 </button>
                             </div>
 
-                            <button
-                                onClick={handleSkip}
-                                className="w-full text-[10px] text-center transition-colors py-0.5"
-                                style={{ color: '#2a2a2a' }}
-                                onMouseEnter={(e) => (e.currentTarget.style.color = '#555')}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = '#2a2a2a')}
+                            <button onClick={handleSkip}
+                                style={{ width: '100%', textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', transition: 'color .15s' }}
+                                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                             >
                                 {t('onboard.skip')}
                             </button>
