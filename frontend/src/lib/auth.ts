@@ -4,9 +4,14 @@ import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { checkLoginAttempt, recordLoginFailure, clearLoginAttempts } from '@/lib/login-limiter';
 
 class EmailNotVerifiedError extends CredentialsSignin {
     code = 'EMAIL_NOT_VERIFIED' as const;
+}
+
+class TooManyAttemptsError extends CredentialsSignin {
+    code = 'TOO_MANY_ATTEMPTS' as const;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -14,11 +19,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: 'jwt' },
 
     providers: [
-        // Google OAuth
-        Google({
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        }),
+        // Google OAuth (only register if env vars are set)
+        ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+            ? [Google({
+                clientId: process.env.GOOGLE_CLIENT_ID,
+                clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            })]
+            : []),
 
         // Email + Password
         Credentials({
@@ -30,22 +37,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
 
+                const email = credentials.email as string;
+
+                // Brute-force protection
+                const { allowed } = checkLoginAttempt(email);
+                if (!allowed) {
+                    throw new TooManyAttemptsError();
+                }
+
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email as string },
+                    where: { email },
                 });
 
-                if (!user || !user.passwordHash) return null;
+                if (!user || !user.passwordHash) {
+                    recordLoginFailure(email);
+                    return null;
+                }
 
                 const isValid = await bcrypt.compare(
                     credentials.password as string,
                     user.passwordHash,
                 );
 
-                if (!isValid) return null;
+                if (!isValid) {
+                    recordLoginFailure(email);
+                    return null;
+                }
 
                 if (!user.emailVerified) {
                     throw new EmailNotVerifiedError();
                 }
+
+                // Login success — clear failed attempts
+                clearLoginAttempts(email);
 
                 return {
                     id: user.id,

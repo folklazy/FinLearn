@@ -21,7 +21,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
     }
     const { symbol } = await req.json();
-    if (!symbol) return NextResponse.json({ error: 'symbol required' }, { status: 400 });
+    if (!symbol || typeof symbol !== 'string' || !/^[A-Za-z0-9.\-]{1,12}$/.test(symbol)) {
+        return NextResponse.json({ error: 'Invalid symbol format' }, { status: 400 });
+    }
 
     await prisma.$executeRaw`
         INSERT INTO user_favorites (user_id, symbol) VALUES (${session.user.id}, ${symbol.toUpperCase()})

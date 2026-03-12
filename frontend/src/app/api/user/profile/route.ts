@@ -56,6 +56,47 @@ export async function PUT(req: NextRequest) {
         onboardingStep,
     } = body;
 
+    // ── Input validation ──
+    const VALID_EXP = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+    const VALID_GOAL = ['LEARN_BASICS', 'VALUE', 'GROWTH', 'DIVIDEND', 'TRADING_EDU'];
+    const VALID_RISK = ['LOW', 'MEDIUM', 'HIGH'];
+    const VALID_LANG = ['th', 'en'];
+    const VALID_CURRENCY = ['THB', 'USD'];
+
+    if (name !== undefined && (typeof name !== 'string' || name.length > 100)) {
+        return NextResponse.json({ error: 'ชื่อต้องเป็นข้อความไม่เกิน 100 ตัวอักษร' }, { status: 400 });
+    }
+    if (displayName !== undefined && (typeof displayName !== 'string' || displayName.length > 100)) {
+        return NextResponse.json({ error: 'ชื่อแสดงต้องเป็นข้อความไม่เกิน 100 ตัวอักษร' }, { status: 400 });
+    }
+    if (experienceLevel !== undefined && !VALID_EXP.includes(experienceLevel)) {
+        return NextResponse.json({ error: 'ระดับประสบการณ์ไม่ถูกต้อง' }, { status: 400 });
+    }
+    if (primaryGoal !== undefined && !VALID_GOAL.includes(primaryGoal)) {
+        return NextResponse.json({ error: 'เป้าหมายไม่ถูกต้อง' }, { status: 400 });
+    }
+    if (riskLevel !== undefined && !VALID_RISK.includes(riskLevel)) {
+        return NextResponse.json({ error: 'ระดับความเสี่ยงไม่ถูกต้อง' }, { status: 400 });
+    }
+    if (simulatorStartingCash !== undefined) {
+        const cash = Number(simulatorStartingCash);
+        if (isNaN(cash) || cash < 1000 || cash > 10_000_000) {
+            return NextResponse.json({ error: 'เงินเริ่มต้นต้องอยู่ระหว่าง 1,000 - 10,000,000' }, { status: 400 });
+        }
+    }
+    if (language !== undefined && !VALID_LANG.includes(language)) {
+        return NextResponse.json({ error: 'ภาษาไม่ถูกต้อง' }, { status: 400 });
+    }
+    if (displayCurrency !== undefined && !VALID_CURRENCY.includes(displayCurrency)) {
+        return NextResponse.json({ error: 'สกุลเงินไม่ถูกต้อง' }, { status: 400 });
+    }
+    if (onboardingStep !== undefined && (typeof onboardingStep !== 'number' || onboardingStep < 1 || onboardingStep > 3)) {
+        return NextResponse.json({ error: 'onboardingStep ไม่ถูกต้อง' }, { status: 400 });
+    }
+    if (sectorIds !== undefined && (!Array.isArray(sectorIds) || sectorIds.length > 20)) {
+        return NextResponse.json({ error: 'sectorIds ไม่ถูกต้อง' }, { status: 400 });
+    }
+
     // Update user basic info
     if (name !== undefined || image !== undefined) {
         await prisma.user.update({

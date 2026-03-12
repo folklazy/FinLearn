@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 
 import stockRoutes from './routes/stocks';
 import healthRoutes from './routes/health';
@@ -23,7 +24,27 @@ app.use(cors({
     credentials: true,
 }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// ===== Rate Limiting =====
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,  // 15 minutes
+    max: 300,                   // 300 requests per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later' },
+});
+app.use(globalLimiter);
+
+const stockLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,   // 1 minute
+    max: 60,                    // 60 requests/min for stock data
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many stock requests, please slow down' },
+});
+app.use('/api/stocks', stockLimiter);
 
 // ===== Routes =====
 app.use('/api/health', healthRoutes);
