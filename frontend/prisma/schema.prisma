@@ -259,6 +259,21 @@ model PaperTrade {
 }
 
 // =========================
+// Rate Limiting (DB-backed, persists across restarts)
+// =========================
+
+model RateLimitAttempt {
+  key        String   @id
+  failCount  Int      @default(0) @map("fail_count")
+  lockedUntil DateTime? @map("locked_until")
+  lastAttempt DateTime @default(now()) @map("last_attempt")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([lockedUntil])
+  @@map("rate_limit_attempts")
+}
+
+// =========================
 // API Cache (shared with backend)
 // =========================
 

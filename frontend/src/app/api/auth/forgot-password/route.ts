@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPasswordResetToken } from '@/lib/tokens';
 import { sendPasswordResetEmail } from '@/lib/email';
+import logger from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
     try {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ message: 'หากอีเมลนี้มีในระบบ เราจะส่งลิงก์รีเซ็ตรหัสผ่านให้ทันที' });
     } catch (error) {
-        console.error('Forgot password error:', error);
+        logger.error('Forgot password error', error);
         return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง' }, { status: 500 });
     }
 }

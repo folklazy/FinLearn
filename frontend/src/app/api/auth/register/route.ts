@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { createVerificationToken } from '@/lib/tokens';
 import { sendVerificationEmail } from '@/lib/email';
+import logger from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
     try {
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
             const token = await createVerificationToken(email);
             await sendVerificationEmail(email, token);
         } catch (emailErr) {
-            console.error('Failed to send verification email:', emailErr);
+            logger.error('Failed to send verification email', emailErr, { email });
             return NextResponse.json(
                 { message: 'สร้างบัญชีสำเร็จ! แต่ไม่สามารถส่งอีเมลยืนยันได้ กรุณาติดต่อผู้ดูแลระบบ', emailError: true },
                 { status: 201 },
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
             { status: 201 },
         );
     } catch (error) {
-        console.error('Registration error:', error);
+        logger.error('Registration error', error);
         return NextResponse.json(
             { error: 'เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง' },
             { status: 500 },

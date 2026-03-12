@@ -239,6 +239,55 @@ Switch language via the globe icon in the navbar. State persists in `localStorag
 
 ---
 
+## Production Deployment
+
+### Pre-deploy Checklist
+
+```bash
+# 1. Generate secrets
+openssl rand -hex 32   # → NEXTAUTH_SECRET
+openssl rand -hex 32   # → ADMIN_API_KEY
+
+# 2. Set all env vars (see .env.example for full list)
+#    ⚠️ NODE_ENV=production
+#    ⚠️ Real DATABASE_URL with ?sslmode=require
+#    ⚠️ Real domain URLs (NEXTAUTH_URL, FRONTEND_URL, NEXT_PUBLIC_SITE_URL)
+#    ⚠️ SMTP credentials for email verification
+
+# 3. Database migration (NOT db push)
+cd frontend && npx prisma migrate deploy
+cd ../backend && npx prisma migrate deploy
+
+# 4. Build
+cd frontend && npm run build    # includes prisma generate
+cd ../backend && npm run build  # tsc → dist/
+
+# 5. Start
+cd frontend && npm start        # Next.js production server
+cd ../backend && npm start      # node dist/index.js
+```
+
+### Security Features (production)
+
+| Feature | Implementation |
+|---|---|
+| Rate limiting (backend) | `express-rate-limit` — 300 req/15min global, 60 req/min stocks |
+| Login brute-force | DB-backed limiter — 5 attempts then 15-min lockout |
+| OTP brute-force | DB-backed limiter — 5 attempts then 15-min lockout |
+| Body size limit | `express.json({ limit: '1mb' })` |
+| Security headers | Helmet + CSP + HSTS + X-Frame-Options |
+| Route protection | Next.js middleware — redirects unauthenticated users |
+| Input validation | All API routes validate enums, ranges, formats |
+| Password hashing | bcrypt cost 12 |
+| JWT auth | NextAuth jwt strategy + jose verification |
+| Structured logging | JSON logs in production (compatible with log aggregators) |
+
+### ⚠️ Known: NextAuth v5 Beta
+
+The project uses `next-auth@5.0.0-beta.30` which is not yet stable. Monitor [releases](https://github.com/nextauthjs/next-auth/releases) and upgrade when v5 stable ships.
+
+---
+
 ## Known Limitations & Future Work
 
 - **No real-time WebSocket** — stock prices refresh on page load / manual trigger. Add Socket.io or SSE for live ticking.

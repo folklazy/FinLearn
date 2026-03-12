@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { getMarketStatus, countDayTrades } from '@/lib/market-hours';
+import logger from '@/lib/logger';
 
 // POST /api/portfolio/trade — execute a paper trade
 export async function POST(req: NextRequest) {
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
             pdtWarning,
         });
     } catch (err) {
-        console.error('Trade error:', err);
+        logger.error('Trade error', err);
         return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ' }, { status: 500 });
     }
 }

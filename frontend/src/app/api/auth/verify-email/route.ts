@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { checkOtpAttempt, recordOtpFailure, clearOtpAttempts } from '@/lib/otp-limiter';
+import logger from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
         }
 
         const limiterKey = `verify:${email}`;
-        const { allowed, retryAfterMs } = checkOtpAttempt(limiterKey);
+        const { allowed, retryAfterMs } = await checkOtpAttempt(limiterKey);
         if (!allowed) {
             return NextResponse.json(
                 { error: `ลองหลายครั้งเกินไป กรุณารอ ${Math.ceil(retryAfterMs / 60000)} นาทีแล้วลองใหม่` },
@@ -24,17 +25,17 @@ export async function POST(req: NextRequest) {
         });
 
         if (!verificationToken) {
-            recordOtpFailure(limiterKey);
+            await recordOtpFailure(limiterKey);
             return NextResponse.json({ error: 'รหัส OTP ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง' }, { status: 400 });
         }
 
         if (verificationToken.expires < new Date()) {
             await prisma.verificationToken.deleteMany({ where: { identifier: email } });
-            clearOtpAttempts(limiterKey);
+            await clearOtpAttempts(limiterKey);
             return NextResponse.json({ error: 'รหัส OTP หมดอายุแล้ว กรุณาขอรหัสใหม่' }, { status: 400 });
         }
 
-        clearOtpAttempts(limiterKey);
+        await clearOtpAttempts(limiterKey);
         await prisma.user.update({
             where: { email },
             data: { emailVerified: new Date() },
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ message: 'ยืนยันอีเมลสำเร็จ!' });
     } catch (error) {
-        console.error('Verify email error:', error);
+        logger.error('Verify email error', error);
         return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ' }, { status: 500 });
     }
 }

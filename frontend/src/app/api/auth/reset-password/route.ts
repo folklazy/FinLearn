@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { checkOtpAttempt, recordOtpFailure, clearOtpAttempts } from '@/lib/otp-limiter';
+import logger from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
     try {
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
         }
 
         const limiterKey = `reset-submit:${email}`;
-        const { allowed, retryAfterMs } = checkOtpAttempt(limiterKey);
+        const { allowed, retryAfterMs } = await checkOtpAttempt(limiterKey);
         if (!allowed) {
             return NextResponse.json(
                 { error: `ลองหลายครั้งเกินไป กรุณารอ ${Math.ceil(retryAfterMs / 60000)} นาทีแล้วลองใหม่` },
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (!resetToken) {
-            recordOtpFailure(limiterKey);
+            await recordOtpFailure(limiterKey);
             return NextResponse.json({ error: 'รหัส OTP ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง' }, { status: 400 });
         }
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
         const passwordHash = await bcrypt.hash(password, 12);
 
-        clearOtpAttempts(limiterKey);
+        await clearOtpAttempts(limiterKey);
         await prisma.user.update({
             where: { email },
             data: { passwordHash },
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ message: 'เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่' });
     } catch (error) {
-        console.error('Reset password error:', error);
+        logger.error('Reset password error', error);
         return NextResponse.json({ error: 'เกิดข้อผิดพลาดในระบบ' }, { status: 500 });
     }
 }

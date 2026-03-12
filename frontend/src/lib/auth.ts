@@ -40,7 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const email = credentials.email as string;
 
                 // Brute-force protection
-                const { allowed } = checkLoginAttempt(email);
+                const { allowed } = await checkLoginAttempt(email);
                 if (!allowed) {
                     throw new TooManyAttemptsError();
                 }
@@ -50,7 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 });
 
                 if (!user || !user.passwordHash) {
-                    recordLoginFailure(email);
+                    await recordLoginFailure(email);
                     return null;
                 }
 
@@ -60,7 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 );
 
                 if (!isValid) {
-                    recordLoginFailure(email);
+                    await recordLoginFailure(email);
                     return null;
                 }
 
@@ -69,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
 
                 // Login success — clear failed attempts
-                clearLoginAttempts(email);
+                await clearLoginAttempts(email);
 
                 return {
                     id: user.id,
