@@ -19,7 +19,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://logo.clearbit.com https://financialmodelingprep.com https://images.financialmodelingprep.com https://images.unsplash.com https://lh3.googleusercontent.com",
       "font-src 'self'",
-      "connect-src 'self' https:",
+      "connect-src 'self' http: https:",
       "frame-ancestors 'none'",
     ].join("; "),
   },

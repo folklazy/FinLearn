@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
     User, GraduationCap, Target, Shield, ChevronRight, ChevronLeft,
-    BookOpen, TrendingUp, Coins, BarChart3, Zap, Check, Sparkles
+    BookOpen, TrendingUp, Coins, BarChart3, Zap, Check,
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
@@ -24,10 +24,21 @@ const primaryGoalsData = [
 ];
 
 const riskLevelsData = [
-    { value: 'LOW', labelKey: 'onboard.risk.low', descKey: 'onboard.risk.lowDesc', color: '#22c55e' },
-    { value: 'MEDIUM', labelKey: 'onboard.risk.medium', descKey: 'onboard.risk.mediumDesc', color: '#f59e0b' },
-    { value: 'HIGH', labelKey: 'onboard.risk.high', descKey: 'onboard.risk.highDesc', color: '#ef4444' },
+    { value: 'LOW', labelKey: 'onboard.risk.low', descKey: 'onboard.risk.lowDesc', color: '#22c55e', dot: 'bg-[#22c55e]' },
+    { value: 'MEDIUM', labelKey: 'onboard.risk.medium', descKey: 'onboard.risk.mediumDesc', color: '#f59e0b', dot: 'bg-[#f59e0b]' },
+    { value: 'HIGH', labelKey: 'onboard.risk.high', descKey: 'onboard.risk.highDesc', color: '#ef4444', dot: 'bg-[#ef4444]' },
 ];
+
+const cashPresets = ['10000', '50000', '100000'];
+
+function Spinner() {
+    return (
+        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+            <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+    );
+}
 
 export default function OnboardingPage() {
     const { t } = useI18n();
@@ -36,19 +47,17 @@ export default function OnboardingPage() {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
-    // Step 1
     const [displayName, setDisplayName] = useState('');
     const [experienceLevel, setExperienceLevel] = useState('');
     const [primaryGoal, setPrimaryGoal] = useState('');
 
-    // Step 2
     const [riskLevel, setRiskLevel] = useState('');
     const [startingCash, setStartingCash] = useState('100000');
 
     if (status === 'loading') {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full" />
+            <div className="min-h-screen flex items-center justify-center" style={{ background: '#0e0e0e' }}>
+                <div className="w-5 h-5 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
@@ -59,25 +68,15 @@ export default function OnboardingPage() {
     }
 
     const handleStep1 = async () => {
-        if (!displayName || !experienceLevel || !primaryGoal) return;
+        if (!displayName.trim() || !experienceLevel || !primaryGoal) return;
         setLoading(true);
-
         try {
             const res = await fetch('/api/user/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: displayName,
-                    displayName,
-                    experienceLevel,
-                    primaryGoal,
-                    onboardingStep: 2,
-                }),
+                body: JSON.stringify({ name: displayName, displayName, experienceLevel, primaryGoal, onboardingStep: 2 }),
             });
-
-            if (res.ok) {
-                setStep(2);
-            }
+            if (res.ok) setStep(2);
         } catch (err) {
             console.error('Error saving step 1:', err);
         } finally {
@@ -87,7 +86,6 @@ export default function OnboardingPage() {
 
     const handleStep2 = async () => {
         setLoading(true);
-
         try {
             await fetch('/api/user/profile', {
                 method: 'PUT',
@@ -98,7 +96,6 @@ export default function OnboardingPage() {
                     onboardingStep: 3,
                 }),
             });
-
             router.push('/');
         } catch (err) {
             console.error('Error saving step 2:', err);
@@ -123,242 +120,318 @@ export default function OnboardingPage() {
         }
     };
 
-    return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12">
-            {/* Background */}
-            <div className="fixed inset-0 -z-10">
-                <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-            </div>
+    const step1Complete = displayName.trim() && experienceLevel && primaryGoal;
 
-            <div className="w-full max-w-lg">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-4">
-                        <Sparkles className="w-4 h-4" />
-                        {t('onboard.step')} {step} {t('onboard.of')} 2
-                    </div>
-                    <h1 className="text-2xl font-bold text-white">
+    return (
+        <div
+            className="min-h-screen flex items-center justify-center px-4 py-16"
+            style={{ background: '#0e0e0e' }}
+        >
+            <div className="w-full max-w-[480px]">
+
+                {/* ── Brand ── */}
+                <div className="mb-10 text-center">
+                    <span className="text-[13px] font-medium tracking-widest uppercase" style={{ color: '#555' }}>
+                        fin.learn
+                    </span>
+                </div>
+
+                {/* ── Step indicator ── */}
+                <div className="flex items-center gap-3 mb-8">
+                    {[1, 2].map((s) => (
+                        <div key={s} className="flex items-center gap-3 flex-1">
+                            <div
+                                className="flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-semibold shrink-0 transition-all duration-300"
+                                style={
+                                    step === s
+                                        ? { background: '#22c55e', color: '#0e0e0e' }
+                                        : step > s
+                                        ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }
+                                        : { background: 'rgba(255,255,255,0.04)', color: '#555', border: '1px solid rgba(255,255,255,0.08)' }
+                                }
+                            >
+                                {step > s ? <Check className="w-3 h-3" /> : s}
+                            </div>
+                            {s < 2 && (
+                                <div
+                                    className="flex-1 h-px transition-all duration-500"
+                                    style={{ background: step > 1 ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.08)' }}
+                                />
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* ── Heading ── */}
+                <div className="mb-8">
+                    <h1 className="text-[22px] font-semibold tracking-tight" style={{ color: '#e0e0e0' }}>
                         {step === 1 ? t('onboard.title1') : t('onboard.title2')}
                     </h1>
-                    <p className="text-gray-400 mt-2">
-                        {step === 1
-                            ? t('onboard.desc1')
-                            : t('onboard.desc2')}
+                    <p className="mt-1 text-sm" style={{ color: '#666' }}>
+                        {step === 1 ? t('onboard.desc1') : t('onboard.desc2')}
                     </p>
                 </div>
 
-                {/* Progress bar */}
-                <div className="flex gap-2 mb-8">
-                    <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= 1 ? 'bg-gradient-to-r from-indigo-500 to-emerald-500' : 'bg-white/10'}`} />
-                    <div className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= 2 ? 'bg-gradient-to-r from-indigo-500 to-emerald-500' : 'bg-white/10'}`} />
-                </div>
-
-                {/* Card */}
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+                {/* ── Card ── */}
+                <div
+                    className="rounded-2xl p-6 space-y-6"
+                    style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
                     {step === 1 ? (
-                        <div className="space-y-6">
-                            {/* Display Name */}
+                        <>
+                            {/* Name */}
                             <div>
-                                <label className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <User className="w-4 h-4" /> {t('onboard.displayName')}
+                                <label className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider mb-2.5" style={{ color: '#666' }}>
+                                    <User className="w-3.5 h-3.5" />
+                                    {t('onboard.displayName')}
                                 </label>
                                 <input
                                     type="text"
                                     value={displayName}
                                     onChange={(e) => setDisplayName(e.target.value)}
                                     placeholder={session.user.name || t('onboard.yourName')}
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/25 transition-all"
+                                    autoFocus
+                                    className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: displayName ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                                        color: '#e0e0e0',
+                                    }}
+                                    onFocus={(e) => (e.currentTarget.style.border = '1px solid rgba(34,197,94,0.35)')}
+                                    onBlur={(e) => (e.currentTarget.style.border = displayName ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(255,255,255,0.08)')}
                                 />
                             </div>
 
-                            {/* Experience Level */}
+                            {/* Experience */}
                             <div>
-                                <label className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                    <GraduationCap className="w-4 h-4" /> {t('onboard.expLevel')}
+                                <label className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider mb-2.5" style={{ color: '#666' }}>
+                                    <GraduationCap className="w-3.5 h-3.5" />
+                                    {t('onboard.expLevel')}
                                 </label>
-                                <div className="space-y-2 mt-2">
+                                <div className="space-y-2">
                                     {experienceLevelsData.map((level) => {
                                         const Icon = level.icon;
-                                        const selected = experienceLevel === level.value;
+                                        const sel = experienceLevel === level.value;
                                         return (
                                             <button
                                                 key={level.value}
                                                 onClick={() => setExperienceLevel(level.value)}
-                                                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 text-left ${selected
-                                                    ? 'bg-indigo-500/15 border-indigo-500/40 text-white'
-                                                    : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/20'
-                                                    }`}
+                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-150"
+                                                style={{
+                                                    background: sel ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                                                    border: sel ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                                                }}
                                             >
-                                                <div className={`p-2 rounded-lg ${selected ? 'bg-indigo-500/20' : 'bg-white/5'}`}>
-                                                    <Icon className="w-4 h-4" />
+                                                <div
+                                                    className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+                                                    style={{ background: sel ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)' }}
+                                                >
+                                                    <Icon className="w-3.5 h-3.5" style={{ color: sel ? '#22c55e' : '#555' }} />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-sm">{t(level.labelKey)}</p>
-                                                    <p className="text-xs text-gray-500">{t(level.descKey)}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium" style={{ color: sel ? '#e0e0e0' : '#aaa' }}>
+                                                        {t(level.labelKey)}
+                                                    </p>
+                                                    <p className="text-xs truncate" style={{ color: '#555' }}>
+                                                        {t(level.descKey)}
+                                                    </p>
                                                 </div>
-                                                {selected && <Check className="w-5 h-5 text-indigo-400" />}
+                                                <div
+                                                    className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all"
+                                                    style={sel
+                                                        ? { background: '#22c55e', borderColor: '#22c55e' }
+                                                        : { borderColor: 'rgba(255,255,255,0.15)' }
+                                                    }
+                                                >
+                                                    {sel && <Check className="w-2.5 h-2.5 text-black" strokeWidth={3} />}
+                                                </div>
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Primary Goal */}
+                            {/* Goal */}
                             <div>
-                                <label className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                    <Target className="w-4 h-4" /> {t('onboard.goal')}
+                                <label className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider mb-2.5" style={{ color: '#666' }}>
+                                    <Target className="w-3.5 h-3.5" />
+                                    {t('onboard.goal')}
                                 </label>
-                                <div className="grid grid-cols-1 gap-2 mt-2">
+                                <div className="space-y-2">
                                     {primaryGoalsData.map((goal) => {
                                         const Icon = goal.icon;
-                                        const selected = primaryGoal === goal.value;
+                                        const sel = primaryGoal === goal.value;
                                         return (
                                             <button
                                                 key={goal.value}
                                                 onClick={() => setPrimaryGoal(goal.value)}
-                                                className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 text-left ${selected
-                                                    ? 'bg-emerald-500/15 border-emerald-500/40 text-white'
-                                                    : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/20'
-                                                    }`}
+                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-150"
+                                                style={{
+                                                    background: sel ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                                                    border: sel ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                                                }}
                                             >
-                                                <div className={`p-2 rounded-lg ${selected ? 'bg-emerald-500/20' : 'bg-white/5'}`}>
-                                                    <Icon className="w-4 h-4" />
+                                                <div
+                                                    className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+                                                    style={{ background: sel ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)' }}
+                                                >
+                                                    <Icon className="w-3.5 h-3.5" style={{ color: sel ? '#22c55e' : '#555' }} />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-sm">{t(goal.labelKey)}</p>
-                                                    <p className="text-xs text-gray-500">{t(goal.descKey)}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium" style={{ color: sel ? '#e0e0e0' : '#aaa' }}>
+                                                        {t(goal.labelKey)}
+                                                    </p>
+                                                    <p className="text-xs truncate" style={{ color: '#555' }}>
+                                                        {t(goal.descKey)}
+                                                    </p>
                                                 </div>
-                                                {selected && <Check className="w-5 h-5 text-emerald-400" />}
+                                                <div
+                                                    className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all"
+                                                    style={sel
+                                                        ? { background: '#22c55e', borderColor: '#22c55e' }
+                                                        : { borderColor: 'rgba(255,255,255,0.15)' }
+                                                    }
+                                                >
+                                                    {sel && <Check className="w-2.5 h-2.5 text-black" strokeWidth={3} />}
+                                                </div>
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Next Button */}
+                            {/* CTA */}
                             <button
                                 onClick={handleStep1}
-                                disabled={!displayName || !experienceLevel || !primaryGoal || loading}
-                                className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-500 to-emerald-500 hover:from-indigo-600 hover:to-emerald-600 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                                disabled={!step1Complete || loading}
+                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
+                                style={
+                                    step1Complete && !loading
+                                        ? { background: '#22c55e', color: '#0e0e0e' }
+                                        : { background: 'rgba(255,255,255,0.05)', color: '#444', cursor: 'not-allowed' }
+                                }
                             >
-                                {loading ? (
-                                    <span className="inline-flex items-center gap-2">
-                                        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        {t('onboard.saving')}
-                                    </span>
-                                ) : (
-                                    <>
-                                        {t('onboard.next')} <ChevronRight className="w-5 h-5" />
-                                    </>
-                                )}
+                                {loading ? <><Spinner />{t('onboard.saving')}</> : <>{t('onboard.next')}<ChevronRight className="w-4 h-4" /></>}
                             </button>
-                        </div>
+                        </>
                     ) : (
-                        <div className="space-y-6">
-                            {/* Risk Level */}
+                        <>
+                            {/* Risk */}
                             <div>
-                                <label className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                                    <Shield className="w-4 h-4" /> {t('onboard.riskLevel')}
+                                <label className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider mb-2.5" style={{ color: '#666' }}>
+                                    <Shield className="w-3.5 h-3.5" />
+                                    {t('onboard.riskLevel')}
                                 </label>
-                                <div className="space-y-2 mt-2">
+                                <div className="space-y-2">
                                     {riskLevelsData.map((risk) => {
-                                        const selected = riskLevel === risk.value;
+                                        const sel = riskLevel === risk.value;
                                         return (
                                             <button
                                                 key={risk.value}
                                                 onClick={() => setRiskLevel(risk.value)}
-                                                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 text-left ${selected
-                                                    ? 'border-opacity-40 text-white'
-                                                    : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/20'
-                                                    }`}
-                                                style={selected ? {
-                                                    background: `${risk.color}15`,
-                                                    borderColor: `${risk.color}66`,
-                                                } : {}}
+                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-150"
+                                                style={sel
+                                                    ? { background: `${risk.color}10`, border: `1px solid ${risk.color}40` }
+                                                    : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }
+                                                }
                                             >
                                                 <div
-                                                    className="w-3 h-3 rounded-full"
-                                                    style={{ background: risk.color }}
+                                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                    style={{ background: sel ? risk.color : '#3a3a3a' }}
                                                 />
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-sm">{t(risk.labelKey)}</p>
-                                                    <p className="text-xs text-gray-500">{t(risk.descKey)}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium" style={{ color: sel ? '#e0e0e0' : '#aaa' }}>
+                                                        {t(risk.labelKey)}
+                                                    </p>
+                                                    <p className="text-xs truncate" style={{ color: '#555' }}>
+                                                        {t(risk.descKey)}
+                                                    </p>
                                                 </div>
-                                                {selected && <Check className="w-5 h-5" style={{ color: risk.color }} />}
+                                                {sel && <Check className="w-4 h-4 shrink-0" style={{ color: risk.color }} />}
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Starting Cash */}
+                            {/* Starting cash */}
                             <div>
-                                <label className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                                    <Coins className="w-4 h-4" /> {t('onboard.startCash')}
+                                <label className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider mb-2.5" style={{ color: '#666' }}>
+                                    <Coins className="w-3.5 h-3.5" />
+                                    {t('onboard.startCash')}
                                 </label>
-                                <div className="grid grid-cols-3 gap-2 mt-2">
-                                    {['10000', '50000', '100000'].map((amount) => (
-                                        <button
-                                            key={amount}
-                                            onClick={() => setStartingCash(amount)}
-                                            className={`py-2 rounded-lg border text-sm font-medium transition-all ${startingCash === amount
-                                                ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300'
-                                                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
-                                                }`}
-                                        >
-                                            ${Number(amount).toLocaleString()}
-                                        </button>
-                                    ))}
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                    {cashPresets.map((amount) => {
+                                        const sel = startingCash === amount;
+                                        return (
+                                            <button
+                                                key={amount}
+                                                onClick={() => setStartingCash(amount)}
+                                                className="py-2.5 rounded-xl text-sm font-medium transition-all"
+                                                style={sel
+                                                    ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.35)', color: '#22c55e' }
+                                                    : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#888' }
+                                                }
+                                            >
+                                                ${Number(amount).toLocaleString()}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                                 <input
                                     type="number"
                                     value={startingCash}
                                     onChange={(e) => setStartingCash(e.target.value)}
-                                    className="w-full mt-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/25 transition-all"
                                     placeholder={t('onboard.orEnter')}
+                                    className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        color: '#e0e0e0',
+                                    }}
+                                    onFocus={(e) => (e.currentTarget.style.border = '1px solid rgba(34,197,94,0.35)')}
+                                    onBlur={(e) => (e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)')}
                                 />
                             </div>
 
                             {/* Buttons */}
-                            <div className="flex gap-3">
+                            <div className="flex gap-2.5">
                                 <button
                                     onClick={() => setStep(1)}
-                                    className="flex-1 py-3 rounded-xl font-semibold text-gray-300 bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                                    className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#888' }}
                                 >
-                                    <ChevronLeft className="w-5 h-5" /> {t('onboard.goBack')}
+                                    <ChevronLeft className="w-4 h-4" />
+                                    {t('onboard.goBack')}
                                 </button>
                                 <button
                                     onClick={handleStep2}
                                     disabled={loading}
-                                    className="flex-1 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-500 to-emerald-500 hover:from-indigo-600 hover:to-emerald-600 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all"
+                                    style={{ background: '#22c55e', color: '#0e0e0e' }}
                                 >
-                                    {loading ? (
-                                        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                    ) : (
-                                        <>
-                                            {t('onboard.start')} <Sparkles className="w-5 h-5" />
-                                        </>
-                                    )}
+                                    {loading ? <><Spinner />{t('onboard.saving')}</> : t('onboard.start')}
                                 </button>
                             </div>
 
-                            {/* Skip */}
                             <button
                                 onClick={handleSkip}
-                                className="w-full text-center text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                                className="w-full text-center text-xs transition-colors"
+                                style={{ color: '#444' }}
+                                onMouseEnter={(e) => (e.currentTarget.style.color = '#888')}
+                                onMouseLeave={(e) => (e.currentTarget.style.color = '#444')}
                             >
                                 {t('onboard.skip')}
                             </button>
-                        </div>
+                        </>
                     )}
                 </div>
+
+                {/* ── Footer note ── */}
+                <p className="mt-6 text-center text-[11px]" style={{ color: '#3a3a3a' }}>
+                    {step === 1 ? `${t('onboard.step')} 1 ${t('onboard.of')} 2` : `${t('onboard.step')} 2 ${t('onboard.of')} 2`}
+                    {' · '}fin.learn
+                </p>
             </div>
         </div>
     );
