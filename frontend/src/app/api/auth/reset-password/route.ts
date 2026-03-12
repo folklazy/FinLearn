@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { checkOtpAttempt, recordOtpFailure, clearOtpAttempts } from '@/lib/otp-limiter';
 
 export async function POST(req: NextRequest) {
     try {
@@ -8,6 +9,15 @@ export async function POST(req: NextRequest) {
 
         if (!email || !otp || !password) {
             return NextResponse.json({ error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
+        }
+
+        const limiterKey = `reset-submit:${email}`;
+        const { allowed, retryAfterMs } = checkOtpAttempt(limiterKey);
+        if (!allowed) {
+            return NextResponse.json(
+                { error: `ลองหลายครั้งเกินไป กรุณารอ ${Math.ceil(retryAfterMs / 60000)} นาทีแล้วลองใหม่` },
+                { status: 429 },
+            );
         }
 
         if (password.length < 8 || password.length > 64) {
@@ -22,6 +32,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (!resetToken) {
+            recordOtpFailure(limiterKey);
             return NextResponse.json({ error: 'รหัส OTP ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง' }, { status: 400 });
         }
 
@@ -32,6 +43,7 @@ export async function POST(req: NextRequest) {
 
         const passwordHash = await bcrypt.hash(password, 12);
 
+        clearOtpAttempts(limiterKey);
         await prisma.user.update({
             where: { email },
             data: { passwordHash },

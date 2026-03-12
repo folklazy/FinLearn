@@ -11,6 +11,10 @@ router.get('/search', async (req: Request, res: Response) => {
             res.json([]);
             return;
         }
+        if (query.length > 100) {
+            res.json([]);
+            return;
+        }
         const results = await stockService.searchStocks(query);
         res.json(results);
     } catch (error) {
@@ -23,7 +27,7 @@ router.get('/search', async (req: Request, res: Response) => {
 router.get('/batch', async (req: Request, res: Response) => {
     try {
         const raw = (req.query.symbols as string) || '';
-        const symbols = raw.split(',').map(s => s.trim()).filter(Boolean);
+        const symbols = raw.split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
         if (!symbols.length) { res.json([]); return; }
         const stocks = await stockService.getStocksBatch(symbols);
         res.json(stocks);
@@ -62,6 +66,10 @@ router.get('/sp500', async (req: Request, res: Response) => {
 router.get('/:symbol', async (req: Request, res: Response) => {
     try {
         const symbol = req.params.symbol as string;
+        if (!/^[A-Za-z0-9.\-]{1,12}$/.test(symbol)) {
+            res.status(400).json({ error: 'Invalid symbol format' });
+            return;
+        }
         const data = await stockService.getStockData(symbol);
 
         if (!data) {

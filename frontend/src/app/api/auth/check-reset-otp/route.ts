@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { checkOtpAttempt, recordOtpFailure, clearOtpAttempts } from '@/lib/otp-limiter';
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,19 +10,31 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
         }
 
+        const limiterKey = `reset-check:${email}`;
+        const { allowed, retryAfterMs } = checkOtpAttempt(limiterKey);
+        if (!allowed) {
+            return NextResponse.json(
+                { error: `ลองหลายครั้งเกินไป กรุณารอ ${Math.ceil(retryAfterMs / 60000)} นาทีแล้วลองใหม่` },
+                { status: 429 },
+            );
+        }
+
         const resetToken = await prisma.passwordResetToken.findFirst({
             where: { email, token: String(otp) },
         });
 
         if (!resetToken) {
+            recordOtpFailure(limiterKey);
             return NextResponse.json({ error: 'รหัส OTP ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง' }, { status: 400 });
         }
 
         if (resetToken.expires < new Date()) {
             await prisma.passwordResetToken.deleteMany({ where: { email } });
+            clearOtpAttempts(limiterKey);
             return NextResponse.json({ error: 'รหัส OTP หมดอายุแล้ว กรุณาขอรหัสใหม่' }, { status: 400 });
         }
 
+        clearOtpAttempts(limiterKey);
         return NextResponse.json({ ok: true });
     } catch (error) {
         console.error('Check reset OTP error:', error);

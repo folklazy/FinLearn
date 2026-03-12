@@ -16,6 +16,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return NextResponse.json(
+                { error: 'รูปแบบอีเมลไม่ถูกต้อง' },
+                { status: 400 },
+            );
+        }
+
         if (password.length < 8 || password.length > 64) {
             return NextResponse.json(
                 { error: 'รหัสผ่านต้องมี 8-64 ตัวอักษร' },

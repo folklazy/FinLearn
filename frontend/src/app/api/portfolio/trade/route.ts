@@ -16,11 +16,17 @@ export async function POST(req: NextRequest) {
         if (!symbol || !side || !quantity || !price) {
             return NextResponse.json({ error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
         }
+        if (!/^[A-Za-z0-9.\-]{1,12}$/.test(symbol)) {
+            return NextResponse.json({ error: 'รูปแบบ symbol ไม่ถูกต้อง' }, { status: 400 });
+        }
         if (!['BUY', 'SELL'].includes(side)) {
             return NextResponse.json({ error: 'side ต้องเป็น BUY หรือ SELL' }, { status: 400 });
         }
         if (Number(quantity) <= 0 || Number(price) <= 0) {
             return NextResponse.json({ error: 'จำนวนและราคาต้องมากกว่า 0' }, { status: 400 });
+        }
+        if (Number(quantity) > 1_000_000 || Number(price) > 1_000_000) {
+            return NextResponse.json({ error: 'จำนวนหรือราคาเกินขีดจำกัดที่อนุญาต' }, { status: 400 });
         }
 
         // Find company by ticker — auto-create from external API if not in local DB
