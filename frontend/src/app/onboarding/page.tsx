@@ -49,7 +49,7 @@ export default function OnboardingPage() {
     const [startingCash, setStartingCash] = useState('100000');
 
     if (status === 'loading') return (
-        <div style={{ minHeight: 'calc(100vh - 56px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: 18, height: 18, border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />
         </div>
     );
@@ -111,7 +111,7 @@ export default function OnboardingPage() {
     } as Record<number, string[]>;
 
     return (
-        <div style={{ display: 'flex', minHeight: 'calc(100vh - 56px)' }}>
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
 
             {/* ── LEFT PANEL ── */}
             <aside

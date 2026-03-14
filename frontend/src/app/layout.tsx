@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import AuthProvider from "@/components/providers/AuthProvider";
 import OnboardingGuard from "@/components/providers/OnboardingGuard";
+import LayoutShell from "@/components/layout/LayoutShell";
 import { I18nProvider } from "@/lib/i18n";
 import { CurrencyProvider } from "@/lib/currency";
 
@@ -95,11 +94,9 @@ export default function RootLayout({
           <I18nProvider>
             <CurrencyProvider>
             <OnboardingGuard>
-              <Navbar />
-              <main style={{ minHeight: 'calc(100vh - 64px)' }}>
+              <LayoutShell>
                 {children}
-              </main>
-              <Footer />
+              </LayoutShell>
             </OnboardingGuard>
             </CurrencyProvider>
           </I18nProvider>
