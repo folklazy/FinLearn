@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Lock, Eye, EyeOff, CheckCircle, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Lock, Eye, EyeOff, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
@@ -18,7 +18,6 @@ function ResetPasswordContent() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
     const [resending, setResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
@@ -100,7 +99,8 @@ function ResetPasswordContent() {
                 if (data.error?.includes('OTP')) { setStep('otp'); setDigits(['', '', '', '', '', '']); }
                 return;
             }
-            setSuccess(true);
+            // Redirect to login immediately
+            window.location.href = `/login?email=${encodeURIComponent(email)}&reset=1`;
         } catch {
             setError(t('login.errGeneric'));
         } finally {
@@ -156,21 +156,7 @@ function ResetPasswordContent() {
                 </div>
 
                 <div className="card-solid" style={{ padding: '32px', borderRadius: 'var(--radius-xl)' }}>
-                    {success ? (
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                                <CheckCircle size={32} style={{ color: 'var(--success)' }} />
-                            </div>
-                            <h1 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '10px' }}>{t('reset.successTitle')}</h1>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '24px' }}>
-                                {t('reset.successDesc')}
-                            </p>
-                            <Link href="/login" className="btn btn-primary" style={{ display: 'block', padding: '12px', textAlign: 'center' }}>
-                                {t('login.submit')}
-                            </Link>
-                        </div>
-
-                    ) : step === 'otp' ? (
+                    {step === 'otp' ? (
                         /* ── Step 1: OTP ── */
                         <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '0', textAlign: 'center' }}>
                             <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>{t('reset.otpTitle')}</h1>

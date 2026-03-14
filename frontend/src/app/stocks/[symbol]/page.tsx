@@ -7,7 +7,8 @@ import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { StockData } from '@/types/stock';
 import { useI18n } from '@/lib/i18n';
-import { formatCurrency, formatPercent, formatLargeNumber, formatVolume, formatDate, getPriceColor, getSignalColor } from '@/lib/utils';
+import { formatPercent, formatVolume, formatDate, getPriceColor, getSignalColor } from '@/lib/utils';
+import { useCurrency } from '@/lib/currency';
 import {
     Building2, DollarSign,
     BarChart3, Newspaper, Activity, Users, Star, Lightbulb, AlertTriangle,
@@ -26,6 +27,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [data, setData] = useState<StockData | null>(null);
     const [loading, setLoading] = useState(true);
     const { t, locale } = useI18n();
+    const { formatPrice: formatCurrency, formatLarge: formatLargeNumber } = useCurrency();
     const router = useRouter();
     const { data: session } = useSession();
     const [isFavorite, setIsFavorite] = useState(false);

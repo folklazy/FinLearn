@@ -50,6 +50,11 @@ export default function RegisterPage() {
                 return;
             }
 
+            if (data.emailError) {
+                setError(data.message || 'สร้างบัญชีสำเร็จแต่ส่งอีเมลไม่ได้ กรุณาติดต่อผู้ดูแลระบบ');
+                return;
+            }
+
             window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
         } catch {
             setError(t('login.errGeneric'));

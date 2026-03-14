@@ -23,8 +23,10 @@ export default function LoginPage() {
     useEffect(() => {
         const emailParam = searchParams.get('email');
         const verified = searchParams.get('verified');
+        const reset = searchParams.get('reset');
         if (emailParam) setEmail(emailParam);
         if (verified) setSuccessMsg('ยืนยันอีเมลสำเร็จ! กรุณาเข้าสู่ระบบ');
+        if (reset) setSuccessMsg('เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่');
     }, [searchParams]);
 
     const handleCredentialLogin = async (e: React.FormEvent) => {
@@ -46,7 +48,8 @@ export default function LoginPage() {
             } else if (result?.error) {
                 setError(t('login.errCredentials'));
             } else {
-                window.location.href = '/';
+                const callback = searchParams.get('callbackUrl');
+                window.location.href = callback || '/';
             }
         } catch {
             setError(t('login.errGeneric'));

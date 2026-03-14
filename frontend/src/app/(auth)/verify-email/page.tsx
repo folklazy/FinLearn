@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Mail, RefreshCw, CheckCircle, ArrowRight } from 'lucide-react';
+import { Mail, RefreshCw, ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
@@ -13,7 +13,6 @@ function VerifyEmailContent() {
 
     const [digits, setDigits] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
     const [resending, setResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
@@ -72,11 +71,8 @@ function VerifyEmailContent() {
             });
             const data = await res.json();
             if (!res.ok) { setError(data.error); setDigits(['', '', '', '', '', '']); inputRefs.current[0]?.focus(); return; }
-            setSuccess(true);
-            // Auto-redirect to login with email pre-filled
-            setTimeout(() => {
-                window.location.href = `/login?email=${encodeURIComponent(email)}&verified=1`;
-            }, 1200);
+            // Redirect to login immediately with email pre-filled
+            window.location.href = `/login?email=${encodeURIComponent(email)}&verified=1`;
         } catch {
             setError(t('login.errGeneric'));
         } finally {
@@ -119,20 +115,6 @@ function VerifyEmailContent() {
                 </Link>
 
                 <div className="card-solid" style={{ padding: '40px 36px', borderRadius: 'var(--radius-xl)' }}>
-                    {success ? (
-                        <>
-                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                                <CheckCircle size={32} style={{ color: 'var(--success)' }} />
-                            </div>
-                            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '10px' }}>{t('verify.successTitle')}</h1>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.7, marginBottom: '28px' }}>
-                                {t('verify.successDesc')}
-                            </p>
-                            <Link href={`/login?email=${encodeURIComponent(email)}&verified=1`} className="btn btn-primary" style={{ display: 'block', padding: '12px', textAlign: 'center' }}>
-                                {t('login.submit')}
-                            </Link>
-                        </>
-                    ) : (
                         <>
                             <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'color-mix(in srgb, var(--primary) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--primary-light)' }}>
                                 <Mail size={28} />
@@ -200,7 +182,6 @@ function VerifyEmailContent() {
                                 <Link href="/login" style={{ color: 'var(--text-muted)' }}>{t('verify.backLogin')}</Link>
                             </p>
                         </>
-                    )}
                 </div>
             </div>
         </div>
