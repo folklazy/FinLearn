@@ -73,6 +73,10 @@ function VerifyEmailContent() {
             const data = await res.json();
             if (!res.ok) { setError(data.error); setDigits(['', '', '', '', '', '']); inputRefs.current[0]?.focus(); return; }
             setSuccess(true);
+            // Auto-redirect to login with email pre-filled
+            setTimeout(() => {
+                window.location.href = `/login?email=${encodeURIComponent(email)}&verified=1`;
+            }, 1200);
         } catch {
             setError(t('login.errGeneric'));
         } finally {
