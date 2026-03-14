@@ -11,11 +11,13 @@ import healthRoutes from './routes/health';
 import lessonRoutes from './routes/lessons';
 import { StockService } from './services/stockService';
 
-// Load environment variables from monorepo root
+// Load environment variables from monorepo root (dev only — production uses platform env vars)
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = parseInt(process.env.PORT || '4000', 10);
+const HOST = '0.0.0.0';
 
 // ===== Middleware =====
 app.use(helmet());
@@ -61,7 +63,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 });
 
 // ===== Start server =====
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
     console.log(`
   🚀 FinLearn API Server
   ━━━━━━━━━━━━━━━━━━━━━
