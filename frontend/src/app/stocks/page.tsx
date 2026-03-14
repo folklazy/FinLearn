@@ -6,7 +6,8 @@ import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { Search, LayoutGrid, List, ChevronLeft, ChevronRight, Flame, BarChart3, Star, X, ArrowRight, Sparkles } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
-import { formatCurrency, formatPercent, formatLargeNumber } from '@/lib/utils';
+import { formatPercent } from '@/lib/utils';
+import { useCurrency } from '@/lib/currency';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
@@ -23,6 +24,7 @@ type Tab = 'popular' | 'sp500' | 'search';
 
 /* ─────────── Stock Card (Grid) ─────────── */
 function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: number; inWatchlist?: boolean; onToggle?: () => void }) {
+    const { formatPrice, formatLarge } = useCurrency();
     const isUp = stock.change >= 0;
     return (
         <Link href={`/stocks/${stock.symbol}`} style={{ textDecoration: 'none' }}>
@@ -69,7 +71,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
 
                 {/* Middle: Price */}
                 <div style={{ marginBottom: '14px' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>{formatCurrency(stock.price)}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>{formatPrice(stock.price)}</div>
                 </div>
 
                 {/* Bottom: Change + Sector + Score/MCap */}
@@ -95,7 +97,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-light)' }}>{stock.overallScore}/5</span>
                         </div>
                     ) : stock.marketCap > 0 ? (
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{formatLargeNumber(stock.marketCap)}</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{formatLarge(stock.marketCap)}</span>
                     ) : null}
                 </div>
 
@@ -112,6 +114,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
 
 /* ─────────── Stock Row (Table) ─────────── */
 function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: number; inWatchlist?: boolean; onToggle?: () => void }) {
+    const { formatPrice, formatLarge } = useCurrency();
     const router = useRouter();
     const isUp = stock.change >= 0;
     return (
@@ -140,7 +143,7 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
                     </div>
                 </div>
             </td>
-            <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '0.9rem', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(stock.price)}</td>
+            <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '0.9rem', fontVariantNumeric: 'tabular-nums' }}>{formatPrice(stock.price)}</td>
             <td style={{ textAlign: 'right' }}>
                 <span style={{
                     fontWeight: 600, fontSize: '0.78rem', padding: '3px 10px', borderRadius: '100px',
@@ -150,7 +153,7 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
                     {formatPercent(stock.changePercent)}
                 </span>
             </td>
-            <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatLargeNumber(stock.marketCap)}</td>
+            <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatLarge(stock.marketCap)}</td>
             <td>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
                     {stock.sector}

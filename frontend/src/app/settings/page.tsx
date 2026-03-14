@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import {
     User, Mail, Lock, Eye, EyeOff, Save, GraduationCap, Target, Shield,
-    Coins, Globe, Bell, Check, ChevronRight, Settings, TrendingUp,
+    Coins, Bell, Check, ChevronRight, Settings, TrendingUp,
     BookOpen, BarChart3, Zap, AlertCircle, Star, Trash2, ExternalLink, RefreshCw,
     Camera
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { useCurrency } from '@/lib/currency';
 
 const experienceLevelsData = [
     { value: 'BEGINNER', labelKey: 'onboard.exp.beginner', icon: BookOpen },
@@ -31,7 +32,7 @@ const riskLevelsData = [
     { value: 'HIGH', labelKey: 'onboard.risk.high', color: '#ef4444' },
 ];
 
-type ActiveSection = 'displayname' | 'email' | 'password' | 'watchlist' | 'investment' | 'preferences';
+type ActiveSection = 'displayname' | 'email' | 'password' | 'watchlist' | 'investment' | 'preferences' | 'danger';
 
 interface UserProfile {
     displayName?: string;
@@ -94,9 +95,13 @@ export default function SettingsPage() {
     const [startingCash, setStartingCash] = useState('100000');
 
     // Preferences
-    const [language, setLanguage] = useState('th');
     const [displayCurrency, setDisplayCurrency] = useState('USD');
     const [emailNotifications, setEmailNotifications] = useState(true);
+    const { setCurrency } = useCurrency();
+
+    // Delete account
+    const [deleteConfirm, setDeleteConfirm] = useState('');
+    const [deleting, setDeleting] = useState(false);
 
     const loadProfile = useCallback(async () => {
         try {
@@ -112,7 +117,6 @@ export default function SettingsPage() {
                     setPrimaryGoal(user.profile.primaryGoal || '');
                     setRiskLevel(user.profile.riskLevel || '');
                     setStartingCash(user.profile.simulatorStartingCash?.toString() || '100000');
-                    setLanguage(user.profile.language || 'th');
                     setDisplayCurrency(user.profile.displayCurrency || 'USD');
                     setEmailNotifications(user.profile.emailNotifications ?? true);
                 }
@@ -380,12 +384,30 @@ export default function SettingsPage() {
         try {
             const res = await fetch('/api/user/profile', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ language, displayCurrency, emailNotifications }),
+                body: JSON.stringify({ displayCurrency, emailNotifications }),
             });
-            if (res.ok) showMsg('success', t('settings.pref.success'));
+            if (res.ok) {
+                setCurrency(displayCurrency as 'USD' | 'THB');
+                showMsg('success', t('settings.pref.success'));
+            }
             else showMsg('error', t('settings.error'));
         } catch { showMsg('error', t('settings.error')); }
         finally { setSaving(false); }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (deleteConfirm !== 'DELETE') { showMsg('error', 'กรุณาพิมพ์ DELETE เพื่อยืนยัน'); return; }
+        setDeleting(true);
+        try {
+            const res = await fetch('/api/user/delete', { method: 'DELETE' });
+            if (res.ok) {
+                await signOut({ callbackUrl: '/' });
+            } else {
+                const data = await res.json();
+                showMsg('error', data.error || t('settings.error'));
+            }
+        } catch { showMsg('error', t('settings.error')); }
+        finally { setDeleting(false); }
     };
 
     // ── sidebar sections ───────────────────────────────────
@@ -396,6 +418,7 @@ export default function SettingsPage() {
         { id: 'watchlist' as ActiveSection, label: t('settings.sidebar.watchlist'), icon: Star },
         { id: 'investment' as ActiveSection, label: t('settings.sidebar.investment'), icon: TrendingUp },
         { id: 'preferences' as ActiveSection, label: t('settings.sidebar.preferences'), icon: Settings },
+        { id: 'danger' as ActiveSection, label: 'ลบบัญชี', icon: Trash2 },
     ];
 
     const card = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px' } as const;
@@ -709,15 +732,8 @@ export default function SettingsPage() {
                             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}><Settings size={20} /> {t('settings.pref.title')}</h2>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
-                                    <label style={labelStyle}><Globe size={13} /> {t('settings.pref.lang')}</label>
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                        {[{ value: 'th', label: '🇹🇭 ไทย' }, { value: 'en', label: '🇺🇸 English' }].map(lang => (
-                                            <button key={lang.value} onClick={() => setLanguage(lang.value)} style={{ padding: '8px 20px', borderRadius: '10px', cursor: 'pointer', background: language === lang.value ? 'rgba(99,102,241,0.15)' : 'var(--bg-secondary)', border: `1px solid ${language === lang.value ? 'rgba(99,102,241,0.4)' : 'var(--border)'}`, color: language === lang.value ? 'var(--primary-light)' : 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>{lang.label}</button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div>
                                     <label style={labelStyle}><Coins size={13} /> {t('settings.pref.currency')}</label>
+                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px' }}>ราคาหุ้นทั้งหมดจะแสดงในสกุลเงินที่เลือก</p>
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                                         {[{ value: 'USD', label: '$ USD' }, { value: 'THB', label: '฿ THB' }].map(curr => (
                                             <button key={curr.value} onClick={() => setDisplayCurrency(curr.value)} style={{ padding: '8px 20px', borderRadius: '10px', cursor: 'pointer', background: displayCurrency === curr.value ? 'rgba(99,102,241,0.15)' : 'var(--bg-secondary)', border: `1px solid ${displayCurrency === curr.value ? 'rgba(99,102,241,0.4)' : 'var(--border)'}`, color: displayCurrency === curr.value ? 'var(--primary-light)' : 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>{curr.label}</button>
@@ -733,6 +749,50 @@ export default function SettingsPage() {
                                 </div>
                                 <button onClick={handleSavePreferences} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <Save size={15} /> {saving ? t('settings.saving') : t('settings.save')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ===== Danger Zone: Delete Account ===== */}
+                    {activeSection === 'danger' && (
+                        <div style={{ ...card, borderColor: 'rgba(239,68,68,0.3)' }} className="animate-fade-in">
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)' }}><AlertCircle size={20} /> ลบบัญชีผู้ใช้</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', marginBottom: '20px' }}>
+                                เมื่อลบบัญชีแล้ว ข้อมูลทั้งหมดจะถูกลบอย่างถาวร ไม่สามารถกู้คืนได้
+                            </p>
+                            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', marginBottom: '20px' }}>
+                                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                                    <strong style={{ color: 'var(--danger)' }}>สิ่งที่จะถูกลบ:</strong><br />
+                                    • ข้อมูลบัญชีและโปรไฟล์<br />
+                                    • Portfolio จำลองและประวัติการเทรด<br />
+                                    • Watchlist และการตั้งค่าทั้งหมด
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div>
+                                    <label style={{ ...labelStyle, color: 'var(--danger)' }}>พิมพ์ <strong>DELETE</strong> เพื่อยืนยัน</label>
+                                    <input
+                                        type="text"
+                                        value={deleteConfirm}
+                                        onChange={e => setDeleteConfirm(e.target.value)}
+                                        placeholder="DELETE"
+                                        style={{ ...inputStyle, borderColor: deleteConfirm === 'DELETE' ? 'rgba(239,68,68,0.5)' : 'var(--border)' }}
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    disabled={deleting || deleteConfirm !== 'DELETE'}
+                                    style={{
+                                        alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px',
+                                        padding: '10px 20px', borderRadius: '10px', fontFamily: 'inherit',
+                                        background: deleteConfirm === 'DELETE' ? '#ef4444' : 'rgba(239,68,68,0.2)',
+                                        color: 'white', border: 'none', fontSize: '0.85rem', fontWeight: 600,
+                                        cursor: deleteConfirm === 'DELETE' ? 'pointer' : 'not-allowed',
+                                        opacity: deleting ? 0.6 : 1,
+                                    }}
+                                >
+                                    <Trash2 size={15} /> {deleting ? 'กำลังลบ...' : 'ลบบัญชีถาวร'}
                                 </button>
                             </div>
                         </div>

@@ -6,8 +6,9 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ArrowRight, BarChart3, BookOpen, Shield, Sparkles, Star, TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
-import { formatCurrency, formatPercent } from '@/lib/utils';
+import { formatPercent } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
+import { useCurrency } from '@/lib/currency';
 
 
 interface PopularStock {
@@ -27,6 +28,7 @@ const FALLBACK: PopularStock[] = [
 export default function HomePage() {
   const { data: session, status } = useSession();
   const { t } = useI18n();
+  const { formatPrice } = useCurrency();
   const [stocks, setStocks] = useState<PopularStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWatchlist, setIsWatchlist] = useState(false);
@@ -101,7 +103,7 @@ export default function HomePage() {
             return tripled.map((s, i) => (
               <Link key={i} href={`/stocks/${s.symbol}`} className="ticker-item">
                 <span className="ticker-symbol">{s.symbol}</span>
-                <span className="ticker-price">{formatCurrency(s.price)}</span>
+<span className="ticker-price">{formatPrice(s.price)}</span>
                 <span className={`ticker-change ${s.change >= 0 ? 'up' : 'down'}`}>{formatPercent(s.changePercent)}</span>
               </Link>
             ));
@@ -266,7 +268,7 @@ export default function HomePage() {
                           {/* Bottom: Price + Change */}
                           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                             <span style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
-                              {formatCurrency(stock.price)}
+                              {formatPrice(stock.price)}
                             </span>
                             <span style={{
                               display: 'inline-flex', alignItems: 'center', gap: '3px',

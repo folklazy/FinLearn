@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import AuthProvider from "@/components/providers/AuthProvider";
 import OnboardingGuard from "@/components/providers/OnboardingGuard";
 import { I18nProvider } from "@/lib/i18n";
+import { CurrencyProvider } from "@/lib/currency";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -92,6 +93,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <I18nProvider>
+            <CurrencyProvider>
             <OnboardingGuard>
               <Navbar />
               <main style={{ minHeight: 'calc(100vh - 64px)' }}>
@@ -99,6 +101,7 @@ export default function RootLayout({
               </main>
               <Footer />
             </OnboardingGuard>
+            </CurrencyProvider>
           </I18nProvider>
         </AuthProvider>
       </body>
