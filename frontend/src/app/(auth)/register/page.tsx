@@ -50,7 +50,7 @@ export default function RegisterPage() {
                 return;
             }
 
-            window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+            window.location.href = `/login?email=${encodeURIComponent(email)}&registered=1`;
         } catch {
             setError(t('login.errGeneric'));
         } finally {

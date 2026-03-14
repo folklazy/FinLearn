@@ -1,20 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 export default function LoginPage() {
     const { t } = useI18n();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [successMsg, setSuccessMsg] = useState('');
 
     const [unverifiedEmail, setUnverifiedEmail] = useState('');
+
+    useEffect(() => {
+        const emailParam = searchParams.get('email');
+        const registered = searchParams.get('registered');
+        if (emailParam) setEmail(emailParam);
+        if (registered) setSuccessMsg('สร้างบัญชีสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีก่อนเข้าสู่ระบบ');
+    }, [searchParams]);
 
     const handleCredentialLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -85,6 +95,12 @@ export default function LoginPage() {
                     </div>
 
                     <form onSubmit={handleCredentialLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {successMsg && (
+                            <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', color: 'var(--success)', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <CheckCircle size={15} />
+                                {successMsg}
+                            </div>
+                        )}
                         {error && (
                             <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-bg)', border: '1px solid rgba(251,113,133,0.2)', color: 'var(--danger)', fontSize: '0.82rem', textAlign: 'center' }}>
                                 {error}
