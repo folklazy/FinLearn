@@ -18,6 +18,9 @@ export async function GET() {
             image: true,
             passwordHash: true,
             profile: true,
+            accounts: {
+                select: { provider: true },
+            },
             sectorPreferences: {
                 include: { sector: true },
             },
@@ -28,8 +31,9 @@ export async function GET() {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { passwordHash, ...userWithoutHash } = user;
-    return NextResponse.json({ user: { ...userWithoutHash, hasPassword: !!passwordHash } });
+    const { passwordHash, accounts, ...userWithoutHash } = user;
+    const oauthProvider = accounts.find((a: { provider: string }) => a.provider !== 'credentials')?.provider ?? null;
+    return NextResponse.json({ user: { ...userWithoutHash, hasPassword: !!passwordHash, isOAuth: !!oauthProvider, oauthProvider } });
 }
 
 // PUT /api/user/profile — อัปเดต profile
