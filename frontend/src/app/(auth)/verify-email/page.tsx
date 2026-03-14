@@ -124,7 +124,7 @@ function VerifyEmailContent() {
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.7, marginBottom: '28px' }}>
                                 {t('verify.successDesc')}
                             </p>
-                            <Link href="/login" className="btn btn-primary" style={{ display: 'block', padding: '12px', textAlign: 'center' }}>
+                            <Link href={`/login?email=${encodeURIComponent(email)}&verified=1`} className="btn btn-primary" style={{ display: 'block', padding: '12px', textAlign: 'center' }}>
                                 {t('login.submit')}
                             </Link>
                         </>

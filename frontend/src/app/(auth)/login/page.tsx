@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
+
 export default function LoginPage() {
     const { t } = useI18n();
     const searchParams = useSearchParams();
@@ -21,9 +22,9 @@ export default function LoginPage() {
 
     useEffect(() => {
         const emailParam = searchParams.get('email');
-        const registered = searchParams.get('registered');
+        const verified = searchParams.get('verified');
         if (emailParam) setEmail(emailParam);
-        if (registered) setSuccessMsg('สร้างบัญชีสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีก่อนเข้าสู่ระบบ');
+        if (verified) setSuccessMsg('ยืนยันอีเมลสำเร็จ! กรุณาเข้าสู่ระบบ');
     }, [searchParams]);
 
     const handleCredentialLogin = async (e: React.FormEvent) => {
