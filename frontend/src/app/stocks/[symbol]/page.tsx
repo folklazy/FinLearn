@@ -316,7 +316,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     };
 
     return (
-        <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 24px 64px', display: 'flex', gap: '0', alignItems: 'flex-start' }}>
+        <div className="sd-page" style={{ maxWidth: '1360px', margin: '0 auto', padding: '24px 24px 64px', display: 'flex', gap: '0', alignItems: 'flex-start' }}>
 
             {/* ── STICKY TOC SIDEBAR ── */}
             <aside className="hidden-mobile" style={{
@@ -350,7 +350,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
             {/* ===== HEADER ===== */}
-            <section className="animate-fade-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+            <section className="animate-fade-up sd-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--logo-bg)', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', flexShrink: 0 }}>
                         {!logoError ? (
@@ -375,7 +375,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         </p>
                     </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div className="sd-header-price" style={{ textAlign: 'right' }}>
                     <div className="price-hero">{formatCurrency(price.current)}</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', marginTop: '4px', color: price.change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                         {price.change >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
@@ -437,7 +437,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                <div className="sd-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                     {/* Trading stats */}
                     <div style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', padding: '18px' }}>
                         <p className="sub-label"><Activity size={13} /> {t('sd.trade.today')}</p>
@@ -488,7 +488,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 </div>
 
                 {/* Financial snapshot */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                <div className="sd-snapshot-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
                     <div className="metric-card">
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>{t('sd.marketCap')}</div>
                         <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{formatLargeNumber(profile.marketCap)}</div>
@@ -544,7 +544,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             <section id="price-chart" className="detail-section animate-fade-up delay-3" style={{ scrollMarginTop: '80px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                     <h2 className="section-heading" style={{ marginBottom: 0 }}><span className="accent-bar" /><BarChart3 size={18} className="heading-icon" /> {t('sd.toc.chart')}</h2>
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', padding: '3px' }}>
+                    <div className="sd-range-bar" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', padding: '3px' }}>
                         {PRICE_RANGES.map(r => (
                             <button key={r}
                                 onClick={() => setPriceRange(r)}
@@ -612,7 +612,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <h2 className="section-heading"><span className="accent-bar" /><DollarSign size={18} className="heading-icon" /> {t('sd.toc.metrics')}</h2>
 
                 <p className="sub-label"><DollarSign size={13} /> {t('sd.valueMetrics')}</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginBottom: '24px' }}>
+                <div className="sd-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginBottom: '24px' }}>
                     <div className="metric-card">
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             {t('sd.peRatio')} <span className="info-tip"><Info size={10} /><span className="tip-text">{t('sd.peHint')}</span></span>
@@ -639,7 +639,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                 {/* Strength Metrics */}
                 <p className="sub-label"><Activity size={13} /> {t('sd.strengthMetrics')}</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginBottom: '24px' }}>
+                <div className="sd-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginBottom: '24px' }}>
                     {[
                         { label: t('sd.annualRevenue'), value: keyMetrics.revenue != null ? formatLargeNumber(keyMetrics.revenue) : 'N/A' },
                         { label: t('sd.netIncome'), value: keyMetrics.netIncome != null ? formatLargeNumber(keyMetrics.netIncome) : 'N/A' },
@@ -658,7 +658,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 {/* Growth */}
                 <p className="sub-label"><TrendingUp size={13} /> {t('sd.growthLabel')}</p>
                 {(hasRevenueHistory || hasEpsHistory) ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    <div className="sd-2col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('sd.revenue5y')}</span>
@@ -717,7 +717,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {hasFinancials && (
             <section id="financials" className="detail-section animate-fade-up delay-5" style={{ scrollMarginTop: '80px' }}>
                 <h2 className="section-heading"><span className="accent-bar" /><BarChart3 size={18} className="heading-icon" /> {t('sd.simpleFin')}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                <div className="sd-2col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
                     {incomeData.length > 0 && (
                     <div>
                         <p className="sub-label"><BarChart3 size={13} /> {t('sd.incomeStmt')}</p>
@@ -771,7 +771,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {hasNews && (
             <section id="news-events" className="detail-section animate-fade-up delay-6" style={{ scrollMarginTop: '80px' }}>
                 <h2 className="section-heading"><span className="accent-bar" /><Newspaper size={18} className="heading-icon" /> {t('sd.newsEvents')}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+                <div className="sd-2col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
                     <div>
                         <p className="sub-label"><Newspaper size={13} /> {t('sd.latestNews')}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -826,7 +826,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {/* ===== SIGNALS ===== */}
             <section id="signals" className="detail-section animate-fade-up" style={{ scrollMarginTop: '80px' }}>
                 <h2 className="section-heading"><span className="accent-bar" /><Activity size={18} className="heading-icon" /> {t('sd.signalsTitle')}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                <div className="sd-signals-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
                     {/* Technical */}
                     <div style={{ padding: '18px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
                         <p className="sub-label"><Activity size={13} /> {t('sd.technical')}</p>
@@ -950,7 +950,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {/* ===== SCORES ===== */}
             <section id="scores" className="detail-section animate-fade-up" style={{ scrollMarginTop: '80px' }}>
                 <h2 className="section-heading"><span className="accent-bar" /><Star size={18} className="heading-icon" /> {t('sd.scoringSystem')}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', alignItems: 'center' }}>
+                <div className="sd-2col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', alignItems: 'center' }}>
                     <div style={{ textAlign: 'center', padding: '20px 0' }}>
                         <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'var(--primary-light)', lineHeight: 1 }}>{scores.overall}</div>
                         <div style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '8px' }}>/ 5.0</div>
@@ -981,7 +981,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {/* ===== BEGINNER TIPS ===== */}
             <section id="tips" className="detail-section animate-fade-up" style={{ scrollMarginTop: '80px' }}>
                 <h2 className="section-heading"><span className="accent-bar" /><Lightbulb size={18} className="heading-icon" /> {t('sd.tipsTitle')}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                <div className="sd-2col-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                     <div style={{ padding: '20px', background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 'var(--radius-md)' }}>
                         <h3 style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '14px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <CheckCircle size={16} /> {t('sd.goodFor')}

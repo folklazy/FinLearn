@@ -1854,6 +1854,189 @@ input[type=number] {
   .container {
     padding: 0 20px;
   }
+
+  /* ── Stock Detail Page ── */
+  .sd-page {
+    padding: 16px 14px 48px !important;
+  }
+
+  .sd-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .sd-header-price {
+    text-align: left !important;
+  }
+
+  .sd-header-price > div:last-child {
+    justify-content: flex-start !important;
+  }
+
+  .price-hero {
+    font-size: 1.8rem !important;
+  }
+
+  .detail-section {
+    padding: 18px 16px !important;
+  }
+
+  .sd-overview-grid,
+  .sd-2col-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sd-signals-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sd-snapshot-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+  }
+
+  .sd-metrics-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  }
+
+  .sd-range-bar {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sd-range-bar button {
+    padding: 5px 10px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .metric-card {
+    padding: 14px !important;
+  }
+
+  .section-heading {
+    font-size: 0.95rem !important;
+  }
+
+  /* ── Stocks List Page ── */
+  .sl-page {
+    padding: 28px 14px 48px !important;
+  }
+
+  .sl-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+/* ── Small phones (≤480px) ── */
+@media (max-width: 480px) {
+  .sd-page {
+    padding: 12px 10px 40px !important;
+  }
+
+  .price-hero {
+    font-size: 1.5rem !important;
+  }
+
+  .detail-section {
+    padding: 14px 12px !important;
+  }
+
+  .sd-snapshot-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .sd-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .metric-card {
+    padding: 12px 10px !important;
+  }
+
+  .metric-card > div:first-child {
+    font-size: 0.68rem !important;
+  }
+
+  .metric-card > div:nth-child(2) {
+    font-size: 0.95rem !important;
+  }
+
+  .section-heading {
+    font-size: 0.88rem !important;
+    gap: 8px !important;
+  }
+
+  .section-heading .accent-bar {
+    height: 18px !important;
+  }
+
+  .sd-range-bar button {
+    padding: 4px 8px !important;
+    font-size: 0.65rem !important;
+  }
+
+  .sub-label {
+    font-size: 0.72rem !important;
+  }
+
+  /* Stocks List */
+  .sl-page {
+    padding: 20px 10px 40px !important;
+  }
+
+  .sl-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .sl-page h1 {
+    font-size: 1.3rem !important;
+  }
+
+  /* Compact stock cards on small phones */
+  .sl-grid > a > div {
+    padding: 14px !important;
+  }
+
+  /* Smaller logo containers in stock cards */
+  .sl-grid > a > div > div:first-child > div:first-child > div:first-child {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    padding: 4px !important;
+  }
+
+  /* Smaller price in stock cards */
+  .sl-grid > a > div > div:nth-child(2) > div:first-child {
+    font-size: 1.15rem !important;
+  }
+
+  /* Hide sector badges on very small screens */
+  .sl-grid > a > div > div:last-child > div:first-child > span:nth-child(2) {
+    display: none !important;
+  }
+
+  /* Data table compact */
+  .data-table th,
+  .data-table td {
+    padding: 10px 8px !important;
+    font-size: 0.76rem !important;
+  }
+
+  /* Trade modal full width on small screens */
+  .sd-page > div:last-child > div {
+    max-width: 100% !important;
+    border-radius: 16px !important;
+    padding: 20px !important;
+  }
+
+  /* Chip filters horizontal scroll */
+  .chip {
+    font-size: 0.7rem !important;
+    padding: 5px 10px !important;
+  }
 }
 
 /* ═══════════════════════════════════════════

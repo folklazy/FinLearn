@@ -348,7 +348,7 @@ function StocksContent() {
     ];
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 24px 80px' }}>
+        <div className="sl-page" style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 24px 80px' }}>
 
             {/* ═══ Header ═══ */}
             <div style={{ marginBottom: '36px' }}>
@@ -473,7 +473,7 @@ function StocksContent() {
             {/* ═══ Content ═══ */}
             {isLoading ? (
                 /* Skeleton Grid */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                <div className="sl-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                     {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} style={{
                             height: '160px', borderRadius: 'var(--radius-lg)',
@@ -531,7 +531,7 @@ function StocksContent() {
                 </div>
             ) : view === 'grid' ? (
                 /* ─── Grid View ─── */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                <div className="sl-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                     {stocks.map((stock, i) => (
                         <StockCard key={stock.symbol} stock={stock} i={i}
                             inWatchlist={watchlistSet.has(stock.symbol.toUpperCase())}
@@ -646,10 +646,10 @@ function StocksContent() {
 export default function StocksPage() {
     return (
         <Suspense fallback={
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 24px' }}>
+            <div className="sl-page" style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 24px' }}>
                 <div style={{ height: '32px', width: '240px', background: 'var(--bg-elevated)', borderRadius: '8px', marginBottom: '36px' }} />
                 <div style={{ height: '48px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-lg)', marginBottom: '24px' }} />
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                <div className="sl-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                     {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} style={{ height: '160px', borderRadius: 'var(--radius-lg)', background: 'var(--bg-card-solid)', border: '1px solid var(--border)' }} />
                     ))}
