@@ -1,64 +1,66 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 export default function Footer() {
-    const { t } = useI18n();
-
-    const LINKS = {
-        main: [
-            { href: '/', label: t('footer.home') },
-            { href: '/stocks', label: t('footer.stocks') },
-            { href: '/learn', label: t('footer.lessons') },
-            { href: '/glossary', label: t('footer.glossary') },
-        ],
-    };
+    const { t, locale } = useI18n();
+    const isTH = locale === 'th';
+    const year = new Date().getFullYear();
 
     return (
-        <footer style={{ borderTop: '1px solid var(--border)', padding: '56px 0 32px' }}>
+        <footer className="site-footer">
             <div className="container">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '40px', marginBottom: '40px' }}>
+                {/* ── Main grid ── */}
+                <div className="footer-grid">
                     {/* Brand */}
-                    <div>
-                        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 800, color: 'white' }}>F</div>
-                            <span style={{ fontSize: '1rem', fontWeight: 750, letterSpacing: '-0.02em' }}>Fin<span className="gradient-text">Learn</span></span>
+                    <div className="footer-brand">
+                        <Link href="/" className="footer-logo">
+                            <div className="footer-logo-icon">F</div>
+                            <span>Fin<span className="gradient-text">Learn</span></span>
                         </Link>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.65, maxWidth: '200px' }}>
-                            {t('footer.tagline')}
-                        </p>
+                        <p className="footer-tagline">{t('footer.tagline')}</p>
+                        <span className="footer-badge">
+                            {isTH ? 'แพลตฟอร์มการศึกษา' : 'Education Platform'}
+                        </span>
                     </div>
 
-                    {/* Nav column */}
-                    <div>
-                        <h4 style={{ color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '14px', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('footer.menu')}</h4>
-                        <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {LINKS.main.map(link => (
-                                <li key={link.label}>
-                                    <Link href={link.href} style={{ color: 'var(--text-muted)', fontSize: '0.82rem', transition: 'color 0.15s' }}
-                                        onMouseOver={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-                                        onMouseOut={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-                                    >{link.label}</Link>
-                                </li>
-                            ))}
+                    {/* Product column */}
+                    <div className="footer-col">
+                        <h4 className="footer-col-title">
+                            {isTH ? 'เครื่องมือ' : 'Product'}
+                        </h4>
+                        <ul className="footer-links">
+                            <li><Link href="/" className="footer-link">{t('footer.home')}</Link></li>
+                            <li><Link href="/stocks" className="footer-link">{t('footer.stocks')}</Link></li>
+                            <li><Link href="/watchlist" className="footer-link">{isTH ? 'รายการจับตา' : 'Watchlist'}</Link></li>
+                            <li><Link href="/portfolio" className="footer-link">{isTH ? 'พอร์ตโฟลิโอ' : 'Portfolio'}</Link></li>
+                        </ul>
+                    </div>
+
+                    {/* Learn column */}
+                    <div className="footer-col">
+                        <h4 className="footer-col-title">{t('footer.resources')}</h4>
+                        <ul className="footer-links">
+                            <li><Link href="/learn" className="footer-link">{t('footer.lessons')}</Link></li>
+                            <li><Link href="/glossary" className="footer-link">{t('footer.glossary')}</Link></li>
                         </ul>
                     </div>
                 </div>
 
-                {/* Disclaimer */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '14px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.1)', marginBottom: '28px' }}>
-                    <AlertTriangle size={14} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: '2px' }} />
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', lineHeight: 1.6 }}>
-                        <strong style={{ color: 'var(--warning)' }}>Disclaimer</strong> — {t('footer.disclaimer')}
-                    </p>
+                {/* ── Disclaimer ── */}
+                <div className="footer-disclaimer">
+                    <span className="footer-disclaimer-label">Disclaimer —</span>
+                    {t('footer.disclaimer')}
                 </div>
 
-                {/* Bottom */}
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>© {new Date().getFullYear()} FinLearn</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontStyle: 'italic' }}>Not Financial Advice</span>
+                {/* ── Bottom bar ── */}
+                <div className="footer-bottom">
+                    <span>© {year} FinLearn</span>
+                    <span className="footer-sep" />
+                    <span>{isTH ? 'ไม่ใช่คำแนะนำทางการเงิน' : 'Not financial advice'}</span>
+                    <span className="footer-sep" />
+                    <span>{isTH ? 'เพื่อการศึกษาเท่านั้น' : 'For educational use only'}</span>
                 </div>
             </div>
         </footer>
