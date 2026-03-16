@@ -158,174 +158,136 @@ export default function WatchlistPage() {
                 <div className="animate-fade-up delay-1">
                     {!session?.user ? (
                         <>
-                            {/* ── Mock UI Preview with Animations ── */}
-                            <div className="animate-fade-up delay-2" style={{ position: 'relative', marginBottom: '36px', borderRadius: '16px', overflow: 'hidden' }}>
-                                {/* Floating ambient orbs */}
-                                <div className="gp-orb" style={{ width: '180px', height: '180px', background: 'rgba(124,108,240,0.12)', top: '-40px', right: '-30px', animationDelay: '0s' }} />
-                                <div className="gp-orb" style={{ width: '120px', height: '120px', background: 'rgba(250,204,21,0.08)', bottom: '60px', left: '-20px', animationDelay: '3s' }} />
-
-                                <div className="gp-border-shimmer" style={{
-                                    background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                                    borderRadius: '16px', overflow: 'hidden', position: 'relative',
-                                }}>
-                                    {/* Live indicator bar */}
-                                    <div style={{
-                                        display: 'flex', alignItems: 'center', gap: '8px',
-                                        padding: '10px 20px', borderBottom: '1px solid var(--border)',
-                                        background: 'rgba(255,255,255,0.015)',
-                                    }}>
-                                        <div className="gp-live-dot" />
-                                        <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                            Live Market Data
+                            {/* ── Kinetic Typography Hero ── */}
+                            <div style={{ textAlign: 'center', marginBottom: '40px', paddingTop: '16px' }}>
+                                <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.15, marginBottom: '14px' }}>
+                                    {t('wl.loginTitle').split(' ').map((word: string, i: number) => (
+                                        <span key={i} className="kinetic-word" style={{ animationDelay: `${0.1 + i * 0.08}s`, marginRight: '0.3em' }}>
+                                            {word}
                                         </span>
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>5 {t('wl.items')}</span>
-                                    </div>
+                                    ))}
+                                </h2>
+                                <p className="kinetic-word" style={{ animationDelay: '0.6s', color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '440px', margin: '0 auto', lineHeight: 1.6 }}>
+                                    {t('wl.loginDesc')}
+                                </p>
+                            </div>
 
-                                    {/* Mock table header */}
+                            {/* ── Bento Grid ── */}
+                            <div className="bento-grid bento-grid-wl" style={{ marginBottom: '10px' }}>
+
+                                {/* ─ Large cell: Mock stock table (glassmorphism) ─ */}
+                                <div className="glass-card" style={{ gridRow: 'span 2', overflow: 'hidden', padding: 0 }}>
+                                    {/* Table header */}
                                     <div style={{
-                                        display: 'grid', gridTemplateColumns: '2.2fr 80px 1fr 1fr 60px',
-                                        padding: '10px 20px', borderBottom: '1px solid var(--border)',
-                                        fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)',
-                                        textTransform: 'uppercase', letterSpacing: '0.05em',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)',
                                     }}>
-                                        <span>Stock</span>
-                                        <span style={{ textAlign: 'center' }}>7D</span>
-                                        <span style={{ textAlign: 'right' }}>Price</span>
-                                        <span style={{ textAlign: 'right' }}>Change</span>
-                                        <span />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div className="pulse-dot" />
+                                            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.02em' }}>Watchlist</span>
+                                        </div>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>5 {t('wl.items')}</span>
                                     </div>
 
-                                    {/* Mock stock rows with sparklines */}
+                                    {/* Stock rows */}
                                     {[
-                                        { sym: 'AAPL', name: 'Apple Inc.', price: '$231.34', change: '+1.08%', up: true, spark: 'M0,20 C10,18 20,22 30,15 40,17 50,10 60,12 70,8' },
-                                        { sym: 'GOOGL', name: 'Alphabet Inc.', price: '$176.45', change: '+0.89%', up: true, spark: 'M0,22 C10,20 20,18 30,22 40,16 50,14 60,12 70,10' },
-                                        { sym: 'TSLA', name: 'Tesla, Inc.', price: '$248.42', change: '-1.85%', up: false, spark: 'M0,8 C10,10 20,12 30,9 40,15 50,18 60,16 70,22' },
-                                        { sym: 'NVDA', name: 'NVIDIA Corp.', price: '$875.40', change: '+1.42%', up: true, spark: 'M0,24 C10,22 20,18 30,20 40,14 50,10 60,8 70,6' },
-                                        { sym: 'MSFT', name: 'Microsoft', price: '$417.88', change: '+0.65%', up: true, spark: 'M0,16 C10,14 20,16 30,12 40,14 50,10 60,12 70,9' },
+                                        { sym: 'AAPL', name: 'Apple Inc.', price: '$231.34', change: '+1.08%', up: true },
+                                        { sym: 'GOOGL', name: 'Alphabet', price: '$176.45', change: '+0.89%', up: true },
+                                        { sym: 'TSLA', name: 'Tesla', price: '$248.42', change: '-1.85%', up: false },
+                                        { sym: 'NVDA', name: 'NVIDIA', price: '$875.40', change: '+1.42%', up: true },
+                                        { sym: 'MSFT', name: 'Microsoft', price: '$417.88', change: '+0.65%', up: true },
                                     ].map((row, i) => (
-                                        <div key={i} className={`gp-row-${i}`} style={{
-                                            display: 'grid', gridTemplateColumns: '2.2fr 80px 1fr 1fr 60px',
-                                            padding: '14px 20px', alignItems: 'center',
-                                            borderBottom: i < 4 ? '1px solid var(--border)' : 'none',
-                                            transition: 'background 0.2s ease',
-                                        }}
-                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div key={i} className={`row-stagger-${i}`} style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            padding: '12px 18px',
+                                            borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                                                 <div style={{
-                                                    width: '34px', height: '34px', borderRadius: '10px',
-                                                    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                                    width: '30px', height: '30px', borderRadius: '8px',
+                                                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)',
+                                                    fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)',
                                                 }}>
                                                     {row.sym.slice(0, 2)}
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{row.sym}</div>
-                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{row.name}</div>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.82rem', lineHeight: 1.2 }}>{row.sym}</div>
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{row.name}</div>
                                                 </div>
                                             </div>
-                                            {/* Mini sparkline */}
-                                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                                <svg width="70" height="28" viewBox="0 0 70 28" fill="none">
-                                                    <defs>
-                                                        <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor={row.up ? '#22c55e' : '#ef4444'} stopOpacity="0.3" />
-                                                            <stop offset="100%" stopColor={row.up ? '#22c55e' : '#ef4444'} stopOpacity="0" />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <path d={row.spark + ' L70,28 L0,28 Z'} fill={`url(#grad-${i})`} opacity="0.4" />
-                                                    <path d={row.spark} className={`gp-sparkline gp-sparkline-${i}`}
-                                                        stroke={row.up ? '#22c55e' : '#ef4444'} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                                                </svg>
+                                            <div style={{ textAlign: 'right', marginRight: '16px' }}>
+                                                <div style={{ fontWeight: 700, fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{row.price}</div>
                                             </div>
-                                            <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '0.88rem', fontVariantNumeric: 'tabular-nums' }}>{row.price}</div>
                                             <div style={{
-                                                textAlign: 'right', fontWeight: 700, fontSize: '0.78rem',
+                                                fontSize: '0.72rem', fontWeight: 600,
                                                 color: row.up ? 'var(--success)' : 'var(--danger)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px',
+                                                minWidth: '60px', textAlign: 'right',
                                             }}>
-                                                {row.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {row.change}
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                <Star size={14} fill="#facc15" style={{ color: '#facc15' }} />
+                                                {row.change}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Glassmorphism gradient overlay with CTA */}
-                                <div className="gp-glass" style={{
-                                    position: 'absolute', inset: 0,
-                                    background: 'linear-gradient(to bottom, rgba(14,14,14,0) 5%, rgba(14,14,14,0.6) 45%, rgba(14,14,14,0.95) 100%)',
-                                    display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-                                    alignItems: 'center', padding: '0 24px 36px',
-                                }}>
-                                    <div style={{
-                                        width: '52px', height: '52px', borderRadius: '16px',
-                                        background: 'rgba(250,204,21,0.08)', border: '1px solid rgba(250,204,21,0.15)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        marginBottom: '18px', animation: 'float 4s ease-in-out infinite',
-                                    }}>
-                                        <Star size={24} style={{ color: '#facc15' }} />
+                                {/* ─ Feature card 1 ─ */}
+                                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                    <Star size={20} style={{ color: '#facc15', marginBottom: '16px' }} />
+                                    <div>
+                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('wl.feat1Title')}</h3>
+                                        <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('wl.feat1Desc')}</p>
                                     </div>
-                                    <h2 className="gp-gradient-text" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '8px', textAlign: 'center', letterSpacing: '-0.03em' }}>
-                                        {t('wl.loginTitle')}
-                                    </h2>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: '400px', marginBottom: '22px', lineHeight: 1.6 }}>
-                                        {t('wl.loginDesc')}
-                                    </p>
-                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                        <Link href="/register" className="gp-cta-btn" style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                            padding: '12px 28px', borderRadius: '100px',
-                                            background: '#22c55e', color: '#0e0e0e',
-                                            fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
-                                        }}>
-                                            {t('login.register')} <ArrowRight size={15} />
-                                        </Link>
-                                        <Link href="/login" style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                            padding: '12px 28px', borderRadius: '100px',
-                                            background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'var(--border-light)'; }}
-                                        >
-                                            {t('login.submit')}
-                                        </Link>
+                                </div>
+
+                                {/* ─ Feature card 2 ─ */}
+                                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                    <TrendingUp size={20} style={{ color: '#34d399', marginBottom: '16px' }} />
+                                    <div>
+                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('wl.feat2Title')}</h3>
+                                        <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('wl.feat2Desc')}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* ── Feature benefit cards with hover interactions ── */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-                                {[
-                                    { icon: <Star size={18} />, title: t('wl.feat1Title'), desc: t('wl.feat1Desc'), accent: '#facc15' },
-                                    { icon: <TrendingUp size={18} />, title: t('wl.feat2Title'), desc: t('wl.feat2Desc'), accent: '#34d399' },
-                                    { icon: <BarChart2 size={18} />, title: t('wl.feat3Title'), desc: t('wl.feat3Desc'), accent: '#7c6cf0' },
-                                ].map((feat, i) => (
-                                    <div key={i} className={`gp-feat-card animate-fade-up delay-${i + 3}`} style={{
-                                        padding: '24px', borderRadius: '14px',
-                                        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                                        cursor: 'default',
-                                    }}>
-                                        <div style={{
-                                            width: '40px', height: '40px', borderRadius: '12px',
-                                            background: `${feat.accent}10`, border: `1px solid ${feat.accent}18`,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: feat.accent, marginBottom: '16px',
-                                            transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
-                                        }}>
-                                            {feat.icon}
-                                        </div>
-                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{feat.title}</h3>
-                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.65 }}>{feat.desc}</p>
+                            {/* ── Bottom row: stats + feature ── */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '10px', marginBottom: '36px' }}>
+                                <div className="bento-stat animate-fade-up delay-3">
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px' }}>5+</div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Exchanges</div>
+                                </div>
+                                <div className="bento-stat animate-fade-up delay-4">
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px' }}>24/7</div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Real-time</div>
+                                </div>
+                                <div className="glass-card animate-fade-up delay-5" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                    <BarChart2 size={20} style={{ color: '#7c6cf0', flexShrink: 0 }} />
+                                    <div>
+                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', letterSpacing: '-0.01em' }}>{t('wl.feat3Title')}</h3>
+                                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{t('wl.feat3Desc')}</p>
                                     </div>
-                                ))}
+                                </div>
+                            </div>
+
+                            {/* ── CTA ── */}
+                            <div className="animate-fade-up delay-6" style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                    <Link href="/register" className="cta-primary" style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                        padding: '12px 32px', borderRadius: '100px',
+                                        background: '#22c55e', color: '#0e0e0e',
+                                        fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
+                                    }}>
+                                        {t('login.register')} <ArrowRight size={15} />
+                                    </Link>
+                                    <Link href="/login" className="cta-ghost" style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                        padding: '12px 32px', borderRadius: '100px',
+                                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                                        color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
+                                    }}>
+                                        {t('login.submit')}
+                                    </Link>
+                                </div>
                             </div>
                         </>
                     ) : (
