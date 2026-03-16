@@ -11,6 +11,7 @@ import healthRoutes from './routes/health';
 import lessonRoutes from './routes/lessons';
 import { StockService } from './services/stockService';
 import { prisma } from './lib/prisma';
+import { warmCrumb } from './services/providers/yahooFinance';
 
 // Load environment variables from monorepo root (dev only — production uses platform env vars)
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -100,11 +101,16 @@ app.listen(PORT, HOST, () => {
         })
         .catch((err: Error) => console.warn('[Startup] Cache flush error:', err.message));
 
-    // ── Cache warming: pre-fetch popular stocks in background ──
-    const stockService = new StockService();
-    stockService.getPopularStocks()
-        .then(stocks => console.log(`  ✅ Cache warmed: ${stocks.length} popular stocks ready`))
-        .catch(() => console.warn('  ⚠️ Cache warming failed (will fetch on first request)'));
+    // ── Warm Yahoo crumb before any stock requests ──
+    warmCrumb()
+        .then(() => {
+            // ── Cache warming: pre-fetch popular stocks in background ──
+            const stockService = new StockService();
+            return stockService.getPopularStocks()
+                .then(stocks => console.log(`  ✅ Cache warmed: ${stocks.length} popular stocks ready`))
+                .catch(() => console.warn('  ⚠️ Cache warming failed (will fetch on first request)'));
+        })
+        .catch(() => console.warn('  ⚠️ Crumb warming failed'));
 });
 
 export default app;

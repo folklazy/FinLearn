@@ -7,6 +7,46 @@
 const YahooFinanceCtor = require('yahoo-finance2').default;
 const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical', 'yahooSurvey'] });
 
+// ── quoteSummary circuit breaker ──
+// Yahoo crumb endpoint often returns 429; stop retrying after consecutive failures
+let qsConsecutiveFails = 0;
+let qsSkipUntil = 0;
+
+async function quoteSummarySafe(symbol: string, modules: string[]): Promise<any> {
+    if (Date.now() < qsSkipUntil) return null; // Circuit open
+    try {
+        const result = await yahooFinance.quoteSummary(symbol, { modules });
+        if (qsConsecutiveFails > 0) console.log(`[Yahoo] quoteSummary recovered after ${qsConsecutiveFails} failures`);
+        qsConsecutiveFails = 0;
+        return result;
+    } catch (err) {
+        qsConsecutiveFails++;
+        const msg = (err as Error).message;
+        if (qsConsecutiveFails <= 3) console.warn(`[Yahoo] quoteSummary ${symbol} fail #${qsConsecutiveFails}: ${msg}`);
+        if (qsConsecutiveFails >= 3) {
+            qsSkipUntil = Date.now() + 5 * 60 * 1000;
+            console.warn(`[Yahoo] quoteSummary circuit OPEN — skipping for 5 min`);
+        }
+        return null;
+    }
+}
+
+// Warm crumb at startup so first real requests don't 429
+export async function warmCrumb(): Promise<void> {
+    for (let i = 0; i < 3; i++) {
+        try {
+            await yahooFinance.quoteSummary('AAPL', { modules: ['price'] });
+            console.log('[Yahoo] ✅ Crumb initialized');
+            qsConsecutiveFails = 0;
+            return;
+        } catch (err) {
+            console.warn(`[Yahoo] Crumb init ${i + 1}/3: ${(err as Error).message}`);
+            if (i < 2) await new Promise(r => setTimeout(r, 3000 * (i + 1)));
+        }
+    }
+    console.warn('[Yahoo] ⚠️ Crumb init failed — quoteSummary may be unavailable');
+}
+
 // ── Global Yahoo request throttle ──
 // Yahoo rate-limits crumb/cookie requests; serialize to avoid 429
 const MAX_CONCURRENT = 2;
@@ -88,9 +128,7 @@ export interface YFProfile {
 export async function getProfile(symbol: string): Promise<YFProfile | null> {
     return yahooThrottle(async () => {
     try {
-        const result: any = await yahooFinance.quoteSummary(symbol, {
-            modules: ['assetProfile', 'summaryDetail', 'price'],
-        });
+        const result: any = await quoteSummarySafe(symbol, ['assetProfile', 'summaryDetail', 'price']);
         const ap = result?.assetProfile;
         const sd = result?.summaryDetail;
         const pr = result?.price;
@@ -231,9 +269,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         // it causes raw prefixed field names (annualTotalRevenue instead of totalRevenue).
         // Without it, the library normalises fields to match the TypeScript interface.
         const [result, finArr, bsArr] = await Promise.all([
-            yahooFinance.quoteSummary(symbol, {
-                modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory', 'earnings', 'assetProfile', 'price'],
-            }).catch(() => null),
+            quoteSummarySafe(symbol, ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory', 'earnings', 'assetProfile', 'price']),
             (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'financials', type: 'annual' }).catch(() => null),
             (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }).catch(() => null),
         ]);
