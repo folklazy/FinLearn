@@ -133,11 +133,10 @@ export class StockService {
         // Phase 1: Parallel fetch from all providers
         // FMP free tier is heavily rate-limited (429s) — only fetch profile (usually cached)
         // Yahoo Finance provides all financials, metrics, and history without API key limits
-        const [fmpProfile, finnhubProfile, yahooProfile, finnhubQuote, finnhubNews, finnhubPeers, finnhubFinancials, yahooMetrics, yahooFinancials] =
+        const [fmpProfile, finnhubProfile, finnhubQuote, finnhubNews, finnhubPeers, finnhubFinancials, yahooMetrics, yahooFinancials] =
             await Promise.all([
                 fmp.getProfile(symbol).catch(() => null),
                 finnhub.getProfile(symbol).catch(() => null),
-                yahoo.getProfile(symbol).catch(() => null),
                 finnhub.getQuote(symbol).catch(() => null),
                 finnhub.getNews(symbol, 30).catch(() => []),
                 finnhub.getPeers(symbol).catch(() => []),
@@ -145,6 +144,10 @@ export class StockService {
                 yahoo.getKeyMetrics(symbol).catch(() => null),
                 yahoo.getFinancials(symbol).catch(() => null),
             ]);
+
+        // Yahoo profile is now embedded in getKeyMetrics (assetProfile+price modules)
+        // This saves a separate Yahoo API call that was getting 429'd on crumb requests
+        const yahooProfile = yahooMetrics?.profile ?? null;
 
         // Need at least one profile source to build the page
         if (!fmpProfile && !finnhubProfile && !yahooProfile) return null;

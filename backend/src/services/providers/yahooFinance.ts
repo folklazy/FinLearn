@@ -208,6 +208,18 @@ export interface YFKeyMetrics {
     epsGrowth: number | null;      // already percentage
     revenueHistory: { year: string; value: number }[];
     epsHistory: { year: string; value: number }[];
+    profile?: {
+        name: string;
+        description: string;
+        sector: string;
+        industry: string;
+        website: string;
+        employees: number;
+        headquarters: string;
+        ceo: string;
+        exchange: string;
+        marketCap: number;
+    } | null;
 }
 
 export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null> {
@@ -220,7 +232,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         // Without it, the library normalises fields to match the TypeScript interface.
         const [result, finArr, bsArr] = await Promise.all([
             yahooFinance.quoteSummary(symbol, {
-                modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory', 'earnings'],
+                modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory', 'earnings', 'assetProfile', 'price'],
             }).catch(() => null),
             (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'financials', type: 'annual' }).catch(() => null),
             (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }).catch(() => null),
@@ -229,6 +241,8 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         const fd = (result as any)?.financialData;
         const ks = (result as any)?.defaultKeyStatistics;
         const sd = (result as any)?.summaryDetail;
+        const ap = (result as any)?.assetProfile;
+        const pr = (result as any)?.price;
         const is: any[] | undefined = (result as any)?.incomeStatementHistory?.incomeStatementHistory;
         const earningsYearly: any[] | undefined = (result as any)?.earnings?.financialsChart?.yearly;
 
@@ -332,7 +346,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
 
         const rawDivYield = (sd as any)?.trailingAnnualDividendYield ?? sd?.dividendYield ?? null;
         return {
-            pe: sd?.trailingPE ?? (eps > 0 && fd?.currentPrice ? parseFloat((fd.currentPrice / eps).toFixed(1)) : null),
+            pe: sd?.trailingPE ?? (eps > 0 && (fd?.currentPrice || pr?.regularMarketPrice) ? parseFloat(((fd?.currentPrice || pr?.regularMarketPrice) / eps).toFixed(1)) : null),
             pb: ks?.priceToBook ?? null,
             dividendYield: rawDivYield != null && rawDivYield > 0 ? parseFloat((rawDivYield * 100).toFixed(2)) : null,
             dividendPerShare: sd?.dividendRate ?? null,
@@ -347,6 +361,18 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             epsGrowth,
             revenueHistory,
             epsHistory,
+            profile: ap ? {
+                name: pr?.longName || pr?.shortName || symbol,
+                description: ap?.longBusinessSummary?.slice(0, 800) ?? '',
+                sector: ap?.sector ?? '',
+                industry: ap?.industry ?? '',
+                website: ap?.website ?? '',
+                employees: ap?.fullTimeEmployees ?? 0,
+                headquarters: [ap?.city, ap?.state, ap?.country].filter(Boolean).join(', '),
+                ceo: (ap?.companyOfficers as any[])?.find((o: any) => o.title?.toLowerCase().includes('ceo') || o.title?.toLowerCase().includes('chief executive'))?.name ?? 'N/A',
+                exchange: (() => { const raw: string = pr?.exchangeName ?? pr?.exchange ?? ''; return raw.toUpperCase().includes('NASDAQ') ? 'NASDAQ' : raw.toUpperCase().includes('NYSE') ? 'NYSE' : raw || ''; })(),
+                marketCap: sd?.marketCap ?? pr?.marketCap ?? 0,
+            } : null,
         };
     } catch (err) {
         console.warn(`[Yahoo] KeyMetrics error for ${symbol}:`, (err as Error).message);
