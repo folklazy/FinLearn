@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const AUTH_ONLY_PAGES = ['/login', '/register', '/forgot-password', '/reset-password'];
 
-const PROTECTED_ROUTES = ['/portfolio', '/watchlist', '/settings', '/onboarding'];
+const PROTECTED_ROUTES = ['/settings', '/onboarding'];
 
 export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
