@@ -7,6 +7,32 @@
 const YahooFinanceCtor = require('yahoo-finance2').default;
 const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical', 'yahooSurvey'] });
 
+// ── Global Yahoo request throttle ──
+// Yahoo rate-limits crumb/cookie requests; serialize to avoid 429
+const MAX_CONCURRENT = 2;
+let activeRequests = 0;
+const queue: Array<() => void> = [];
+
+function yahooThrottle<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        const run = () => {
+            activeRequests++;
+            fn().then(resolve, reject).finally(() => {
+                activeRequests--;
+                if (queue.length > 0) {
+                    const next = queue.shift()!;
+                    setTimeout(next, 300);
+                }
+            });
+        };
+        if (activeRequests < MAX_CONCURRENT) {
+            run();
+        } else {
+            queue.push(run);
+        }
+    });
+}
+
 // ── Price History ──
 export interface YFHistoricalPoint {
     date: string;   // YYYY-MM-DD
@@ -60,6 +86,7 @@ export interface YFProfile {
 }
 
 export async function getProfile(symbol: string): Promise<YFProfile | null> {
+    return yahooThrottle(async () => {
     try {
         const result: any = await yahooFinance.quoteSummary(symbol, {
             modules: ['assetProfile', 'summaryDetail', 'price'],
@@ -95,6 +122,7 @@ export async function getProfile(symbol: string): Promise<YFProfile | null> {
         console.warn(`[Yahoo] Profile error for ${symbol}:`, (err as Error).message);
         return null;
     }
+    });
 }
 
 // ── Search ──
@@ -106,6 +134,7 @@ export interface YFSearchResult {
 }
 
 export async function searchStocks(query: string, limit = 15): Promise<YFSearchResult[]> {
+    return yahooThrottle(async () => {
     try {
         const result: any = await yahooFinance.search(query, { newsCount: 0, quotesCount: limit });
         const quotes: any[] = result?.quotes ?? [];
@@ -121,6 +150,7 @@ export async function searchStocks(query: string, limit = 15): Promise<YFSearchR
         console.warn(`[Yahoo] Search error for ${query}:`, (err as Error).message);
         return [];
     }
+    });
 }
 
 // ── Lightweight Quote (for batch fallback) ──
@@ -136,6 +166,7 @@ export interface YFQuote {
 }
 
 export async function getQuote(symbol: string): Promise<YFQuote | null> {
+    return yahooThrottle(async () => {
     try {
         const result: any = await yahooFinance.quoteSummary(symbol, {
             modules: ['price', 'assetProfile'],
@@ -157,6 +188,7 @@ export async function getQuote(symbol: string): Promise<YFQuote | null> {
         console.warn(`[Yahoo] Quote error for ${symbol}:`, (err as Error).message);
         return null;
     }
+    });
 }
 
 // ── Key Metrics ──
@@ -179,6 +211,7 @@ export interface YFKeyMetrics {
 }
 
 export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null> {
+    return yahooThrottle(async () => {
     try {
         const period1 = new Date(Date.now() - 5 * 365 * 86400000);
 
@@ -319,6 +352,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         console.warn(`[Yahoo] KeyMetrics error for ${symbol}:`, (err as Error).message);
         return null;
     }
+    });
 }
 
 // ── Financials ──
@@ -349,6 +383,7 @@ export interface YFFinancials {
 }
 
 export async function getFinancials(symbol: string): Promise<YFFinancials | null> {
+    return yahooThrottle(async () => {
     try {
         const period1 = new Date(Date.now() - 5 * 365 * 86400000);
 
@@ -407,4 +442,5 @@ export async function getFinancials(symbol: string): Promise<YFFinancials | null
         console.warn(`[Yahoo] Financials error for ${symbol}:`, (err as Error).message);
         return null;
     }
+    });
 }

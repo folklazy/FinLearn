@@ -19,6 +19,9 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '4000', 10);
 const HOST = '0.0.0.0';
 
+// Trust first proxy (Render) — required for express-rate-limit X-Forwarded-For
+app.set('trust proxy', 1);
+
 // ===== Middleware =====
 app.use(helmet());
 app.use(cors({
