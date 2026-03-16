@@ -5,6 +5,25 @@ import { cacheService } from './cacheService';
 import { SP500_CONSTITUENTS, SP500_SECTORS } from '../data/sp500';
 import { POPULAR_STOCKS, MAJOR_EXCHANGES } from '../data/popularStocks';
 
+/** Translate English text to Thai using Google Translate free endpoint */
+async function translateToThai(text: string): Promise<string> {
+    if (!text || text.length < 20) return '';
+    try {
+        const trimmed = text.slice(0, 1500); // keep within reasonable size
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&q=${encodeURIComponent(trimmed)}`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        if (!res.ok) return '';
+        const data = await res.json();
+        if (Array.isArray(data) && Array.isArray(data[0])) {
+            return data[0].map((seg: any[]) => seg[0] || '').join('');
+        }
+        return '';
+    } catch (err) {
+        console.warn('[Translate] Error:', (err as Error).message);
+        return '';
+    }
+}
+
 function normalizeExchange(ex: string): string {
     if (!ex) return '';
     const u = ex.toUpperCase();
@@ -187,29 +206,40 @@ export class StockService {
         const profileCeo = fmpProfile?.ceo || yahooProfile?.ceo || 'N/A';
         // Description: FMP → Yahoo → Wikipedia (free, no rate limit) → generic fallback
         let profileDescEn = fmpProfile?.description?.slice(0, 800) || yahooProfile?.description || '';
-        if (!profileDescEn || profileDescEn.length < 80) {
+        if (!profileDescEn || profileDescEn.length < 150) {
             const wikiDesc = await wikipedia.getDescription(profileName, symbol).catch(() => null);
-            if (wikiDesc) profileDescEn = wikiDesc;
+            if (wikiDesc && wikiDesc.length > (profileDescEn?.length || 0)) profileDescEn = wikiDesc;
         }
         if (!profileDescEn) profileDescEn = `${profileName} is a company in the ${profileSector} sector, ${profileIndustry} industry.`;
+
+        // Translate English description to Thai
+        const translatedDesc = await translateToThai(profileDescEn);
+        console.log(`[StockService] ${symbol} translate: en=${profileDescEn.length}ch → th=${translatedDesc.length}ch`);
+
         const sectorThMap: Record<string, string> = {
-            'Technology': 'เทคโนโลยี', 'Healthcare': 'สุขภาพ', 'Financial Services': 'บริการทางการเงิน',
+            'Technology': 'เทคโนโลยี', 'Healthcare': 'สุขภาพ', 'Health Care': 'สุขภาพ',
+            'Financial Services': 'บริการทางการเงิน',
             'Consumer Cyclical': 'สินค้าอุปโภคบริโภค', 'Consumer Defensive': 'สินค้าจำเป็น',
             'Communication Services': 'สื่อสาร', 'Industrials': 'อุตสาหกรรม', 'Energy': 'พลังงาน',
             'Real Estate': 'อสังหาริมทรัพย์', 'Utilities': 'สาธารณูปโภค', 'Basic Materials': 'วัตถุดิบ',
+            'Materials': 'วัตถุดิบ',
         };
         const sectorTh = sectorThMap[profileSector] || profileSector;
         const mcapTh = profileMarketCap >= 200e9 ? 'บริษัทขนาดใหญ่มาก (Mega Cap)' : profileMarketCap >= 10e9 ? 'บริษัทขนาดใหญ่ (Large Cap)' : profileMarketCap >= 2e9 ? 'บริษัทขนาดกลาง (Mid Cap)' : 'บริษัทขนาดเล็ก (Small Cap)';
         const mcapFormatted = profileMarketCap >= 1e12 ? `$${(profileMarketCap / 1e12).toFixed(2)} ล้านล้าน` : profileMarketCap >= 1e9 ? `$${(profileMarketCap / 1e9).toFixed(2)} พันล้าน` : profileMarketCap >= 1e6 ? `$${(profileMarketCap / 1e6).toFixed(0)} ล้าน` : '';
-        const parts: string[] = [];
-        parts.push(`${profileName} เป็น${mcapTh}ในกลุ่ม${sectorTh} อุตสาหกรรม ${profileIndustry}`);
-        if (mcapFormatted) parts.push(`มูลค่าตลาดประมาณ ${mcapFormatted}`);
-        if (profileHQ) parts.push(`สำนักงานใหญ่ตั้งอยู่ที่ ${profileHQ}`);
-        if (profileCeo && profileCeo !== 'N/A') parts.push(`CEO คือ ${profileCeo}`);
-        if (profileEmployees) parts.push(`มีพนักงานประมาณ ${profileEmployees.toLocaleString()} คน`);
-        if (profileIpo && profileIpo !== 'N/A') parts.push(`เข้าตลาดหลักทรัพย์เมื่อปี ${profileIpo.split('-')[0]}`);
-        if (profileWebsite) parts.push(`เว็บไซต์: ${profileWebsite}`);
-        const profileDescTh = parts.join(' · ');
+        // Build auto-generated Thai facts
+        const facts: string[] = [];
+        facts.push(`${profileName} เป็น${mcapTh}ในกลุ่ม${sectorTh} อุตสาหกรรม ${profileIndustry}`);
+        if (mcapFormatted) facts.push(`มูลค่าตลาดประมาณ ${mcapFormatted}`);
+        if (profileHQ) facts.push(`สำนักงานใหญ่ตั้งอยู่ที่ ${profileHQ}`);
+        if (profileCeo && profileCeo !== 'N/A') facts.push(`CEO คือ ${profileCeo}`);
+        if (profileEmployees) facts.push(`มีพนักงานประมาณ ${profileEmployees.toLocaleString()} คน`);
+        if (profileIpo && profileIpo !== 'N/A') facts.push(`เข้าตลาดหลักทรัพย์เมื่อปี ${profileIpo.split('-')[0]}`);
+        if (profileWebsite) facts.push(`เว็บไซต์: ${profileWebsite}`);
+        // Combine: translated description + auto-generated facts
+        const profileDescTh = translatedDesc
+            ? `${translatedDesc}\n\n${facts.join(' · ')}`
+            : facts.join(' · ');
 
         // Use Finnhub quote for real-time price, fallback to FMP profile, then 0
         const price = finnhubQuote?.c ?? fmpProfile?.price ?? 0;

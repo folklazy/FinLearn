@@ -427,14 +427,11 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             </p>
                         ) : (
                             <>
-                                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.88rem', margin: 0 }}>
-                                    {profile.description}
-                                </p>
-                                {profile.descriptionEn && profile.descriptionEn !== profile.description && (
-                                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.8, fontSize: '0.82rem', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-                                        {profile.descriptionEn}
+                                {(profile.description || '').split('\n').filter(Boolean).map((para, i) => (
+                                    <p key={i} style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.88rem', margin: 0, marginTop: i > 0 ? '12px' : 0 }}>
+                                        {para}
                                     </p>
-                                )}
+                                ))}
                             </>
                         )}
                     </div>
