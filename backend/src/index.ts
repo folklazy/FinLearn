@@ -82,17 +82,18 @@ app.listen(PORT, HOST, () => {
   `);
 
     // ── One-time cache flush when code changes data shape ──
-    const CACHE_VERSION = '5'; // Bump to invalidate stale cache after deploy
+    const CACHE_VERSION = '6'; // Bump to invalidate stale cache after deploy
     prisma.apiCache.findUnique({ where: { key: 'system:cache_version' } })
         .then(async (entry) => {
             const stored = (entry?.data as any);
             if (stored === CACHE_VERSION) return;
-            // Flush stale yahoo:metrics (missing profile field) and assembled stockdata
-            const [m, s] = await Promise.all([
+            // Flush stale caches (logo URLs changed, data shape changed)
+            const [m, s, p] = await Promise.all([
                 prisma.apiCache.deleteMany({ where: { key: { startsWith: 'yahoo:metrics:' } } }),
                 prisma.apiCache.deleteMany({ where: { key: { startsWith: 'stockdata:full:' } } }),
+                prisma.apiCache.deleteMany({ where: { key: { startsWith: 'stockdata:popular:' } } }),
             ]);
-            console.log(`[Startup] Cache v${CACHE_VERSION}: flushed ${m.count} yahoo:metrics + ${s.count} stockdata:full`);
+            console.log(`[Startup] Cache v${CACHE_VERSION}: flushed ${m.count} yahoo:metrics + ${s.count} stockdata:full + ${p.count} stockdata:popular`);
             await prisma.apiCache.upsert({
                 where: { key: 'system:cache_version' },
                 update: { data: CACHE_VERSION as any, expiresAt: new Date('2099-01-01'), updatedAt: new Date() },

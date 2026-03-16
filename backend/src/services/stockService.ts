@@ -17,16 +17,20 @@ function normalizeExchange(ex: string): string {
     return ex;
 }
 
-/** Build a Clearbit logo URL from a website URL, fallback to symbol-based guess */
-function buildClearbitLogo(website: string | undefined | null, symbol: string): string {
+/** Build a logo URL. Prefer direct logo URL, fallback to DuckDuckGo icon from website domain */
+function buildLogoUrl(directLogo: string | undefined | null, website: string | undefined | null, symbol: string): string {
+    // 1. Direct logo URL from provider (e.g. Finnhub)
+    if (directLogo) return directLogo;
+    // 2. DuckDuckGo icon from company website domain (free, no auth)
     if (website) {
         try {
             const url = website.startsWith('http') ? website : `https://${website}`;
             const domain = new URL(url).hostname.replace(/^www\./, '');
-            if (domain) return `https://logo.clearbit.com/${domain}`;
+            if (domain) return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
         } catch { /* ignore */ }
     }
-    return `https://logo.clearbit.com/${symbol.toLowerCase()}.com`;
+    // 3. Fallback: guess domain from symbol
+    return `https://icons.duckduckgo.com/ip3/${symbol.toLowerCase()}.com.ico`;
 }
 
 /**
@@ -166,9 +170,9 @@ export class StockService {
 
         // Merge profile — FMP → Finnhub → Yahoo fallback chain
         const profileName = fmpProfile?.companyName || finnhubProfile?.name || yahooProfile?.name || symbol;
-        // Logo: Clearbit (from website domain, already in CSP) → Finnhub → FMP image
+        // Logo: Finnhub direct → DuckDuckGo icon from website domain
         const profileWebsiteForLogo = fmpProfile?.website || finnhubProfile?.weburl || yahooProfile?.website || '';
-        const profileLogo = buildClearbitLogo(profileWebsiteForLogo || null, symbol);
+        const profileLogo = buildLogoUrl(finnhubProfile?.logo, profileWebsiteForLogo || null, symbol);
         // Prefer Yahoo sector/industry — it uses proper GICS classification
         // FMP free tier returns simplified names (e.g. "Automobiles" instead of "Consumer Cyclical")
         const rawSector = yahooProfile?.sector || fmpProfile?.sector || finnhubProfile?.finnhubIndustry || 'Other';
@@ -825,7 +829,7 @@ export class StockService {
                 if (fp || fq) {
                     finnhubMap.set(sym, {
                         name: fp?.name || sym,
-                        logo: buildClearbitLogo(fp?.weburl, sym),
+                        logo: buildLogoUrl(fp?.logo, fp?.weburl, sym),
                         price: fq?.c || 0,
                         change: fq?.d || 0,
                         changePercent: fq?.dp || 0,
@@ -882,7 +886,7 @@ export class StockService {
                 return {
                     symbol: sym,
                     name: (p as any)?.companyName ?? sym,
-                    logo: buildClearbitLogo((p as any)?.website, sym),
+                    logo: buildLogoUrl(null, (p as any)?.website, sym),
                     sector: (p as any)?.sector ?? '',
                     price: (p as any)?.price ?? 0,
                     change: (p as any)?.change ?? 0,
@@ -902,7 +906,7 @@ export class StockService {
             }
             return {
                 symbol: sym, name: sym,
-                logo: buildClearbitLogo(null, sym),
+                logo: buildLogoUrl(null, null, sym),
                 sector: '', price: 0, change: 0,
                 changePercent: 0, marketCap: 0, overallScore: 0,
             };
@@ -958,7 +962,7 @@ export class StockService {
                     if (fp || fq) {
                         finnhubMap.set(sym, {
                             name: fp?.name || sym,
-                            logo: buildClearbitLogo(fp?.weburl, sym),
+                            logo: buildLogoUrl(fp?.logo, fp?.weburl, sym),
                             price: fq?.c || 0,
                             change: fq?.d || 0,
                             changePercent: fq?.dp || 0,
@@ -1015,7 +1019,7 @@ export class StockService {
                 if (fmpP && fmpP.price > 0) {
                     result.push({
                         symbol: fmpP.symbol, name: fmpP.companyName,
-                        logo: buildClearbitLogo(fmpP.website, fmpP.symbol),
+                        logo: buildLogoUrl(null, fmpP.website, fmpP.symbol),
                         sector: fmpP.sector, price: fmpP.price,
                         change: fmpP.change, changePercent: fmpP.changePercentage,
                         marketCap: fmpP.marketCap, overallScore: score,
@@ -1096,7 +1100,7 @@ export class StockService {
                 if (fp || fq) {
                     finnhubMap.set(sym, {
                         name: fp?.name || sym,
-                        logo: buildClearbitLogo(fp?.weburl, sym),
+                        logo: buildLogoUrl(fp?.logo, fp?.weburl, sym),
                         price: fq?.c || 0,
                         change: fq?.d || 0,
                         changePercent: fq?.dp || 0,
@@ -1153,7 +1157,7 @@ export class StockService {
                 return {
                     symbol: fmpP.symbol,
                     name: fmpP.companyName,
-                    logo: buildClearbitLogo(fmpP.website, fmpP.symbol),
+                    logo: buildLogoUrl(null, fmpP.website, fmpP.symbol),
                     sector: fmpP.sector || item.sector,
                     price: fmpP.price,
                     change: fmpP.change,
@@ -1179,7 +1183,7 @@ export class StockService {
             return {
                 symbol: item.symbol,
                 name: item.name,
-                logo: buildClearbitLogo(null, item.symbol),
+                logo: buildLogoUrl(null, null, item.symbol),
                 sector: item.sector,
                 price: 0,
                 change: 0,

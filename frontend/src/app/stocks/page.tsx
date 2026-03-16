@@ -11,6 +11,13 @@ import { useCurrency } from '@/lib/currency';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
+/* ─────────── Stock Logo with error fallback ─────────── */
+function StockLogo({ src, symbol, size = 30 }: { src: string; symbol: string; size?: number }) {
+    const [err, setErr] = useState(false);
+    if (!src || err) return <span style={{ fontSize: size < 28 ? '0.6rem' : '0.7rem', fontWeight: 800, color: 'var(--text-secondary)' }}>{symbol.slice(0, 2)}</span>;
+    return <Image src={src} alt={symbol} width={size} height={size} unoptimized style={{ objectFit: 'contain', borderRadius: '4px' }} onError={() => setErr(true)} />;
+}
+
 /* ─────────── Types ─────────── */
 interface StockItem {
     symbol: string; name: string; logo: string; sector: string;
@@ -47,11 +54,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                             padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                             boxShadow: 'var(--shadow-sm)',
                         }}>
-                            {stock.logo ? (
-                                <Image src={stock.logo} alt={stock.symbol} width={30} height={30} unoptimized style={{ objectFit: 'contain', borderRadius: '4px' }} />
-                            ) : (
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#333' }}>{stock.symbol.slice(0, 2)}</span>
-                            )}
+                            <StockLogo src={stock.logo} symbol={stock.symbol} size={30} />
                         </div>
                         <div>
                             <div style={{ fontWeight: 700, fontSize: '0.95rem', letterSpacing: '-0.01em', lineHeight: 1.2 }}>{stock.symbol}</div>
@@ -138,11 +141,7 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
                         padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         boxShadow: 'var(--shadow-sm)',
                     }}>
-                        {stock.logo ? (
-                            <Image src={stock.logo} alt="" width={24} height={24} unoptimized style={{ objectFit: 'contain', borderRadius: '3px' }} />
-                        ) : (
-                            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#444' }}>{stock.symbol.slice(0, 2)}</span>
-                        )}
+                        <StockLogo src={stock.logo} symbol={stock.symbol} size={24} />
                     </div>
                     <div>
                         <div style={{ fontWeight: 700, fontSize: '0.88rem', letterSpacing: '-0.01em' }}>{stock.symbol}</div>
@@ -206,11 +205,7 @@ function SearchResultCard({ result, i }: { result: SearchResultItem; i: number }
                         padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         boxShadow: 'var(--shadow-sm)',
                     }}>
-                        {result.logo ? (
-                            <Image src={result.logo} alt={result.symbol} width={28} height={28} unoptimized style={{ objectFit: 'contain', borderRadius: '4px' }} />
-                        ) : (
-                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#333' }}>{result.symbol.slice(0, 2)}</span>
-                        )}
+                        <StockLogo src={result.logo || ''} symbol={result.symbol} size={28} />
                     </div>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -317,7 +312,7 @@ function StocksContent() {
                 setSearchResults(results.map((r: SearchResultItem) => ({
                     symbol: r.symbol,
                     name: r.name,
-                    logo: r.logo || `https://logo.clearbit.com/${r.symbol.toLowerCase()}.com`,
+                    logo: r.logo || `https://icons.duckduckgo.com/ip3/${r.symbol.toLowerCase()}.com.ico`,
                     sector: r.sector || r.exchange || '',
                     exchange: r.exchange || '',
                 })));

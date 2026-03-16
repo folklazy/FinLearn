@@ -221,8 +221,8 @@ export async function getQuote(symbol: string): Promise<YFQuote | null> {
             marketCap: pr?.marketCap ?? 0,
             sector: ap?.sector ?? '',
             logo: ap?.website
-                ? `https://logo.clearbit.com/${(() => { try { const u = ap.website.startsWith('http') ? ap.website : 'https://' + ap.website; return new URL(u).hostname.replace(/^www\./, ''); } catch { return symbol.toLowerCase() + '.com'; } })()}`
-                : `https://logo.clearbit.com/${symbol.toLowerCase()}.com`,
+                ? `https://icons.duckduckgo.com/ip3/${(() => { try { const u = ap.website.startsWith('http') ? ap.website : 'https://' + ap.website; return new URL(u).hostname.replace(/^www\./, ''); } catch { return symbol.toLowerCase() + '.com'; } })()}.ico`
+                : `https://icons.duckduckgo.com/ip3/${symbol.toLowerCase()}.com.ico`,
         };
     } catch (err) {
         console.warn(`[Yahoo] Quote error for ${symbol}:`, (err as Error).message);
