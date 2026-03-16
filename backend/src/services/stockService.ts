@@ -270,21 +270,22 @@ export class StockService {
         if (sp500Candidates.length > 0) console.log(`[StockService] ${symbol} S&P 500 sector peers: ${sp500Candidates.join(',')}`);
 
         if (peerCandidates.length > 0) {
-            // ── Phase 1: Profiles only (Yahoo — no FMP to avoid 429s) ──
-            const peerYahooProfiles = await Promise.all(
-                peerCandidates.map(p => yahoo.getProfile(p).catch(() => null))
+            // ── Phase 1: Profiles via Finnhub (free, no crumbs) + S&P 500 data ──
+            // Do NOT use Yahoo getProfile for peers — crumb 429 kills all 8 parallel calls
+            const peerFinnhubProfiles = await Promise.all(
+                peerCandidates.map(p => finnhub.getProfile(p).catch(() => null))
             );
 
-            // Build lightweight candidate list from profiles + S&P 500 data
+            // Build lightweight candidate list from Finnhub profiles + S&P 500 data
             const profileCandidates: { sym: string; name: string; marketCap: number; normSector: string; divYield: number | null }[] = [];
             for (let i = 0; i < peerCandidates.length; i++) {
-                const yp = peerYahooProfiles[i];
+                const fp = peerFinnhubProfiles[i];
                 const sp = SP500_CONSTITUENTS.find(s => s.symbol === peerCandidates[i]);
-                const peerRawSector = yp?.sector || sp?.sector || '';
+                const peerRawSector = fp?.finnhubIndustry || sp?.sector || '';
                 profileCandidates.push({
                     sym: peerCandidates[i],
-                    name: yp?.name || sp?.name || peerCandidates[i],
-                    marketCap: yp?.marketCap || 0,
+                    name: fp?.name || sp?.name || peerCandidates[i],
+                    marketCap: fp?.marketCapitalization ? fp.marketCapitalization * 1e6 : 0,
                     normSector: normalizeSector(peerRawSector),
                     divYield: null,
                 });
@@ -299,14 +300,9 @@ export class StockService {
             ];
             const picks = sorted.slice(0, 4);
 
-            // ── Phase 2: Metrics only for picked peers (Yahoo only — saves FMP quota) ──
-            const pickedMetrics = await Promise.all(
-                picks.map(p => yahoo.getKeyMetrics(p.sym).catch(() => null))
-            );
-
-            for (let i = 0; i < picks.length; i++) {
-                const p = picks[i];
-                const ym = pickedMetrics[i];
+            // ── Phase 2: Metrics for picked peers — sequential to avoid Yahoo 429 ──
+            for (const p of picks) {
+                const ym = await yahoo.getKeyMetrics(p.sym).catch(() => null);
                 competitors.push({
                     symbol: p.sym,
                     name: p.name,

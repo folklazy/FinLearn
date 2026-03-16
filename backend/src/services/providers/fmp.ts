@@ -51,6 +51,10 @@ function releaseSlot() {
     }, delayMs);
 }
 
+// Circuit breaker: after consecutive 429 exhaustions, flush queue to stop infinite retries
+let consecutive429Exhausted = 0;
+const CIRCUIT_BREAKER_THRESHOLD = 5;
+
 // When 429 is hit, temporarily slow down ALL requests
 function enter429Cooldown() {
     delayMs = Math.min(delayMs * 2, 3000);
@@ -58,10 +62,31 @@ function enter429Cooldown() {
     setTimeout(() => { delayMs = BASE_DELAY_MS; }, 15000);
 }
 
+function flushQueue() {
+    const count = queue.length;
+    // Resolve all waiting callers so they proceed past acquireSlot and hit the circuit breaker fast-fail
+    while (queue.length > 0) {
+        const next = queue.shift()!;
+        activeRequests++;
+        next();
+    }
+    if (count > 0) {
+        console.warn(`[FMP] Circuit breaker: flushed ${count} queued requests after ${CIRCUIT_BREAKER_THRESHOLD} consecutive 429 exhaustions`);
+    }
+    // Auto-reset after 5 minutes so FMP can recover
+    setTimeout(() => {
+        consecutive429Exhausted = 0;
+        console.log('[FMP] Circuit breaker reset — resuming requests');
+    }, 5 * 60 * 1000);
+}
+
 async function get<T>(path: string, params: Record<string, string> = {}): Promise<T | null> {
     // Fast-fail for known premium paths (e.g. /ratios-ttm?symbol=AVGO)
     const cacheKey = `${path}:${params.symbol ?? ''}`;
     if (premiumPaths.has(cacheKey)) return null;
+
+    // Circuit breaker: skip if we've had too many consecutive 429 exhaustions
+    if (consecutive429Exhausted >= CIRCUIT_BREAKER_THRESHOLD) return null;
 
     const url = new URL(`${BASE}${path}`);
     url.searchParams.set('apikey', KEY());
@@ -82,8 +107,14 @@ async function get<T>(path: string, params: Record<string, string> = {}): Promis
         }
         if (!res || res.status === 429) {
             console.warn(`[FMP] 429 exhausted retries for ${path}`);
+            consecutive429Exhausted++;
+            if (consecutive429Exhausted >= CIRCUIT_BREAKER_THRESHOLD) {
+                flushQueue();
+            }
             return null;
         }
+        // Success — reset circuit breaker
+        consecutive429Exhausted = 0;
         if (res.status === 402) {
             premiumPaths.add(cacheKey);
             return null;
