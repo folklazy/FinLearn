@@ -43,9 +43,9 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{
-                            width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(255,255,255,0.95)',
+                            width: '42px', height: '42px', borderRadius: '12px', background: 'var(--logo-bg)',
                             padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            boxShadow: 'var(--shadow-sm)',
                         }}>
                             {stock.logo ? (
                                 <Image src={stock.logo} alt={stock.symbol} width={30} height={30} unoptimized style={{ objectFit: 'contain', borderRadius: '4px' }} />
@@ -87,7 +87,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                             {formatPercent(stock.changePercent)}
                         </span>
                         {stock.sector && (
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'var(--tint-bg)', border: '1px solid var(--border)' }}>
                                 {stock.sector}
                             </span>
                         )}
@@ -109,7 +109,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                             <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>{t('stocks.scoreLabel')}</span>
                             <span style={{ fontSize: '0.62rem', color: 'var(--primary-light)', fontWeight: 600 }}>{stock.overallScore}/5</span>
                         </div>
-                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '100px', overflow: 'hidden' }}>
+                        <div style={{ height: '3px', background: 'var(--tint-bg-hover)', borderRadius: '100px', overflow: 'hidden' }}>
                             <div style={{ height: '100%', borderRadius: '100px', background: 'var(--gradient-primary)', width: `${((stock.overallScore ?? 0) / 5) * 100}%`, transition: 'width 1s var(--ease)' }} />
                         </div>
                     </div>
@@ -127,16 +127,16 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
     return (
         <tr style={{ cursor: 'pointer', transition: 'background 0.15s' }}
             onClick={() => router.push(`/stocks/${stock.symbol}`)}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--tint-overlay)'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
         >
             <td style={{ color: 'var(--text-muted)', fontSize: '0.76rem', width: '40px', fontWeight: 500 }}>{i + 1}</td>
             <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
-                        width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(255,255,255,0.92)',
+                        width: '34px', height: '34px', borderRadius: '10px', background: 'var(--logo-bg)',
                         padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                        boxShadow: 'var(--shadow-sm)',
                     }}>
                         {stock.logo ? (
                             <Image src={stock.logo} alt="" width={24} height={24} unoptimized style={{ objectFit: 'contain', borderRadius: '3px' }} />
@@ -162,7 +162,7 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
             </td>
             <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatLarge(stock.marketCap)}</td>
             <td>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'var(--tint-bg)', border: '1px solid var(--border)' }}>
                     {stock.sector}
                 </span>
             </td>
@@ -202,9 +202,9 @@ function SearchResultCard({ result, i }: { result: SearchResultItem; i: number }
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <div style={{
-                        width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.92)',
+                        width: '40px', height: '40px', borderRadius: '10px', background: 'var(--logo-bg)',
                         padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                        boxShadow: 'var(--shadow-sm)',
                     }}>
                         {result.logo ? (
                             <Image src={result.logo} alt={result.symbol} width={28} height={28} unoptimized style={{ objectFit: 'contain', borderRadius: '4px' }} />
@@ -216,7 +216,7 @@ function SearchResultCard({ result, i }: { result: SearchResultItem; i: number }
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontWeight: 700, fontSize: '0.92rem', letterSpacing: '-0.01em' }}>{result.symbol}</span>
                             {result.sector && (
-                                <span style={{ fontSize: '0.64rem', color: 'var(--text-muted)', padding: '2px 8px', borderRadius: '100px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+                                <span style={{ fontSize: '0.64rem', color: 'var(--text-muted)', padding: '2px 8px', borderRadius: '100px', background: 'var(--tint-bg)', border: '1px solid var(--border)' }}>
                                     {result.sector}
                                 </span>
                             )}
@@ -369,7 +369,7 @@ function StocksContent() {
             </div>
 
             {/* ═══ Search Bar ═══ */}
-            <form onSubmit={handleSearchSubmit} style={{ marginBottom: '24px' }}>
+            <form id="tour-stock-search" onSubmit={handleSearchSubmit} style={{ marginBottom: '24px' }}>
                 <div style={{
                     display: 'flex', alignItems: 'center', gap: '12px',
                     background: 'var(--bg-elevated)', border: '1px solid var(--border)',
@@ -395,12 +395,12 @@ function StocksContent() {
                     {search && (
                         <button type="button" onClick={clearSearch}
                             style={{
-                                background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px',
+                                background: 'var(--tint-bg-hover)', border: 'none', borderRadius: '8px',
                                 padding: '6px', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)',
                                 transition: 'all 0.15s',
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--tint-bg-strong)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--tint-bg-hover)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
                             aria-label="Clear search"
                         >
                             <X size={14} />
@@ -429,7 +429,7 @@ function StocksContent() {
             </form>
 
             {/* ═══ Tabs ═══ */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '20px', overflowX: 'auto' }}>
+            <div id="tour-stock-tabs" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '20px', overflowX: 'auto' }}>
                 {tabs.map(t => (
                     <button key={t.key} onClick={() => setTab(t.key)} style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
@@ -487,7 +487,7 @@ function StocksContent() {
                         }}>
                             <div style={{
                                 position: 'absolute', inset: 0,
-                                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
+                                background: 'linear-gradient(90deg, transparent 0%, var(--tint-bg) 50%, transparent 100%)',
                                 animation: 'shimmer 1.5s infinite',
                             }} />
                         </div>

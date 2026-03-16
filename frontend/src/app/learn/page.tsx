@@ -80,9 +80,9 @@ function Thumbnail({ src, alt, icon, index, featured }: { src?: string; alt: str
                 }}>
                     <div style={{
                         width: '52px', height: '52px', borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.9)', display: 'flex',
+                        background: 'var(--logo-bg)', display: 'flex',
                         alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                        boxShadow: 'var(--shadow-lg)',
                     }}>
                         <Play size={22} fill="var(--bg-primary)" style={{ color: 'var(--bg-primary)', marginLeft: '2px' }} />
                     </div>
@@ -146,7 +146,7 @@ function LessonCard({ lesson, index = 0, featured = false }: { lesson: LessonSum
 }
 
 export default function LearnPage() {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const [lessons, setLessons] = useState<LessonSummary[]>([]);
     const [selectedDiff, setSelectedDiff] = useState<Difficulty>('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -215,12 +215,12 @@ export default function LearnPage() {
                     {searchQuery && (
                         <button type="button" onClick={() => setSearchQuery('')}
                             style={{
-                                background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px',
+                                background: 'var(--tint-bg-hover)', border: 'none', borderRadius: '8px',
                                 padding: '6px', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)',
                                 transition: 'all 0.15s',
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--tint-bg-strong)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--tint-bg-hover)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
                             aria-label="Clear search"
                         >
                             <X size={14} />
@@ -230,7 +230,7 @@ export default function LearnPage() {
             </div>
 
             {/* ── Difficulty level tabs ── */}
-            <div className="animate-fade-up delay-1" style={{ display: 'flex', gap: '6px', marginBottom: '32px', flexWrap: 'wrap' }}>
+            <div id="tour-learn-tabs" className="animate-fade-up delay-1" style={{ display: 'flex', gap: '6px', marginBottom: '32px', flexWrap: 'wrap' }}>
                 {DIFFICULTY_KEYS.map(tab => {
                     const active = selectedDiff === tab.key;
                     const meta = tab.key ? DIFF_META[tab.key] : null;
@@ -279,14 +279,16 @@ export default function LearnPage() {
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>{t('learn.noResults')}</p>
                 </div>
             ) : (
-                <>
+                <div id="tour-lessons">
                     {/* ── Featured hero + side card ── */}
                     {featured && (
                         <div className="animate-fade-up delay-2" style={{
                             display: 'grid', gap: '24px', marginBottom: '40px',
                             gridTemplateColumns: sideCard ? '1.5fr 1fr' : '1fr',
                         }}>
-                            <LessonCard lesson={featured} index={0} featured />
+                            <div id="tour-featured-lesson">
+                                <LessonCard lesson={featured} index={0} featured />
+                            </div>
                             {sideCard && <LessonCard lesson={sideCard} index={1} />}
                         </div>
                     )}
@@ -303,7 +305,7 @@ export default function LearnPage() {
                             ))}
                         </div>
                     )}
-                </>
+                </div>
             )}
         </div>
     );

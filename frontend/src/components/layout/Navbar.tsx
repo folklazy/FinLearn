@@ -157,11 +157,12 @@ export default function Navbar() {
 
                         <div className="navbar-separator" />
 
-                        <div className="navbar-links hidden-mobile">
+                        <div className="navbar-links hidden-mobile" id="tour-nav-links">
                             {NAV_KEYS.map(link => (
                                 <Link
                                     key={link.href}
                                     href={link.href}
+                                    id={`tour-nav-${link.href.replace('/', '') || 'home'}`}
                                     className={`navbar-link${isActive(link.href) ? ' active' : ''}`}
                                 >
                                     {t(link.key)}
@@ -173,7 +174,7 @@ export default function Navbar() {
                     {/* ── Right: Search + Auth ── */}
                     <div className="navbar-right hidden-mobile">
                         {/* Search */}
-                        <div ref={searchContainerRef} style={{ position: 'relative' }}>
+                        <div ref={searchContainerRef} id="tour-search" style={{ position: 'relative' }}>
                             {searchOpen ? (
                                 <form onSubmit={handleSearch} className="navbar-search-expanded">
                                     <Search size={14} className="navbar-search-icon" />
@@ -253,7 +254,7 @@ export default function Navbar() {
                         {status === 'loading' ? (
                             <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
                         ) : session?.user ? (
-                            <div ref={menuRef} style={{ position: 'relative' }}>
+                            <div ref={menuRef} id="tour-user-menu" style={{ position: 'relative' }}>
                                 <button
                                     onClick={() => setUserMenu(!userMenu)}
                                     className={`navbar-avatar-btn${userMenu ? ' active' : ''}`}

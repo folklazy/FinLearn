@@ -308,7 +308,7 @@ export default function HomePage() {
                             </span>
                             {stock.overallScore > 0 && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <div style={{ width: '40px', height: '3px', borderRadius: '100px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                                <div style={{ width: '40px', height: '3px', borderRadius: '100px', background: 'var(--tint-bg-hover)', overflow: 'hidden' }}>
                                   <div style={{ width: `${(stock.overallScore / 5) * 100}%`, height: '100%', borderRadius: '100px', background: 'var(--gradient-primary)', transition: 'width 0.8s var(--ease)' }} />
                                 </div>
                                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary-light)' }}>{stock.overallScore.toFixed(1)}</span>

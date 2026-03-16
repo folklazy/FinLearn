@@ -77,7 +77,7 @@ function pct(n: number) {
 export default function PortfolioPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
 
     const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
     const [positions, setPositions] = useState<Position[]>([]);
@@ -334,7 +334,7 @@ export default function PortfolioPage() {
     }
 
     return (
-        <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
+        <div id="tour-portfolio" style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
 
             {/* Toast */}
             {toast.text && (
@@ -360,33 +360,39 @@ export default function PortfolioPage() {
             {/* ═══ Login prompt for guests ═══ */}
             {!session?.user && (
                 <div className="animate-fade-up delay-1">
-                    {/* ── Kinetic Typography Hero ── */}
-                    <div style={{ textAlign: 'center', marginBottom: '40px', paddingTop: '16px' }}>
-                        <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.15, marginBottom: '14px' }}>
+                    {/* ── Hero ── */}
+                    <div style={{ textAlign: 'center', marginBottom: '48px', paddingTop: '20px' }}>
+                        <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.15, marginBottom: '16px' }}>
                             {t('port.loginPrompt').split(' ').map((word: string, i: number) => (
                                 <span key={i} className="kinetic-word" style={{ animationDelay: `${0.1 + i * 0.08}s`, marginRight: '0.3em' }}>
                                     {word}
                                 </span>
                             ))}
                         </h2>
-                        <p className="kinetic-word" style={{ animationDelay: '0.6s', color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '460px', margin: '0 auto', lineHeight: 1.6 }}>
+                        <p className="kinetic-word" style={{ animationDelay: '0.6s', color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '460px', margin: '0 auto', lineHeight: 1.65 }}>
                             {t('port.loginDesc')}
                         </p>
                     </div>
 
                     {/* ── Bento Grid ── */}
-                    <div className="bento-grid bento-grid-port" style={{ marginBottom: '10px' }}>
+                    <div className="bento-grid bento-grid-port" style={{ marginBottom: '12px' }}>
 
                         {/* ─ Feature card 1 ─ */}
-                        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                            <Layers size={20} style={{ color: '#34d399', marginBottom: '16px' }} />
+                        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{
+                                width: '36px', height: '36px', borderRadius: '10px',
+                                background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.15)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <Layers size={18} style={{ color: '#34d399' }} />
+                            </div>
                             <div>
-                                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('port.feat1Title')}</h3>
-                                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('port.feat1Desc')}</p>
+                                <h3 style={{ fontSize: '0.92rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('port.feat1Title')}</h3>
+                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('port.feat1Desc')}</p>
                             </div>
                         </div>
 
-                        {/* ─ Large cell: Mock portfolio dashboard (glassmorphism) ─ */}
+                        {/* ─ Large cell: Mock portfolio dashboard ─ */}
                         <div className="glass-card" style={{ gridRow: 'span 2', overflow: 'hidden', padding: 0 }}>
                             {/* Portfolio value header */}
                             <div style={{ padding: '18px 18px 0' }}>
@@ -396,12 +402,12 @@ export default function PortfolioPage() {
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                                     <span style={{ fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}>$104,832</span>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--success)' }}>+4.83%</span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--success)', padding: '2px 8px', borderRadius: '100px', background: 'var(--success-bg)' }}>+4.83%</span>
                                 </div>
                             </div>
 
                             {/* Mini area chart */}
-                            <div style={{ padding: '0', overflow: 'hidden' }}>
+                            <div style={{ overflow: 'hidden' }}>
                                 <svg width="100%" height="60" viewBox="0 0 400 60" preserveAspectRatio="none" style={{ display: 'block' }}>
                                     <defs>
                                         <linearGradient id="portAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -417,7 +423,7 @@ export default function PortfolioPage() {
                             </div>
 
                             {/* Position rows */}
-                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ borderTop: '1px solid var(--border)' }}>
                                 {[
                                     { sym: 'AAPL', qty: 50, pl: '+$645', up: true },
                                     { sym: 'NVDA', qty: 15, pl: '+$978', up: true },
@@ -426,12 +432,12 @@ export default function PortfolioPage() {
                                     <div key={i} className={`row-stagger-${i}`} style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                         padding: '10px 18px',
-                                        borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                        borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{
                                                 width: '26px', height: '26px', borderRadius: '7px',
-                                                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                                                background: 'var(--tint-bg)', border: '1px solid var(--border)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)',
                                             }}>
@@ -449,27 +455,39 @@ export default function PortfolioPage() {
                         </div>
 
                         {/* ─ Feature card 2 ─ */}
-                        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                            <Activity size={20} style={{ color: '#7c6cf0', marginBottom: '16px' }} />
+                        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{
+                                width: '36px', height: '36px', borderRadius: '10px',
+                                background: 'rgba(124, 108, 240, 0.1)', border: '1px solid rgba(124, 108, 240, 0.15)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <Activity size={18} style={{ color: '#7c6cf0' }} />
+                            </div>
                             <div>
-                                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('port.feat2Title')}</h3>
-                                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('port.feat2Desc')}</p>
+                                <h3 style={{ fontSize: '0.92rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('port.feat2Title')}</h3>
+                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('port.feat2Desc')}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* ── Bottom row: stats + feature ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '10px', marginBottom: '36px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '12px', marginBottom: '40px' }}>
                         <div className="bento-stat animate-fade-up delay-3">
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px' }}>$100k</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>$100k</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('port.startingCash')}</div>
                         </div>
                         <div className="bento-stat animate-fade-up delay-4">
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px' }}>0%</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>0%</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Risk-free</div>
                         </div>
                         <div className="glass-card animate-fade-up delay-5" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                            <TrendingUp size={20} style={{ color: '#fbbf24', flexShrink: 0 }} />
+                            <div style={{
+                                width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                                background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.15)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <TrendingUp size={18} style={{ color: '#fbbf24' }} />
+                            </div>
                             <div>
                                 <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', letterSpacing: '-0.01em' }}>{t('port.feat3Title')}</h3>
                                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{t('port.feat3Desc')}</p>
@@ -479,20 +497,23 @@ export default function PortfolioPage() {
 
                     {/* ── CTA ── */}
                     <div className="animate-fade-up delay-6" style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
                             <Link href="/register" className="cta-primary" style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                                 padding: '12px 32px', borderRadius: '100px',
-                                background: '#22c55e', color: '#0e0e0e',
+                                background: 'var(--gradient-primary)', color: '#fff',
                                 fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
+                                boxShadow: '0 2px 16px rgba(124, 108, 240, 0.3)',
+                                transition: 'all 0.2s var(--ease)',
                             }}>
                                 {t('port.register')} <ArrowRight size={15} />
                             </Link>
                             <Link href="/login" className="cta-ghost" style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                                 padding: '12px 32px', borderRadius: '100px',
-                                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                                background: 'var(--tint-bg)', border: '1px solid var(--border)',
                                 color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
+                                transition: 'all 0.2s var(--ease)',
                             }}>
                                 {t('port.login')}
                             </Link>
@@ -541,7 +562,7 @@ export default function PortfolioPage() {
             <div className="animate-fade-up delay-1 detail-section" style={{ marginBottom: '28px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'start' }}>
                     {/* Left — Total Value + allocation bar */}
-                    <div>
+                    <div id="tour-portfolio-overview">
                         <p className="sub-label" style={{ marginBottom: '10px' }}><BarChart2 size={12} /> {t('port.totalValue')}</p>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '6px' }}>
                             <span style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>${fmt(totalValue)}</span>
@@ -610,7 +631,7 @@ export default function PortfolioPage() {
             </div>
 
             {/* ═══ Tabs + เพิ่มหุ้นใหม่ ═══ */}
-            <div className="animate-fade-up delay-2" style={{ display: 'flex', gap: '6px', marginBottom: '24px', alignItems: 'center' }}>
+            <div id="tour-portfolio-tabs" className="animate-fade-up delay-2" style={{ display: 'flex', gap: '6px', marginBottom: '24px', alignItems: 'center' }}>
                 {([['holdings', t('port.holdings'), BarChart2], ['history', t('port.history'), Clock]] as [string, string, typeof BarChart2][]).map(([id, label, Icon]) => {
                     const active = tab === id;
                     return (
@@ -675,21 +696,21 @@ export default function PortfolioPage() {
                                                     const p = totalAllocValue > 0 ? (d.value / totalAllocValue * 100) : 0;
                                                     return (
                                                         <div style={{
-                                                            background: '#1c1d24', border: '1px solid rgba(255,255,255,0.12)',
+                                                            background: 'var(--tooltip-bg)', border: '1px solid var(--border-light)',
                                                             borderRadius: '10px', padding: '10px 14px',
-                                                            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                                                            boxShadow: 'var(--shadow-lg)',
                                                             minWidth: '140px',
                                                         }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                                                                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: d.color }} />
-                                                                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#e8e9ed' }}>{d.name}</span>
+                                                                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--tooltip-text)' }}>{d.name}</span>
                                                             </div>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
-                                                                <span style={{ color: '#9a9caa', fontSize: '0.78rem' }}>{t('port.value')}</span>
-                                                                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#e8e9ed' }}>${fmt(d.value)}</span>
+                                                                <span style={{ color: 'var(--tooltip-muted)', fontSize: '0.78rem' }}>{t('port.value')}</span>
+                                                                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--tooltip-text)' }}>${fmt(d.value)}</span>
                                                             </div>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginTop: '2px' }}>
-                                                                <span style={{ color: '#9a9caa', fontSize: '0.78rem' }}>{t('port.proportion')}</span>
+                                                                <span style={{ color: 'var(--tooltip-muted)', fontSize: '0.78rem' }}>{t('port.proportion')}</span>
                                                                 <span style={{ fontWeight: 700, fontSize: '0.85rem', color: d.color }}>{p.toFixed(1)}%</span>
                                                             </div>
                                                         </div>
@@ -747,7 +768,7 @@ export default function PortfolioPage() {
                                                         {!isCash && <ExternalLink size={11} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />}
                                                     </div>
                                                     {/* Progress bar */}
-                                                    <div style={{ width: '100%', height: '4px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                                                    <div style={{ width: '100%', height: '4px', borderRadius: '4px', background: 'var(--tint-bg-hover)', overflow: 'hidden' }}>
                                                         <div style={{
                                                             width: `${Math.max(1, Math.min(100, allocPct))}%`,
                                                             height: '100%', borderRadius: '4px',
@@ -1167,7 +1188,7 @@ export default function PortfolioPage() {
                                                 background: 'transparent', textAlign: 'left', fontFamily: 'inherit',
                                                 transition: 'background 0.12s',
                                             }}
-                                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--tint-bg-hover)'; }}
                                             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                                         >
                                             <Image
@@ -1193,7 +1214,7 @@ export default function PortfolioPage() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                     <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{stock.symbol}</span>
                                                     {stock.exchange && (
-                                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '4px' }}>
+                                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--tint-bg-hover)', padding: '1px 5px', borderRadius: '4px' }}>
                                                             {stock.exchange}
                                                         </span>
                                                     )}
@@ -1203,7 +1224,7 @@ export default function PortfolioPage() {
                                                 </p>
                                             </div>
                                             {stock.sector && (
-                                                <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '6px', flexShrink: 0, maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', background: 'var(--tint-bg)', padding: '2px 6px', borderRadius: '6px', flexShrink: 0, maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {stock.sector}
                                                 </span>
                                             )}

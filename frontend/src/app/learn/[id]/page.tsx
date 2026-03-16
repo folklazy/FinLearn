@@ -181,15 +181,15 @@ export default function LessonDetailPage() {
                                 padding: '2px 8px', borderRadius: '4px',
                                 background: diff.bg, color: diff.color,
                             }}>{diff.label.toUpperCase()}</span>
-                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <Clock size={11} /> {lesson.duration} {t('learn.minutes')}
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <BookOpen size={11} /> {lesson.sections.length} {t('learn.topics')}
                             </span>
                         </div>
                         <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.3, color: '#fff' }}>{locale === 'en' ? lesson.titleEn : lesson.title}</h1>
-                        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>{locale === 'en' ? lesson.title : lesson.titleEn}</p>
+                        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>{locale === 'en' ? lesson.title : lesson.titleEn}</p>
                     </div>
                 </div>
             )}
@@ -364,7 +364,7 @@ export default function LessonDetailPage() {
                                                             width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                             fontSize: '0.68rem', fontWeight: 700,
-                                                            background: isCorrect ? 'rgba(74,222,128,0.2)' : isWrong ? 'rgba(248,113,113,0.2)' : selected ? 'rgba(124,108,240,0.15)' : 'rgba(255,255,255,0.04)',
+                                                            background: isCorrect ? 'rgba(74,222,128,0.2)' : isWrong ? 'rgba(248,113,113,0.2)' : selected ? 'rgba(124,108,240,0.15)' : 'var(--tint-bg)',
                                                             color: isCorrect ? '#4ade80' : isWrong ? '#f87171' : selected ? 'var(--primary-light)' : 'var(--text-muted)',
                                                             border: `1px solid ${isCorrect ? 'rgba(74,222,128,0.3)' : isWrong ? 'rgba(248,113,113,0.3)' : selected ? 'rgba(124,108,240,0.3)' : 'var(--border)'}`,
                                                         }}>

@@ -105,10 +105,10 @@ export default function WatchlistPage() {
     }
 
     return (
-        <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
+        <div id="tour-watchlist" style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
 
             {/* ═══ Header ═══ */}
-            <div className="animate-fade-up" style={{ marginBottom: '28px' }}>
+            <div id="tour-watchlist-header" className="animate-fade-up" style={{ marginBottom: '28px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <div style={{ width: '4px', height: '28px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
                     <h1 style={{ fontSize: '1.7rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>
@@ -148,12 +148,12 @@ export default function WatchlistPage() {
                         {searchQuery && (
                             <button type="button" onClick={() => setSearchQuery('')}
                                 style={{
-                                    background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px',
+                                    background: 'var(--tint-bg-hover)', border: 'none', borderRadius: '8px',
                                     padding: '6px', cursor: 'pointer', display: 'flex', color: 'var(--text-muted)',
                                     transition: 'all 0.15s',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--tint-bg-strong)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'var(--tint-bg-hover)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
                                 aria-label="Clear search"
                             >
                                 <X size={14} />
@@ -168,29 +168,28 @@ export default function WatchlistPage() {
                 <div className="animate-fade-up delay-1">
                     {!session?.user ? (
                         <>
-                            {/* ── Kinetic Typography Hero ── */}
-                            <div style={{ textAlign: 'center', marginBottom: '40px', paddingTop: '16px' }}>
-                                <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.15, marginBottom: '14px' }}>
+                            {/* ── Hero ── */}
+                            <div style={{ textAlign: 'center', marginBottom: '48px', paddingTop: '20px' }}>
+                                <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.15, marginBottom: '16px' }}>
                                     {t('wl.loginTitle').split(' ').map((word: string, i: number) => (
                                         <span key={i} className="kinetic-word" style={{ animationDelay: `${0.1 + i * 0.08}s`, marginRight: '0.3em' }}>
                                             {word}
                                         </span>
                                     ))}
                                 </h2>
-                                <p className="kinetic-word" style={{ animationDelay: '0.6s', color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '440px', margin: '0 auto', lineHeight: 1.6 }}>
+                                <p className="kinetic-word" style={{ animationDelay: '0.6s', color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '440px', margin: '0 auto', lineHeight: 1.65 }}>
                                     {t('wl.loginDesc')}
                                 </p>
                             </div>
 
                             {/* ── Bento Grid ── */}
-                            <div className="bento-grid bento-grid-wl" style={{ marginBottom: '10px' }}>
+                            <div className="bento-grid bento-grid-wl" style={{ marginBottom: '12px' }}>
 
-                                {/* ─ Large cell: Mock stock table (glassmorphism) ─ */}
+                                {/* ─ Large cell: Mock stock table ─ */}
                                 <div className="glass-card" style={{ gridRow: 'span 2', overflow: 'hidden', padding: 0 }}>
-                                    {/* Table header */}
                                     <div style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                        padding: '14px 18px', borderBottom: '1px solid var(--border)',
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div className="pulse-dot" />
@@ -198,8 +197,6 @@ export default function WatchlistPage() {
                                         </div>
                                         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>5 {t('wl.items')}</span>
                                     </div>
-
-                                    {/* Stock rows */}
                                     {[
                                         { sym: 'AAPL', name: 'Apple Inc.', price: '$231.34', change: '+1.08%', up: true },
                                         { sym: 'GOOGL', name: 'Alphabet', price: '$176.45', change: '+0.89%', up: true },
@@ -209,13 +206,13 @@ export default function WatchlistPage() {
                                     ].map((row, i) => (
                                         <div key={i} className={`row-stagger-${i}`} style={{
                                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '12px 18px',
-                                            borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                            padding: '11px 18px',
+                                            borderBottom: i < 4 ? '1px solid var(--border)' : 'none',
                                         }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                                                 <div style={{
                                                     width: '30px', height: '30px', borderRadius: '8px',
-                                                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                                                    background: 'var(--tint-bg)', border: '1px solid var(--border)',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)',
                                                 }}>
@@ -241,36 +238,54 @@ export default function WatchlistPage() {
                                 </div>
 
                                 {/* ─ Feature card 1 ─ */}
-                                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                    <Star size={20} style={{ color: '#facc15', marginBottom: '16px' }} />
+                                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{
+                                        width: '36px', height: '36px', borderRadius: '10px',
+                                        background: 'rgba(250, 204, 21, 0.1)', border: '1px solid rgba(250, 204, 21, 0.15)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <Star size={18} style={{ color: '#facc15' }} />
+                                    </div>
                                     <div>
-                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('wl.feat1Title')}</h3>
-                                        <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('wl.feat1Desc')}</p>
+                                        <h3 style={{ fontSize: '0.92rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('wl.feat1Title')}</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('wl.feat1Desc')}</p>
                                     </div>
                                 </div>
 
                                 {/* ─ Feature card 2 ─ */}
-                                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                    <TrendingUp size={20} style={{ color: '#34d399', marginBottom: '16px' }} />
+                                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{
+                                        width: '36px', height: '36px', borderRadius: '10px',
+                                        background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.15)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <TrendingUp size={18} style={{ color: '#34d399' }} />
+                                    </div>
                                     <div>
-                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('wl.feat2Title')}</h3>
-                                        <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('wl.feat2Desc')}</p>
+                                        <h3 style={{ fontSize: '0.92rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{t('wl.feat2Title')}</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>{t('wl.feat2Desc')}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* ── Bottom row: stats + feature ── */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '10px', marginBottom: '36px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '12px', marginBottom: '40px' }}>
                                 <div className="bento-stat animate-fade-up delay-3">
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px' }}>5+</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>5+</div>
                                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Exchanges</div>
                                 </div>
                                 <div className="bento-stat animate-fade-up delay-4">
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px' }}>24/7</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>24/7</div>
                                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Real-time</div>
                                 </div>
                                 <div className="glass-card animate-fade-up delay-5" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                    <BarChart2 size={20} style={{ color: '#7c6cf0', flexShrink: 0 }} />
+                                    <div style={{
+                                        width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                                        background: 'rgba(124, 108, 240, 0.1)', border: '1px solid rgba(124, 108, 240, 0.15)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <BarChart2 size={18} style={{ color: '#7c6cf0' }} />
+                                    </div>
                                     <div>
                                         <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', letterSpacing: '-0.01em' }}>{t('wl.feat3Title')}</h3>
                                         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{t('wl.feat3Desc')}</p>
@@ -280,20 +295,23 @@ export default function WatchlistPage() {
 
                             {/* ── CTA ── */}
                             <div className="animate-fade-up delay-6" style={{ textAlign: 'center' }}>
-                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
                                     <Link href="/register" className="cta-primary" style={{
                                         display: 'inline-flex', alignItems: 'center', gap: '6px',
                                         padding: '12px 32px', borderRadius: '100px',
-                                        background: '#22c55e', color: '#0e0e0e',
+                                        background: 'var(--gradient-primary)', color: '#fff',
                                         fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
+                                        boxShadow: '0 2px 16px rgba(124, 108, 240, 0.3)',
+                                        transition: 'all 0.2s var(--ease)',
                                     }}>
                                         {t('login.register')} <ArrowRight size={15} />
                                     </Link>
                                     <Link href="/login" className="cta-ghost" style={{
                                         display: 'inline-flex', alignItems: 'center', gap: '6px',
                                         padding: '12px 32px', borderRadius: '100px',
-                                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                                        background: 'var(--tint-bg)', border: '1px solid var(--border)',
                                         color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
+                                        transition: 'all 0.2s var(--ease)',
                                     }}>
                                         {t('login.submit')}
                                     </Link>

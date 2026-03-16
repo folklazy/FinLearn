@@ -201,8 +201,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const COLORS = ['#6366f1', '#8b5cf6', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4'];
 
     // Shared tooltip style
-    const tooltipStyle: React.CSSProperties = { background: 'rgba(20,20,20,0.95)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', fontSize: '0.8rem', color: '#e0e0e0', boxShadow: '0 8px 32px rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', padding: '10px 14px' };
-    const tooltipLabelStyle: React.CSSProperties = { color: '#888', fontSize: '0.72rem', fontWeight: 500, marginBottom: '4px' };
+    const tooltipStyle: React.CSSProperties = { background: 'var(--tooltip-bg)', border: '1px solid var(--border-light)', borderRadius: '10px', fontSize: '0.8rem', color: 'var(--tooltip-text)', boxShadow: 'var(--shadow-lg)', backdropFilter: 'blur(12px)', padding: '10px 14px' };
+    const tooltipLabelStyle: React.CSSProperties = { color: 'var(--tooltip-muted)', fontSize: '0.72rem', fontWeight: 500, marginBottom: '4px' };
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     const BillionTooltip = ({ active, payload, label }: any) => {
@@ -336,7 +336,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 cursor: 'pointer', textDecoration: 'none', transition: 'all 0.18s',
                                 borderRadius: '0 6px 6px 0',
                             }}
-                            onMouseOver={e => { if (activeSection !== s.id) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; } }}
+                            onMouseOver={e => { if (activeSection !== s.id) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--tint-overlay)'; } }}
                             onMouseOut={e => { if (activeSection !== s.id) { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; } }}
                         >
                             {s.label}
@@ -351,7 +351,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {/* ===== HEADER ===== */}
             <section className="animate-fade-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255,255,255,0.95)', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--logo-bg)', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', flexShrink: 0 }}>
                         <Image src={profile.logo} alt={profile.name} width={42} height={42} unoptimized style={{ objectFit: 'contain', borderRadius: '8px' }} />
                     </div>
                     <div>
@@ -400,7 +400,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 20px',
                         borderRadius: '100px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                         transition: 'all 0.2s',
-                        background: isFavorite ? 'rgba(250,204,21,0.08)' : 'rgba(255,255,255,0.03)',
+                        background: isFavorite ? 'rgba(250,204,21,0.08)' : 'var(--tint-bg)',
                         border: isFavorite ? '1px solid rgba(250,204,21,0.25)' : '1px solid var(--border)',
                         color: isFavorite ? '#facc15' : 'var(--text-muted)',
                     }}
@@ -569,7 +569,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                             <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.3} />
                             <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={xTickFmt} tickLine={false} axisLine={false} interval="preserveStartEnd" tickCount={6} />
                             <YAxis hide domain={['auto', 'auto']} />
-                            <RTooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={{ color: '#e0e0e0', fontWeight: 600 }} formatter={(val: unknown) => [`$${Number(val).toFixed(2)}`, t('sd.price')]} labelFormatter={(label) => `${label}`} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+                            <RTooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={{ color: 'var(--tooltip-text)', fontWeight: 600 }} formatter={(val: unknown) => [`$${Number(val).toFixed(2)}`, t('sd.price')]} labelFormatter={(label) => `${label}`} cursor={{ stroke: 'var(--tint-bg-strong)' }} />
                             <Area type="monotone" dataKey="close" stroke={chartColor} strokeWidth={2} fill={`url(#${chartGradId})`} dot={false} activeDot={{ r: 4, fill: chartColor, strokeWidth: 0 }} />
                         </AreaChart>
                     </ResponsiveContainer>
