@@ -8,6 +8,7 @@ import * as rawFmp from './providers/fmp';
 import * as rawFinnhub from './providers/finnhub';
 import * as rawTwelveData from './providers/twelveData';
 import * as rawYahoo from './providers/yahooFinance';
+import * as rawWikipedia from './providers/wikipedia';
 
 // ── Generic cached fetch wrapper ──
 async function cached<T>(
@@ -212,4 +213,13 @@ export const yahoo = {
 
     searchStocks: (query: string, limit = 15) =>
         cachedArray('yahoo', 'search', query.toLowerCase(), () => rawYahoo.searchStocks(query, limit)),
+};
+
+// ═══════════════════════════════════
+// Wikipedia (cached) — free, no API key, no rate limit
+// ═══════════════════════════════════
+
+export const wikipedia = {
+    getDescription: (companyName: string, symbol: string) =>
+        cached('wikipedia', 'description', symbol, () => rawWikipedia.getDescription(companyName), symbol),
 };

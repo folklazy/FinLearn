@@ -317,7 +317,7 @@ function StocksContent() {
                 setSearchResults(results.map((r: SearchResultItem) => ({
                     symbol: r.symbol,
                     name: r.name,
-                    logo: r.logo || `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
+                    logo: r.logo || `https://logo.clearbit.com/${r.symbol.toLowerCase()}.com`,
                     sector: r.sector || r.exchange || '',
                     exchange: r.exchange || '',
                 })));

@@ -1,6 +1,6 @@
 import { mockStocks, mockSearchResults, getPopularStocks as getMockPopular } from '../data/mockData';
 import { StockData, SearchResult, PricePoint, NewsItem, CompetitorData } from '../types/stock';
-import { fmp, finnhub, twelveData, yahoo } from './cachedProviders';
+import { fmp, finnhub, twelveData, yahoo, wikipedia } from './cachedProviders';
 import { cacheService } from './cacheService';
 import { SP500_CONSTITUENTS, SP500_SECTORS } from '../data/sp500';
 import { POPULAR_STOCKS, MAJOR_EXCHANGES } from '../data/popularStocks';
@@ -154,7 +154,14 @@ export class StockService {
 
         // Merge profile — FMP → Finnhub → Yahoo fallback chain
         const profileName = fmpProfile?.companyName || finnhubProfile?.name || yahooProfile?.name || symbol;
-        const profileLogo = fmpProfile?.image || finnhubProfile?.logo || `https://financialmodelingprep.com/image-stock/${symbol}.png`;
+        // Logo: Clearbit (from website domain, already in CSP) → Finnhub → FMP image
+        const websiteDomain = (() => {
+            const url = fmpProfile?.website || finnhubProfile?.weburl || yahooProfile?.website || '';
+            try { return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, ''); } catch { return null; }
+        })();
+        const profileLogo = (websiteDomain ? `https://logo.clearbit.com/${websiteDomain}` : null)
+            || finnhubProfile?.logo || fmpProfile?.image
+            || `https://logo.clearbit.com/${symbol.toLowerCase()}.com`;
         // Prefer Yahoo sector/industry — it uses proper GICS classification
         // FMP free tier returns simplified names (e.g. "Automobiles" instead of "Consumer Cyclical")
         const rawSector = yahooProfile?.sector || fmpProfile?.sector || finnhubProfile?.finnhubIndustry || 'Other';
@@ -167,7 +174,13 @@ export class StockService {
         const profileIpo = fmpProfile?.ipoDate || finnhubProfile?.ipo || 'N/A';
         const profileHQ = fmpProfile ? [fmpProfile.city, fmpProfile.state, fmpProfile.country].filter(Boolean).join(', ') : (finnhubProfile?.country || yahooProfile?.headquarters || '');
         const profileCeo = fmpProfile?.ceo || yahooProfile?.ceo || 'N/A';
-        const profileDescEn = fmpProfile?.description?.slice(0, 800) || yahooProfile?.description || `${profileName} is a company in the ${profileSector} sector, ${profileIndustry} industry.`;
+        // Description: FMP → Yahoo → Wikipedia (free, no rate limit) → generic fallback
+        let profileDescEn = fmpProfile?.description?.slice(0, 800) || yahooProfile?.description || '';
+        if (!profileDescEn || profileDescEn.length < 80) {
+            const wikiDesc = await wikipedia.getDescription(profileName, symbol).catch(() => null);
+            if (wikiDesc) profileDescEn = wikiDesc;
+        }
+        if (!profileDescEn) profileDescEn = `${profileName} is a company in the ${profileSector} sector, ${profileIndustry} industry.`;
         const sectorThMap: Record<string, string> = {
             'Technology': 'เทคโนโลยี', 'Healthcare': 'สุขภาพ', 'Financial Services': 'บริการทางการเงิน',
             'Consumer Cyclical': 'สินค้าอุปโภคบริโภค', 'Consumer Defensive': 'สินค้าจำเป็น',

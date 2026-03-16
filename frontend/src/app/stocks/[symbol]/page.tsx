@@ -35,6 +35,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const [priceRange, setPriceRange] = useState('1Y');
     const PRICE_RANGES = ['1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
     const [activeSection, setActiveSection] = useState('overview');
+    const [logoError, setLogoError] = useState(false);
 
     // Trade modal
     const [showTradeModal, setShowTradeModal] = useState<boolean>(false);
@@ -352,7 +353,11 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             <section className="animate-fade-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--logo-bg)', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', flexShrink: 0 }}>
-                        <Image src={profile.logo} alt={profile.name} width={42} height={42} unoptimized style={{ objectFit: 'contain', borderRadius: '8px' }} />
+                        {!logoError ? (
+                            <Image src={profile.logo} alt={profile.name} width={42} height={42} unoptimized style={{ objectFit: 'contain', borderRadius: '8px' }} onError={() => setLogoError(true)} />
+                        ) : (
+                            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-secondary)' }}>{profile.symbol.slice(0, 2)}</span>
+                        )}
                     </div>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
@@ -1043,7 +1048,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     {/* Modal header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Image src={profile.logo} alt="" width={40} height={40} unoptimized style={{ borderRadius: '10px', background: 'white', padding: '4px' }} />
+                            {!logoError ? (
+                                <Image src={profile.logo} alt="" width={40} height={40} unoptimized style={{ borderRadius: '10px', background: 'white', padding: '4px' }} onError={() => setLogoError(true)} />
+                            ) : (
+                                <div style={{ width: 40, height: 40, borderRadius: '10px', background: 'var(--logo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-secondary)' }}>{profile.symbol.slice(0, 2)}</span>
+                                </div>
+                            )}
                             <div>
                                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>{profile.symbol}</h3>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</p>
