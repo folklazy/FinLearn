@@ -25,6 +25,7 @@ type Tab = 'popular' | 'sp500' | 'search';
 /* ─────────── Stock Card (Grid) ─────────── */
 function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: number; inWatchlist?: boolean; onToggle?: () => void }) {
     const { formatPrice, formatLarge } = useCurrency();
+    const { t } = useI18n();
     const isUp = stock.change >= 0;
     return (
         <Link href={`/stocks/${stock.symbol}`} style={{ textDecoration: 'none' }}>
@@ -92,7 +93,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                         )}
                     </div>
                     {(stock.overallScore ?? 0) > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title={t('stocks.scoreTooltip')}>
                             <Sparkles size={12} style={{ color: 'var(--primary-light)' }} />
                             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-light)' }}>{stock.overallScore}/5</span>
                         </div>
@@ -103,8 +104,14 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
 
                 {/* Score bar */}
                 {(stock.overallScore ?? 0) > 0 && (
-                    <div style={{ marginTop: '12px', height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '100px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', borderRadius: '100px', background: 'var(--gradient-primary)', width: `${((stock.overallScore ?? 0) / 5) * 100}%`, transition: 'width 1s var(--ease)' }} />
+                    <div style={{ marginTop: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>{t('stocks.scoreLabel')}</span>
+                            <span style={{ fontSize: '0.62rem', color: 'var(--primary-light)', fontWeight: 600 }}>{stock.overallScore}/5</span>
+                        </div>
+                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '100px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', borderRadius: '100px', background: 'var(--gradient-primary)', width: `${((stock.overallScore ?? 0) / 5) * 100}%`, transition: 'width 1s var(--ease)' }} />
+                        </div>
                     </div>
                 )}
             </div>

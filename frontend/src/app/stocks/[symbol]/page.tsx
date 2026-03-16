@@ -507,14 +507,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     )}
                     {keyMetrics.profitMargin !== 0 && (
                         <div className="metric-card">
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Profit Margin</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>{t('sd.profitMargin')}</div>
                             <div style={{ fontWeight: 800, fontSize: '1.05rem', color: keyMetrics.profitMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>{keyMetrics.profitMargin.toFixed(1)}%</div>
                         </div>
                     )}
                     {keyMetrics.pe != null && (
                         <div className="metric-card">
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                P/E Ratio
+                                {t('sd.peRatio')}
                                 <span className="info-tip"><Info size={11} /><span className="tip-text">{t('sd.peHint')}</span></span>
                             </div>
                             <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{keyMetrics.pe.toFixed(1)}</div>
@@ -523,7 +523,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     )}
                     {keyMetrics.eps !== 0 && (
                         <div className="metric-card">
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>EPS</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>{t('sd.epsLabel')}</div>
                             <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>${keyMetrics.eps.toFixed(2)}</div>
                             {keyMetrics.epsGrowth !== 0 && <div style={{ fontSize: '0.68rem', color: keyMetrics.epsGrowth >= 0 ? 'var(--success)' : 'var(--danger)', marginTop: '3px' }}>{keyMetrics.epsGrowth >= 0 ? '+' : ''}{keyMetrics.epsGrowth.toFixed(1)}%</div>}
                         </div>
@@ -623,7 +623,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         )}
                     </div>
                     <div className="metric-card">
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>P/B Ratio</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>{t('sd.pbRatio')}</div>
                         <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>{keyMetrics.pb != null ? keyMetrics.pb.toFixed(1) : 'N/A'}</div>
                     </div>
                     <div className="metric-card">
@@ -643,8 +643,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                         { label: t('sd.netIncome'), value: keyMetrics.netIncome != null ? formatLargeNumber(keyMetrics.netIncome) : 'N/A' },
                         { label: t('sd.profitMargin'), value: keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A', color: keyMetrics.profitMargin > 20 ? 'var(--success)' : keyMetrics.profitMargin > 0 ? 'var(--warning)' : keyMetrics.profitMargin < 0 ? 'var(--danger)' : undefined },
                         { label: t('sd.debtToEquity'), value: keyMetrics.debtToEquity != null && keyMetrics.debtToEquity > 0 ? `${keyMetrics.debtToEquity}%` : 'N/A', color: (keyMetrics.debtToEquity ?? 0) > 150 ? 'var(--danger)' : (keyMetrics.debtToEquity ?? 0) > 80 ? 'var(--warning)' : (keyMetrics.debtToEquity ?? 0) > 0 ? 'var(--success)' : undefined },
-                        { label: 'Current Ratio', value: keyMetrics.currentRatio != null && keyMetrics.currentRatio > 0 ? `${keyMetrics.currentRatio}x` : 'N/A', color: (keyMetrics.currentRatio ?? 0) >= 1.5 ? 'var(--success)' : (keyMetrics.currentRatio ?? 0) >= 1 ? 'var(--warning)' : (keyMetrics.currentRatio ?? 0) > 0 ? 'var(--danger)' : undefined },
-                        { label: 'ROE', value: keyMetrics.roe ? `${keyMetrics.roe}%` : 'N/A' },
+                        { label: t('sd.currentRatio'), value: keyMetrics.currentRatio != null && keyMetrics.currentRatio > 0 ? `${keyMetrics.currentRatio}x` : 'N/A', color: (keyMetrics.currentRatio ?? 0) >= 1.5 ? 'var(--success)' : (keyMetrics.currentRatio ?? 0) >= 1 ? 'var(--warning)' : (keyMetrics.currentRatio ?? 0) > 0 ? 'var(--danger)' : undefined },
+                        { label: t('sd.roe'), value: keyMetrics.roe ? `${keyMetrics.roe}%` : 'N/A' },
                     ].map((item, i) => (
                         <div key={i} className="metric-card">
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '6px' }}>{item.label}</div>
@@ -827,12 +827,12 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
                     {/* Technical */}
                     <div style={{ padding: '18px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                        <p className="sub-label"><Activity size={13} /> Technical</p>
+                        <p className="sub-label"><Activity size={13} /> {t('sd.technical')}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {[
                                 { label: t('sd.priceVsMa50'), badge: signals.technical.ma50 === 'above' ? 'badge-success' : 'badge-danger', text: signals.technical.ma50 === 'above' ? t('sd.above') : t('sd.below') },
                                 { label: t('sd.priceVsMa200'), badge: signals.technical.ma200 === 'above' ? 'badge-success' : 'badge-danger', text: signals.technical.ma200 === 'above' ? t('sd.above') : t('sd.below') },
-                                { label: 'MACD', badge: signals.technical.macd === 'bullish' ? 'badge-success' : 'badge-danger', text: signals.technical.macd === 'bullish' ? 'Bullish' : 'Bearish' },
+                                { label: 'MACD', badge: signals.technical.macd === 'bullish' ? 'badge-success' : 'badge-danger', text: signals.technical.macd === 'bullish' ? t('sd.bullish') : t('sd.bearish') },
                             ].map((s, i) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.label}</span>
@@ -855,7 +855,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
                     {/* Fundamental */}
                     <div style={{ padding: '18px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                        <p className="sub-label"><FileText size={13} /> Fundamental</p>
+                        <p className="sub-label"><FileText size={13} /> {t('sd.fundamental')}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {[
                                 { label: t('sd.earningsGrowth'), badge: signals.fundamental.earningsGrowth === 'positive' ? 'badge-success' : 'badge-danger', text: signals.fundamental.earningsGrowth === 'positive' ? t('sd.increase') : t('sd.decrease') },
@@ -910,7 +910,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     <table className="data-table">
                         <thead>
                             <tr>
-                                {[t('sd.companyCol'), 'Market Cap', 'P/E', 'Profit Margin', t('sd.revGrowthCol'), t('sd.dividendCol')].map(h => (
+                                {[t('sd.companyCol'), t('sd.marketCap'), t('sd.peRatio'), t('sd.profitMargin'), t('sd.revGrowthCol'), t('sd.dividendCol')].map(h => (
                                     <th key={h} style={{ whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                             </tr>
@@ -957,7 +957,10 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 <Star key={s} size={22} fill={s <= Math.round(scores.overall) ? '#f59e0b' : 'transparent'} stroke={s <= Math.round(scores.overall) ? '#f59e0b' : 'var(--border-light)'} />
                             ))}
                         </div>
-                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t('sd.scoreFrom5')}</p>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            {t('sd.scoreFrom5')}
+                            <span className="info-tip"><Info size={11} /><span className="tip-text">{t('sd.scoreTooltip')}</span></span>
+                        </p>
                     </div>
                     <div>
                         <ResponsiveContainer width="100%" height={240}>

@@ -13,11 +13,6 @@ export default function Footer() {
             { href: '/stocks', label: t('footer.stocks') },
             { href: '/learn', label: t('footer.lessons') },
         ],
-        resources: [
-            { href: '#', label: t('footer.glossary') },
-            { href: '#', label: t('footer.faq') },
-            { href: '#', label: t('footer.about') },
-        ],
     };
 
     return (
@@ -35,25 +30,20 @@ export default function Footer() {
                         </p>
                     </div>
 
-                    {/* Nav columns */}
-                    {[
-                        { title: t('footer.menu'), links: LINKS.main },
-                        { title: t('footer.resources'), links: LINKS.resources },
-                    ].map(col => (
-                        <div key={col.title}>
-                            <h4 style={{ color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '14px', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{col.title}</h4>
-                            <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {col.links.map(link => (
-                                    <li key={link.label}>
-                                        <Link href={link.href} style={{ color: 'var(--text-muted)', fontSize: '0.82rem', transition: 'color 0.15s' }}
-                                            onMouseOver={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-                                            onMouseOut={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-                                        >{link.label}</Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+                    {/* Nav column */}
+                    <div>
+                        <h4 style={{ color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '14px', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('footer.menu')}</h4>
+                        <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {LINKS.main.map(link => (
+                                <li key={link.label}>
+                                    <Link href={link.href} style={{ color: 'var(--text-muted)', fontSize: '0.82rem', transition: 'color 0.15s' }}
+                                        onMouseOver={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+                                        onMouseOut={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                                    >{link.label}</Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
 
                 {/* Disclaimer */}
