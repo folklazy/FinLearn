@@ -672,21 +672,20 @@ export class StockService {
             }
         }
 
-        // ── Three API sources in parallel ──
-        const [fmpNameResults, fmpSymResults, finnhubResults] = await Promise.all([
-            fmp.searchStocks(query, 15).catch(() => []),
-            fmp.searchBySymbol(query, 15).catch(() => []),
+        // ── API sources in parallel — Yahoo (primary) + Finnhub (no FMP to avoid 429) ──
+        const [yahooSearchResults, finnhubResults] = await Promise.all([
+            yahoo.searchStocks(query, 15).catch(() => []),
             finnhub.searchSymbols(query).catch(() => []),
         ]);
 
-        // Normalize FMP results
-        const fromFmp = [...fmpNameResults, ...fmpSymResults]
-            .filter(r => isAllowed(r.symbol, r.exchangeShortName || r.stockExchange || ''))
+        // Normalize Yahoo search results
+        const fromYahoo: SearchResult[] = yahooSearchResults
+            .filter(r => isAllowed(r.symbol, r.exchange))
             .map(r => ({
                 symbol: r.symbol,
                 name: r.name,
                 sector: '',
-                exchange: r.exchangeShortName || r.stockExchange || '',
+                exchange: r.exchange || '',
                 logo: `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
             }));
 
@@ -705,7 +704,7 @@ export class StockService {
         const seen = new Set<string>();
         const merged: SearchResult[] = [];
 
-        for (const r of [...localResults, ...fromFmp, ...fromFinnhub]) {
+        for (const r of [...localResults, ...fromYahoo, ...fromFinnhub]) {
             const sym = r.symbol.toUpperCase();
             if (seen.has(sym)) continue;
             seen.add(sym);

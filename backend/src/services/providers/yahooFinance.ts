@@ -97,6 +97,32 @@ export async function getProfile(symbol: string): Promise<YFProfile | null> {
     }
 }
 
+// ── Search ──
+export interface YFSearchResult {
+    symbol: string;
+    name: string;
+    exchange: string;
+    type: string;
+}
+
+export async function searchStocks(query: string, limit = 15): Promise<YFSearchResult[]> {
+    try {
+        const result: any = await yahooFinance.search(query, { newsCount: 0, quotesCount: limit });
+        const quotes: any[] = result?.quotes ?? [];
+        return quotes
+            .filter((q: any) => q.symbol && (q.quoteType === 'EQUITY' || q.typeDisp === 'Equity'))
+            .map((q: any) => ({
+                symbol: q.symbol,
+                name: q.longname || q.shortname || q.symbol,
+                exchange: q.exchDisp || q.exchange || '',
+                type: q.quoteType || 'EQUITY',
+            }));
+    } catch (err) {
+        console.warn(`[Yahoo] Search error for ${query}:`, (err as Error).message);
+        return [];
+    }
+}
+
 // ── Lightweight Quote (for batch fallback) ──
 export interface YFQuote {
     symbol: string;
@@ -155,14 +181,16 @@ export interface YFKeyMetrics {
 export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null> {
     try {
         const period1 = new Date(Date.now() - 5 * 365 * 86400000);
-        const ftOpts = { validateResult: false } as any;
 
+        // NOTE: Do NOT use { validateResult: false } for fundamentalsTimeSeries —
+        // it causes raw prefixed field names (annualTotalRevenue instead of totalRevenue).
+        // Without it, the library normalises fields to match the TypeScript interface.
         const [result, finArr, bsArr] = await Promise.all([
             yahooFinance.quoteSummary(symbol, {
                 modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory', 'earnings'],
             }).catch(() => null),
-            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'financials', type: 'annual' }, ftOpts).catch(() => null),
-            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }, ftOpts).catch(() => null),
+            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'financials', type: 'annual' }).catch(() => null),
+            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }).catch(() => null),
         ]);
 
         const fd = (result as any)?.financialData;
@@ -171,36 +199,59 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         const is: any[] | undefined = (result as any)?.incomeStatementHistory?.incomeStatementHistory;
         const earningsYearly: any[] | undefined = (result as any)?.earnings?.financialsChart?.yearly;
 
-        console.log(`[Yahoo] ${symbol} KeyMetrics: fd.totalRevenue=${fd?.totalRevenue} fd.debtToEquity=${fd?.debtToEquity} ks.trailingEps=${ks?.trailingEps} finRows=${Array.isArray(finArr) ? finArr.length : 0} earningsYearly=${earningsYearly?.length ?? 0}`);
-
-        if (!fd && !ks && !sd) return null;
-
         // fundamentalsTimeSeries rows sorted oldest-first
-        const finRows: any[] = Array.isArray(finArr) ? finArr.filter((r: any) => r?.TYPE === 'FINANCIALS') : [];
-        const bsRows: any[] = Array.isArray(bsArr) ? bsArr.filter((r: any) => r?.TYPE === 'BALANCE_SHEET') : [];
+        const finRows: any[] = Array.isArray(finArr) ? finArr.filter((r: any) => r?.date) : [];
+        const bsRows: any[] = Array.isArray(bsArr) ? bsArr.filter((r: any) => r?.date) : [];
 
-        // Build revenue history — fundamentalsTimeSeries → incomeStatementHistory → earnings.financialsChart.yearly
+        // Most-recent rows for current-period metrics
+        const latestFin = finRows.length ? finRows[finRows.length - 1] : null;
+        const latestBs = bsRows.length ? bsRows[bsRows.length - 1] : null;
+
+        console.log(`[Yahoo] ${symbol} KeyMetrics: fd.totalRevenue=${fd?.totalRevenue} latestFin.totalRevenue=${latestFin?.totalRevenue} finRows=${finRows.length} bsRows=${bsRows.length} earningsYearly=${earningsYearly?.length ?? 0} finKeys=${latestFin ? Object.keys(latestFin).slice(0, 8).join(',') : 'none'}`);
+
+        if (!fd && !ks && !sd && !latestFin) return null;
+
+        // ── Revenue from fundamentalsTimeSeries (primary) or quoteSummary fallback ──
+        const revenue = latestFin?.totalRevenue ?? fd?.totalRevenue ?? null;
+        const netIncome = latestFin?.netIncome ?? latestFin?.dilutedNIAvailtoComStockholders ?? fd?.netIncomeToCommon ?? null;
+
+        // ── EPS: from fundamentalsTimeSeries (dilutedEPS) or quoteSummary ──
+        const eps = latestFin?.dilutedEPS ?? latestFin?.basicEPS ?? ks?.trailingEps ?? 0;
+
+        // ── D/E: from balance sheet ──
+        const totalLiab = latestBs?.totalLiabilitiesNetMinorityInterest ?? latestBs?.totalLiabilities ?? 0;
+        const equity = latestBs?.stockholdersEquity ?? latestBs?.commonStockEquity ?? latestBs?.totalEquityGrossMinorityInterest ?? 0;
+        const debtToEquity = fd?.debtToEquity ?? (equity > 0 && totalLiab > 0 ? parseFloat((totalLiab / equity * 100).toFixed(1)) : null);
+
+        // ── Current Ratio: from balance sheet ──
+        const currentAssets = latestBs?.currentAssets ?? 0;
+        const currentLiab = latestBs?.currentLiabilities ?? 0;
+        const currentRatio = fd?.currentRatio ?? (currentAssets > 0 && currentLiab > 0 ? parseFloat((currentAssets / currentLiab).toFixed(2)) : null);
+
+        // ── ROE: from fundamentalsTimeSeries or quoteSummary ──
+        const roe = fd?.returnOnEquity != null ? fd.returnOnEquity * 100
+            : (netIncome && equity > 0 ? parseFloat((netIncome / equity * 100).toFixed(1)) : null);
+
+        // ── Profit margin ──
+        const profitMargin = fd?.profitMargins != null ? fd.profitMargins * 100
+            : (revenue && netIncome ? parseFloat((netIncome / revenue * 100).toFixed(2)) : null);
+
+        // ── Build revenue history ──
         let revenueHistory: { year: string; value: number }[] = [];
         if (finRows.length >= 2) {
             revenueHistory = finRows.slice(-5).map((s: any) => ({
                 year: s.date ? new Date(s.date).getFullYear().toString() : '',
                 value: s.totalRevenue ?? 0,
-            })).filter((s: any) => s.year && s.value);
-        }
-        if (revenueHistory.length < 2 && is && is.length >= 2) {
-            revenueHistory = is.slice(0, 5).map((s: any) => ({
-                year: s.endDate ? new Date(s.endDate).getFullYear().toString() : '',
-                value: s.totalRevenue ?? 0,
-            })).filter((s: any) => s.year && s.value).reverse();
+            })).filter((s: { year: string; value: number }) => s.year && s.value);
         }
         if (revenueHistory.length < 2 && earningsYearly && earningsYearly.length >= 2) {
             revenueHistory = earningsYearly.map((e: any) => ({
                 year: String(e.date),
                 value: e.revenue ?? 0,
-            })).filter((s: any) => s.year && s.value);
+            })).filter((s: { year: string; value: number }) => s.year && s.value);
         }
 
-        // Build EPS history — fundamentalsTimeSeries → incomeStatementHistory → earnings.financialsChart.yearly
+        // ── Build EPS history ──
         let epsHistory: { year: string; value: number }[] = [];
         if (finRows.length >= 2 && bsRows.length >= 2) {
             const sharesMap: Record<string, number> = {};
@@ -212,35 +263,29 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
                 const yr = s.date ? new Date(s.date).getFullYear().toString() : '';
                 const ni = s.netIncome ?? s.dilutedNIAvailtoComStockholders ?? 0;
                 const shares = sharesMap[yr] ?? 0;
-                return { year: yr, value: shares > 0 ? parseFloat((ni / shares).toFixed(2)) : 0 };
-            }).filter((s: any) => s.year);
-        }
-        if (epsHistory.length < 2 && is && is.length >= 2) {
-            epsHistory = is.slice(0, 5).map((s: any) => ({
-                year: s.endDate ? new Date(s.endDate).getFullYear().toString() : '',
-                value: s.epsdiluted ?? s.dilutedEps ?? s.eps ?? s.basicEps ?? 0,
-            })).filter((s: any) => s.year).reverse();
+                const dilEps = s.dilutedEPS ?? (shares > 0 ? parseFloat((ni / shares).toFixed(2)) : 0);
+                return { year: yr, value: dilEps };
+            }).filter((s: { year: string; value: number }) => s.year);
         }
         if (epsHistory.length < 2 && earningsYearly && earningsYearly.length >= 2) {
             epsHistory = earningsYearly.map((e: any) => ({
                 year: String(e.date),
-                value: e.earnings && fd?.currentPrice ? parseFloat((e.earnings / (fd.sharesOutstanding ?? 1)).toFixed(2)) : 0,
-            })).filter((s: any) => s.year && s.value);
+                value: e.earnings != null ? parseFloat((e.earnings / 1e9).toFixed(2)) : 0,
+            })).filter((s: { year: string; value: number }) => s.year && s.value);
         }
 
-        // Revenue growth — prefer annual comparison (stable) over quarterly YoY from financialData
+        // ── Revenue growth ──
         let revenueGrowth: number | null = null;
         if (finRows.length >= 2) {
             const r0 = finRows[finRows.length - 1]?.totalRevenue;
             const r1 = finRows[finRows.length - 2]?.totalRevenue;
             if (r0 && r1) revenueGrowth = ((r0 - r1) / Math.abs(r1)) * 100;
-        } else if (is && is.length >= 2 && is[1]?.totalRevenue) {
-            revenueGrowth = ((is[0].totalRevenue - is[1].totalRevenue) / Math.abs(is[1].totalRevenue)) * 100;
-        } else if (fd?.revenueGrowth != null) {
+        }
+        if (revenueGrowth == null && fd?.revenueGrowth != null) {
             revenueGrowth = fd.revenueGrowth * 100;
         }
 
-        // EPS growth — from financialData or computed from EPS history
+        // ── EPS growth ──
         let epsGrowth: number | null = null;
         if (fd?.earningsGrowth != null) {
             epsGrowth = fd.earningsGrowth * 100;
@@ -250,28 +295,22 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             if (e0 != null && e1 != null && e1 !== 0) {
                 epsGrowth = ((e0 - e1) / Math.abs(e1)) * 100;
             }
-        } else if (is && is.length >= 2) {
-            const e0 = is[0]?.epsdiluted ?? is[0]?.eps;
-            const e1 = is[1]?.epsdiluted ?? is[1]?.eps;
-            if (e0 != null && e1 != null && e1 !== 0) {
-                epsGrowth = ((e0 - e1) / Math.abs(e1)) * 100;
-            }
         }
 
         const rawDivYield = (sd as any)?.trailingAnnualDividendYield ?? sd?.dividendYield ?? null;
         return {
-            pe: (sd?.trailingPE ?? (fd?.currentPrice && fd?.trailingEps && fd.trailingEps > 0 ? fd.currentPrice / fd.trailingEps : null)) ?? null,
+            pe: sd?.trailingPE ?? (eps > 0 && fd?.currentPrice ? parseFloat((fd.currentPrice / eps).toFixed(1)) : null),
             pb: ks?.priceToBook ?? null,
             dividendYield: rawDivYield != null && rawDivYield > 0 ? parseFloat((rawDivYield * 100).toFixed(2)) : null,
             dividendPerShare: sd?.dividendRate ?? null,
-            revenue: fd?.totalRevenue ?? (is?.[0]?.totalRevenue ?? null),
+            revenue,
             revenueGrowth,
-            netIncome: fd?.netIncomeToCommon ?? (is?.[0]?.netIncome ?? null),
-            profitMargin: fd?.profitMargins != null ? fd.profitMargins * 100 : null,
-            debtToEquity: fd?.debtToEquity ?? null,
-            currentRatio: fd?.currentRatio ?? null,
-            roe: fd?.returnOnEquity != null ? fd.returnOnEquity * 100 : null,
-            eps: ks?.trailingEps ?? 0,
+            netIncome,
+            profitMargin,
+            debtToEquity,
+            currentRatio,
+            roe,
+            eps,
             epsGrowth,
             revenueHistory,
             epsHistory,
@@ -312,22 +351,21 @@ export interface YFFinancials {
 export async function getFinancials(symbol: string): Promise<YFFinancials | null> {
     try {
         const period1 = new Date(Date.now() - 5 * 365 * 86400000);
-        const ftOpts = { validateResult: false } as any;
 
-        // All historical statement modules broken since Nov 2024 → use fundamentalsTimeSeries
+        // NOTE: Do NOT use { validateResult: false } — see getKeyMetrics comment
         const [incomeResult, bsArr, cfArr, finArr] = await Promise.all([
             yahooFinance.quoteSummary(symbol, { modules: ['incomeStatementHistory'] }).catch(() => null),
-            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }, ftOpts).catch(() => null),
-            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'cash-flow', type: 'annual' }, ftOpts).catch(() => null),
-            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'financials', type: 'annual' }, ftOpts).catch(() => null),
+            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }).catch(() => null),
+            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'cash-flow', type: 'annual' }).catch(() => null),
+            (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'financials', type: 'annual' }).catch(() => null),
         ]);
 
         // incomeStatementHistory fallback (still returns revenue/grossProfit but not EPS)
         const is = (incomeResult as any)?.incomeStatementHistory?.incomeStatementHistory?.[0];
         // fundamentalsTimeSeries results sorted oldest-first; take last entry for most recent
-        const bsRows: any[] = Array.isArray(bsArr) ? bsArr.filter((r: any) => r?.TYPE === 'BALANCE_SHEET') : [];
-        const cfRows: any[] = Array.isArray(cfArr) ? cfArr.filter((r: any) => r?.TYPE === 'CASH_FLOW') : [];
-        const finRows: any[] = Array.isArray(finArr) ? finArr.filter((r: any) => r?.TYPE === 'FINANCIALS') : [];
+        const bsRows: any[] = Array.isArray(bsArr) ? bsArr.filter((r: any) => r?.date) : [];
+        const cfRows: any[] = Array.isArray(cfArr) ? cfArr.filter((r: any) => r?.date) : [];
+        const finRows: any[] = Array.isArray(finArr) ? finArr.filter((r: any) => r?.date) : [];
         const bs = bsRows.length ? bsRows[bsRows.length - 1] : null;
         const cf = cfRows.length ? cfRows[cfRows.length - 1] : null;
         const fin = finRows.length ? finRows[finRows.length - 1] : null;

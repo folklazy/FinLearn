@@ -209,4 +209,7 @@ export const yahoo = {
 
     getQuote: (symbol: string) =>
         cached('yahoo', 'quote', symbol, () => rawYahoo.getQuote(symbol), symbol),
+
+    searchStocks: (query: string, limit = 15) =>
+        cachedArray('yahoo', 'search', query.toLowerCase(), () => rawYahoo.searchStocks(query, limit)),
 };
