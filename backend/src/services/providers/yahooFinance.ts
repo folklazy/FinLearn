@@ -220,7 +220,9 @@ export async function getQuote(symbol: string): Promise<YFQuote | null> {
             changePercent: pr?.regularMarketChangePercent ? pr.regularMarketChangePercent * 100 : 0,
             marketCap: pr?.marketCap ?? 0,
             sector: ap?.sector ?? '',
-            logo: `https://financialmodelingprep.com/image-stock/${symbol.toUpperCase()}.png`,
+            logo: ap?.website
+                ? `https://logo.clearbit.com/${(() => { try { const u = ap.website.startsWith('http') ? ap.website : 'https://' + ap.website; return new URL(u).hostname.replace(/^www\./, ''); } catch { return symbol.toLowerCase() + '.com'; } })()}`
+                : `https://logo.clearbit.com/${symbol.toLowerCase()}.com`,
         };
     } catch (err) {
         console.warn(`[Yahoo] Quote error for ${symbol}:`, (err as Error).message);

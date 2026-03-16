@@ -17,6 +17,18 @@ function normalizeExchange(ex: string): string {
     return ex;
 }
 
+/** Build a Clearbit logo URL from a website URL, fallback to symbol-based guess */
+function buildClearbitLogo(website: string | undefined | null, symbol: string): string {
+    if (website) {
+        try {
+            const url = website.startsWith('http') ? website : `https://${website}`;
+            const domain = new URL(url).hostname.replace(/^www\./, '');
+            if (domain) return `https://logo.clearbit.com/${domain}`;
+        } catch { /* ignore */ }
+    }
+    return `https://logo.clearbit.com/${symbol.toLowerCase()}.com`;
+}
+
 /**
  * Normalize any sector/industry name to a standard GICS-like sector.
  * FMP, Finnhub, and Yahoo all use different naming conventions.
@@ -155,13 +167,8 @@ export class StockService {
         // Merge profile — FMP → Finnhub → Yahoo fallback chain
         const profileName = fmpProfile?.companyName || finnhubProfile?.name || yahooProfile?.name || symbol;
         // Logo: Clearbit (from website domain, already in CSP) → Finnhub → FMP image
-        const websiteDomain = (() => {
-            const url = fmpProfile?.website || finnhubProfile?.weburl || yahooProfile?.website || '';
-            try { return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, ''); } catch { return null; }
-        })();
-        const profileLogo = (websiteDomain ? `https://logo.clearbit.com/${websiteDomain}` : null)
-            || finnhubProfile?.logo || fmpProfile?.image
-            || `https://logo.clearbit.com/${symbol.toLowerCase()}.com`;
+        const profileWebsiteForLogo = fmpProfile?.website || finnhubProfile?.weburl || yahooProfile?.website || '';
+        const profileLogo = buildClearbitLogo(profileWebsiteForLogo || null, symbol);
         // Prefer Yahoo sector/industry — it uses proper GICS classification
         // FMP free tier returns simplified names (e.g. "Automobiles" instead of "Consumer Cyclical")
         const rawSector = yahooProfile?.sector || fmpProfile?.sector || finnhubProfile?.finnhubIndustry || 'Other';
@@ -803,27 +810,28 @@ export class StockService {
         const profileMap = new Map<string, (typeof profiles)[0]>();
         for (const p of profiles) profileMap.set(p.symbol, p);
 
-        // Yahoo fallback for symbols missing FMP profiles (price/name/sector)
+        // Finnhub fallback for symbols missing FMP profiles (rate-limited)
         const missingProfileSyms = syms.filter(s => !profileMap.has(s));
+        const finnhubMap = new Map<string, { name: string; logo: string; price: number; change: number; changePercent: number; marketCap: number; sector: string }>();
         if (missingProfileSyms.length > 0) {
-            console.log(`[StockService] Batch: FMP missing profiles for ${missingProfileSyms.join(',')}, trying Yahoo`);
-            const yahooQuotes = await Promise.all(
-                missingProfileSyms.map(s => yahoo.getQuote(s).catch(() => null))
-            );
+            console.log(`[StockService] Batch: FMP missing profiles for ${missingProfileSyms.join(',')}, trying Finnhub`);
+            const [fhProfiles, fhQuotes] = await Promise.all([
+                Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null))),
+                Promise.all(missingProfileSyms.map(s => finnhub.getQuote(s).catch(() => null))),
+            ]);
             missingProfileSyms.forEach((sym, i) => {
-                const yq = yahooQuotes[i];
-                if (yq && yq.price > 0) {
-                    // Store as FMP-compatible shape so downstream code works
-                    profileMap.set(sym, {
-                        symbol: sym,
-                        companyName: yq.name,
-                        image: yq.logo,
-                        sector: yq.sector,
-                        price: yq.price,
-                        change: yq.change,
-                        changePercentage: yq.changePercent,
-                        marketCap: yq.marketCap,
-                    } as any);
+                const fp = fhProfiles[i];
+                const fq = fhQuotes[i];
+                if (fp || fq) {
+                    finnhubMap.set(sym, {
+                        name: fp?.name || sym,
+                        logo: buildClearbitLogo(fp?.weburl, sym),
+                        price: fq?.c || 0,
+                        change: fq?.d || 0,
+                        changePercent: fq?.dp || 0,
+                        marketCap: fp?.marketCapitalization ? fp.marketCapitalization * 1e6 : 0,
+                        sector: fp?.finnhubIndustry || '',
+                    });
                 }
             });
         }
@@ -859,6 +867,7 @@ export class StockService {
 
         const result = syms.map(sym => {
             const p = profileMap.get(sym);
+            const fhP = finnhubMap.get(sym);
             const m = metricsMap.get(sym);
             let score = 0;
             if (m) {
@@ -869,16 +878,33 @@ export class StockService {
                 const debtToEquity = m.debtToEquityTTM ?? null;
                 score = this.computeQuickScore(pe, revenueGrowth, profitMargin, divYield, debtToEquity);
             }
+            if (p) {
+                return {
+                    symbol: sym,
+                    name: (p as any)?.companyName ?? sym,
+                    logo: buildClearbitLogo((p as any)?.website, sym),
+                    sector: (p as any)?.sector ?? '',
+                    price: (p as any)?.price ?? 0,
+                    change: (p as any)?.change ?? 0,
+                    changePercent: (p as any)?.changePercentage ?? 0,
+                    marketCap: (p as any)?.marketCap ?? 0,
+                    overallScore: score,
+                };
+            }
+            if (fhP) {
+                return {
+                    symbol: sym, name: fhP.name,
+                    logo: fhP.logo, sector: fhP.sector,
+                    price: fhP.price, change: fhP.change,
+                    changePercent: fhP.changePercent,
+                    marketCap: fhP.marketCap, overallScore: score,
+                };
+            }
             return {
-                symbol: sym,
-                name: (p as any)?.companyName ?? sym,
-                logo: (p as any)?.image ?? '',
-                sector: (p as any)?.sector ?? '',
-                price: (p as any)?.price ?? 0,
-                change: (p as any)?.change ?? 0,
-                changePercent: (p as any)?.changePercentage ?? 0,
-                marketCap: (p as any)?.marketCap ?? 0,
-                overallScore: score,
+                symbol: sym, name: sym,
+                logo: buildClearbitLogo(null, sym),
+                sector: '', price: 0, change: 0,
+                changePercent: 0, marketCap: 0, overallScore: 0,
             };
         }).filter(s => s.price > 0);
 
@@ -907,72 +933,106 @@ export class StockService {
         ];
 
         try {
-            // Batch fetch profiles + key metrics in parallel
-            const [profiles, metricsArr] = await Promise.all([
+            // Batch fetch FMP profiles + key metrics in parallel
+            const [fmpProfiles, metricsArr] = await Promise.all([
                 fmp.getBatchProfiles(TOP_SYMBOLS),
                 Promise.all(TOP_SYMBOLS.map(s => fmp.getKeyMetrics(s).catch(() => null))),
             ]);
-            if (profiles.length > 0) {
-                // Build a quick lookup for metrics by symbol
-                const metricsMap = new Map<string, typeof metricsArr[0]>();
-                TOP_SYMBOLS.forEach((sym, i) => metricsMap.set(sym, metricsArr[i]));
 
-                // Fallback: fetch Yahoo metrics for stocks where FMP returned null (premium/rate-limited)
-                const missingSymbols = TOP_SYMBOLS.filter(s => !metricsMap.get(s));
-                if (missingSymbols.length > 0) {
-                    const yahooResults = await Promise.all(
-                        missingSymbols.map(s => yahoo.getKeyMetrics(s).catch(() => null))
-                    );
-                    missingSymbols.forEach((sym, i) => {
-                        const ym = yahooResults[i];
-                        if (ym) {
-                            // Map Yahoo fields to FMP-compatible shape
-                            metricsMap.set(sym, {
-                                peRatioTTM: ym.pe ?? 0,
-                                revenueGrowth: ym.revenueGrowth != null ? ym.revenueGrowth / 100 : 0, // Yahoo returns %, FMP expects decimal
-                                netProfitMarginTTM: ym.profitMargin != null ? ym.profitMargin / 100 : 0, // same
-                                dividendYieldTTM: ym.dividendYield != null ? ym.dividendYield / 100 : 0, // same
-                                debtToEquityTTM: ym.debtToEquity ?? 0,
-                                currentRatioTTM: ym.currentRatio ?? 0,
-                                priceToBookRatioTTM: ym.pb ?? 0,
-                                revenuePerShareTTM: 0,
-                                netIncomePerShareTTM: 0,
-                                dividendPerShareTTM: ym.dividendPerShare ?? 0,
-                                epsGrowth: ym.epsGrowth != null ? ym.epsGrowth / 100 : 0,
-                                roeTTM: ym.roe != null ? ym.roe / 100 : 0,
-                            } as any);
-                        }
+            // Build FMP profile map
+            const fmpMap = new Map<string, (typeof fmpProfiles)[0]>();
+            for (const p of fmpProfiles) fmpMap.set(p.symbol, p);
+
+            // Finnhub fallback for symbols missing FMP profiles (rate-limited)
+            const missingProfileSyms = TOP_SYMBOLS.filter(s => !fmpMap.has(s));
+            const finnhubMap = new Map<string, { name: string; logo: string; price: number; change: number; changePercent: number; marketCap: number; sector: string }>();
+            if (missingProfileSyms.length > 0) {
+                console.log(`[StockService] Popular: FMP missing ${missingProfileSyms.length} profiles, fetching Finnhub`);
+                const [fhProfiles, fhQuotes] = await Promise.all([
+                    Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null))),
+                    Promise.all(missingProfileSyms.map(s => finnhub.getQuote(s).catch(() => null))),
+                ]);
+                missingProfileSyms.forEach((sym, i) => {
+                    const fp = fhProfiles[i];
+                    const fq = fhQuotes[i];
+                    if (fp || fq) {
+                        finnhubMap.set(sym, {
+                            name: fp?.name || sym,
+                            logo: buildClearbitLogo(fp?.weburl, sym),
+                            price: fq?.c || 0,
+                            change: fq?.d || 0,
+                            changePercent: fq?.dp || 0,
+                            marketCap: fp?.marketCapitalization ? fp.marketCapitalization * 1e6 : 0,
+                            sector: fp?.finnhubIndustry || '',
+                        });
+                    }
+                });
+            }
+
+            // Build metrics lookup with Yahoo fallback
+            const metricsMap = new Map<string, typeof metricsArr[0]>();
+            TOP_SYMBOLS.forEach((sym, i) => metricsMap.set(sym, metricsArr[i]));
+            const missingMetrics = TOP_SYMBOLS.filter(s => !metricsMap.get(s));
+            if (missingMetrics.length > 0) {
+                const yahooResults = await Promise.all(
+                    missingMetrics.map(s => yahoo.getKeyMetrics(s).catch(() => null))
+                );
+                missingMetrics.forEach((sym, i) => {
+                    const ym = yahooResults[i];
+                    if (ym) {
+                        metricsMap.set(sym, {
+                            peRatioTTM: ym.pe ?? 0,
+                            revenueGrowth: ym.revenueGrowth != null ? ym.revenueGrowth / 100 : 0,
+                            netProfitMarginTTM: ym.profitMargin != null ? ym.profitMargin / 100 : 0,
+                            dividendYieldTTM: ym.dividendYield != null ? ym.dividendYield / 100 : 0,
+                            debtToEquityTTM: ym.debtToEquity ?? 0,
+                            currentRatioTTM: ym.currentRatio ?? 0,
+                            priceToBookRatioTTM: ym.pb ?? 0,
+                            revenuePerShareTTM: 0, netIncomePerShareTTM: 0,
+                            dividendPerShareTTM: ym.dividendPerShare ?? 0,
+                            epsGrowth: ym.epsGrowth != null ? ym.epsGrowth / 100 : 0,
+                            roeTTM: ym.roe != null ? ym.roe / 100 : 0,
+                        } as any);
+                    }
+                });
+            }
+
+            // Build result from FMP + Finnhub fallback
+            const result: SimplifiedStock[] = [];
+            for (const sym of TOP_SYMBOLS) {
+                const fmpP = fmpMap.get(sym);
+                const fhP = finnhubMap.get(sym);
+                const m = metricsMap.get(sym);
+                let score = 0;
+                if (m) {
+                    const pe = m.peRatioTTM ?? null;
+                    const revenueGrowth = m.revenueGrowth != null ? m.revenueGrowth * 100 : 0;
+                    const profitMargin = m.netProfitMarginTTM != null ? m.netProfitMarginTTM * 100 : 0;
+                    const divYield = m.dividendYieldTTM != null ? m.dividendYieldTTM * 100 : 0;
+                    const debtToEquity = m.debtToEquityTTM ?? null;
+                    score = this.computeQuickScore(pe, revenueGrowth, profitMargin, divYield, debtToEquity);
+                }
+                if (fmpP && fmpP.price > 0) {
+                    result.push({
+                        symbol: fmpP.symbol, name: fmpP.companyName,
+                        logo: buildClearbitLogo(fmpP.website, fmpP.symbol),
+                        sector: fmpP.sector, price: fmpP.price,
+                        change: fmpP.change, changePercent: fmpP.changePercentage,
+                        marketCap: fmpP.marketCap, overallScore: score,
+                    });
+                } else if (fhP && fhP.price > 0) {
+                    result.push({
+                        symbol: sym, name: fhP.name,
+                        logo: fhP.logo, sector: fhP.sector,
+                        price: fhP.price, change: fhP.change,
+                        changePercent: fhP.changePercent,
+                        marketCap: fhP.marketCap, overallScore: score,
                     });
                 }
+            }
 
-                const result = profiles
-                    .filter(p => p.price > 0)
-                    .sort((a, b) => b.marketCap - a.marketCap)
-                    .map(p => {
-                        const m = metricsMap.get(p.symbol);
-                        let score = 0;
-                        if (m) {
-                            const pe = m.peRatioTTM ?? null;
-                            const revenueGrowth = m.revenueGrowth != null ? m.revenueGrowth * 100 : 0;
-                            const profitMargin = m.netProfitMarginTTM != null ? m.netProfitMarginTTM * 100 : 0;
-                            const divYield = m.dividendYieldTTM != null ? m.dividendYieldTTM * 100 : 0;
-                            const debtToEquity = m.debtToEquityTTM ?? null;
-                            score = this.computeQuickScore(pe, revenueGrowth, profitMargin, divYield, debtToEquity);
-                        }
-                        return {
-                            symbol: p.symbol,
-                            name: p.companyName,
-                            logo: p.image,
-                            sector: p.sector,
-                            price: p.price,
-                            change: p.change,
-                            changePercent: p.changePercentage,
-                            marketCap: p.marketCap,
-                            overallScore: score,
-                        };
-                    });
-
-                // Cache the assembled response (TTL managed by cacheService 'popular' key)
+            if (result.length > 0) {
+                result.sort((a, b) => b.marketCap - a.marketCap);
                 cacheService.set('stockdata', 'popular', 'top20', result).catch(() => {});
                 return result;
             }
@@ -1011,23 +1071,53 @@ export class StockService {
         const pageItems = filtered.slice(start, start + limit);
         const pageSymbols = pageItems.map(c => c.symbol);
 
-        // Fetch profiles + key metrics in parallel
-        const [profiles, metricsArr] = await Promise.all([
+        // Fetch FMP profiles + key metrics in parallel
+        const [fmpProfiles, metricsArr] = await Promise.all([
             fmp.getBatchProfiles(pageSymbols),
             Promise.all(pageSymbols.map(s => fmp.getKeyMetrics(s).catch(() => null))),
         ]);
+
+        // Build FMP profile map
+        const fmpProfileMap = new Map<string, (typeof fmpProfiles)[0]>();
+        for (const p of fmpProfiles) fmpProfileMap.set(p.symbol, p);
+
+        // Finnhub fallback for symbols missing FMP profiles (rate-limited)
+        const missingProfileSyms = pageSymbols.filter(s => !fmpProfileMap.has(s));
+        const finnhubMap = new Map<string, { name: string; logo: string; price: number; change: number; changePercent: number; marketCap: number; sector: string }>();
+        if (missingProfileSyms.length > 0) {
+            console.log(`[StockService] SP500: FMP missing ${missingProfileSyms.length} profiles, fetching Finnhub`);
+            const [fhProfiles, fhQuotes] = await Promise.all([
+                Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null))),
+                Promise.all(missingProfileSyms.map(s => finnhub.getQuote(s).catch(() => null))),
+            ]);
+            missingProfileSyms.forEach((sym, i) => {
+                const fp = fhProfiles[i];
+                const fq = fhQuotes[i];
+                if (fp || fq) {
+                    finnhubMap.set(sym, {
+                        name: fp?.name || sym,
+                        logo: buildClearbitLogo(fp?.weburl, sym),
+                        price: fq?.c || 0,
+                        change: fq?.d || 0,
+                        changePercent: fq?.dp || 0,
+                        marketCap: fp?.marketCapitalization ? fp.marketCapitalization * 1e6 : 0,
+                        sector: fp?.finnhubIndustry || '',
+                    });
+                }
+            });
+        }
 
         // Build metrics lookup
         const metricsMap = new Map<string, typeof metricsArr[0]>();
         pageSymbols.forEach((sym, i) => metricsMap.set(sym, metricsArr[i]));
 
         // Fallback: fetch Yahoo metrics for stocks where FMP returned null (premium/rate-limited)
-        const missingSymbols = pageSymbols.filter(s => !metricsMap.get(s));
-        if (missingSymbols.length > 0) {
+        const missingMetrics = pageSymbols.filter(s => !metricsMap.get(s));
+        if (missingMetrics.length > 0) {
             const yahooResults = await Promise.all(
-                missingSymbols.map(s => yahoo.getKeyMetrics(s).catch(() => null))
+                missingMetrics.map(s => yahoo.getKeyMetrics(s).catch(() => null))
             );
-            missingSymbols.forEach((sym, i) => {
+            missingMetrics.forEach((sym, i) => {
                 const ym = yahooResults[i];
                 if (ym) {
                     metricsMap.set(sym, {
@@ -1049,7 +1139,8 @@ export class StockService {
         }
 
         const stocks: SimplifiedStock[] = pageItems.map(item => {
-            const profile = profiles.find(p => p.symbol === item.symbol);
+            const fmpP = fmpProfileMap.get(item.symbol);
+            const fhP = finnhubMap.get(item.symbol);
             const m = metricsMap.get(item.symbol);
             const pe = m?.peRatioTTM ?? null;
             const revenueGrowth = m?.revenueGrowth != null ? m.revenueGrowth * 100 : 0;
@@ -1058,24 +1149,37 @@ export class StockService {
             const debtToEquity = m?.debtToEquityTTM ?? null;
             const score = m ? this.computeQuickScore(pe, revenueGrowth, profitMargin, divYield, debtToEquity) : 0;
 
-            if (profile) {
+            if (fmpP) {
                 return {
-                    symbol: profile.symbol,
-                    name: profile.companyName,
-                    logo: profile.image,
-                    sector: profile.sector || item.sector,
-                    price: profile.price,
-                    change: profile.change,
-                    changePercent: profile.changePercentage,
-                    marketCap: profile.marketCap,
+                    symbol: fmpP.symbol,
+                    name: fmpP.companyName,
+                    logo: buildClearbitLogo(fmpP.website, fmpP.symbol),
+                    sector: fmpP.sector || item.sector,
+                    price: fmpP.price,
+                    change: fmpP.change,
+                    changePercent: fmpP.changePercentage,
+                    marketCap: fmpP.marketCap,
                     overallScore: score,
                 };
             }
-            // Fallback: return basic info without price
+            if (fhP) {
+                return {
+                    symbol: item.symbol,
+                    name: fhP.name || item.name,
+                    logo: fhP.logo,
+                    sector: fhP.sector || item.sector,
+                    price: fhP.price,
+                    change: fhP.change,
+                    changePercent: fhP.changePercent,
+                    marketCap: fhP.marketCap,
+                    overallScore: score,
+                };
+            }
+            // Last resort: basic info with Clearbit logo guess
             return {
                 symbol: item.symbol,
                 name: item.name,
-                logo: '',
+                logo: buildClearbitLogo(null, item.symbol),
                 sector: item.sector,
                 price: 0,
                 change: 0,
