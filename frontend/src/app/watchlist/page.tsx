@@ -155,37 +155,65 @@ export default function WatchlistPage() {
 
             {/* ═══ Empty state / Login prompt ═══ */}
             {stocks.length === 0 && !loading && (
-                <div className="animate-fade-up delay-1 detail-section" style={{ textAlign: 'center', padding: '60px 24px' }}>
-                    <Star size={48} style={{ color: 'var(--text-muted)', margin: '0 auto 16px', display: 'block', opacity: 0.3 }} />
+                <div className="animate-fade-up delay-1">
                     {!session?.user ? (
                         <>
-                            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '8px' }}>{t('wl.loginTitle')}</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '20px', maxWidth: '380px', margin: '0 auto 20px' }}>
-                                {t('wl.loginDesc')}
-                            </p>
-                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <Link href="/login" style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    padding: '10px 22px', borderRadius: '100px',
-                                    background: 'var(--primary)', color: 'white',
-                                    fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                                }}>
-                                    {t('login.submit')} <ArrowRight size={15} />
-                                </Link>
-                                <Link href="/register" style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    padding: '10px 22px', borderRadius: '100px',
-                                    background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)',
-                                    fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                                }}>
-                                    {t('login.register')}
-                                </Link>
+                            {/* Feature preview cards */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '28px' }}>
+                                {[
+                                    { icon: <Star size={18} />, title: t('wl.feat1Title'), desc: t('wl.feat1Desc'), accent: '#facc15' },
+                                    { icon: <TrendingUp size={18} />, title: t('wl.feat2Title'), desc: t('wl.feat2Desc'), accent: '#34d399' },
+                                    { icon: <BarChart2 size={18} />, title: t('wl.feat3Title'), desc: t('wl.feat3Desc'), accent: '#7c6cf0' },
+                                ].map((feat, i) => (
+                                    <div key={i} className={`animate-fade-up delay-${i + 2}`} style={{
+                                        padding: '22px', borderRadius: 'var(--radius-lg)',
+                                        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                    }}>
+                                        <div style={{
+                                            width: '36px', height: '36px', borderRadius: '10px',
+                                            background: `${feat.accent}12`, border: `1px solid ${feat.accent}20`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: feat.accent, marginBottom: '14px',
+                                        }}>
+                                            {feat.icon}
+                                        </div>
+                                        <h3 style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: '4px' }}>{feat.title}</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{feat.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* CTA section */}
+                            <div className="detail-section animate-fade-up delay-5" style={{ textAlign: 'center', padding: '40px 24px' }}>
+                                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '8px' }}>{t('wl.loginTitle')}</h2>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '380px', margin: '0 auto 20px' }}>
+                                    {t('wl.loginDesc')}
+                                </p>
+                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                    <Link href="/login" style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                        padding: '10px 22px', borderRadius: '100px',
+                                        background: 'var(--primary)', color: 'white',
+                                        fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
+                                    }}>
+                                        {t('login.submit')} <ArrowRight size={15} />
+                                    </Link>
+                                    <Link href="/register" style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                        padding: '10px 22px', borderRadius: '100px',
+                                        background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)',
+                                        fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
+                                    }}>
+                                        {t('login.register')}
+                                    </Link>
+                                </div>
                             </div>
                         </>
                     ) : (
-                        <>
+                        <div className="detail-section" style={{ textAlign: 'center', padding: '60px 24px' }}>
+                            <Star size={48} style={{ color: 'var(--text-muted)', margin: '0 auto 16px', display: 'block', opacity: 0.3 }} />
                             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '8px' }}>{t('wl.emptyTitle')}</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '20px', maxWidth: '360px', margin: '0 auto 20px' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '360px', margin: '0 auto 20px' }}>
                                 {t('wl.emptyDesc')}
                             </p>
                             <Link href="/stocks" style={{
@@ -196,7 +224,7 @@ export default function WatchlistPage() {
                             }}>
                                 {t('wl.findStocks')} <ArrowRight size={15} />
                             </Link>
-                        </>
+                        </div>
                     )}
                 </div>
             )}
