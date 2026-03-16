@@ -342,61 +342,110 @@ export default function PortfolioPage() {
             {/* ═══ Login prompt for guests ═══ */}
             {!session?.user && (
                 <div className="animate-fade-up delay-1">
-                    {/* ── Mock Portfolio Dashboard ── */}
-                    <div className="animate-fade-up delay-2" style={{ position: 'relative', marginBottom: '32px', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                        <div style={{
+                    {/* ── Mock Portfolio Dashboard with Animations ── */}
+                    <div className="animate-fade-up delay-2" style={{ position: 'relative', marginBottom: '36px', borderRadius: '16px', overflow: 'hidden' }}>
+                        {/* Floating ambient orbs */}
+                        <div className="gp-orb" style={{ width: '200px', height: '200px', background: 'rgba(52,211,153,0.1)', top: '-50px', right: '-40px', animationDelay: '0s' }} />
+                        <div className="gp-orb" style={{ width: '140px', height: '140px', background: 'rgba(124,108,240,0.08)', bottom: '40px', left: '-30px', animationDelay: '4s' }} />
+
+                        <div className="gp-border-shimmer" style={{
                             background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+                            borderRadius: '16px', overflow: 'hidden', position: 'relative',
                         }}>
-                            {/* Mock portfolio summary */}
-                            <div style={{ padding: '24px 24px 20px', borderBottom: '1px solid var(--border)' }}>
-                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                                    {t('port.totalValue')}
+                            {/* Mock portfolio summary with animated chart */}
+                            <div style={{ padding: '24px 24px 0', borderBottom: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                            <div className="gp-live-dot" />
+                                            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                                {t('port.totalValue')}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums', animation: 'countFade 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s both' }}>
+                                                $104,832.50
+                                            </span>
+                                            <span style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                fontSize: '0.82rem', fontWeight: 700, color: 'var(--success)',
+                                                padding: '4px 12px', borderRadius: '100px', background: 'var(--success-bg)',
+                                            }}>
+                                                <TrendingUp size={13} /> +$4,832.50 (+4.83%)
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>$104,832.50</span>
-                                    <span style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                        fontSize: '0.82rem', fontWeight: 700, color: 'var(--success)',
-                                        padding: '4px 12px', borderRadius: '100px', background: 'var(--success-bg)',
+
+                                {/* Mini portfolio area chart (SVG) */}
+                                <div style={{ margin: '16px -24px 0', overflow: 'hidden' }}>
+                                    <svg width="100%" height="80" viewBox="0 0 500 80" preserveAspectRatio="none" style={{ display: 'block' }}>
+                                        <defs>
+                                            <linearGradient id="portGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#22c55e" stopOpacity="0.2" />
+                                                <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M0,70 C30,68 60,65 90,60 C120,55 150,52 180,48 C210,44 240,46 270,40 C300,34 330,30 360,26 C390,22 420,18 450,15 C470,12 490,10 500,8 L500,80 L0,80 Z"
+                                            fill="url(#portGrad)" style={{ animation: 'chartGrow 1.2s cubic-bezier(0.16,1,0.3,1) 0.4s both', transformOrigin: 'bottom' }} />
+                                        <path d="M0,70 C30,68 60,65 90,60 C120,55 150,52 180,48 C210,44 240,46 270,40 C300,34 330,30 360,26 C390,22 420,18 450,15 C470,12 490,10 500,8"
+                                            className="gp-sparkline gp-sparkline-0" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Stats row */}
+                            <div style={{
+                                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+                                borderBottom: '1px solid var(--border)',
+                            }}>
+                                {[
+                                    { label: t('port.startingCash'), value: '$100,000' },
+                                    { label: t('port.cash'), value: '$41,206' },
+                                    { label: t('port.stocks'), value: '3 Positions' },
+                                ].map((stat, i) => (
+                                    <div key={i} style={{
+                                        padding: '14px 24px',
+                                        borderRight: i < 2 ? '1px solid var(--border)' : 'none',
+                                        animation: `countFade 0.5s cubic-bezier(0.16,1,0.3,1) ${0.5 + i * 0.1}s both`,
                                     }}>
-                                        <TrendingUp size={13} /> +4.83%
-                                    </span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '24px', marginTop: '14px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                                    <span>{t('port.startingCash')}: <strong style={{ color: 'var(--text-secondary)' }}>$100,000.00</strong></span>
-                                    <span>{t('port.cash')}: <strong style={{ color: 'var(--text-secondary)' }}>$41,206.00</strong></span>
-                                    <span>3 {t('port.stocks')}</span>
-                                </div>
+                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{stat.label}</div>
+                                        <div style={{ fontSize: '0.92rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{stat.value}</div>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Mock positions table header */}
                             <div style={{
-                                display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                display: 'grid', gridTemplateColumns: '2fr 0.8fr 1fr 1fr',
                                 padding: '10px 24px', borderBottom: '1px solid var(--border)',
                                 fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)',
                                 textTransform: 'uppercase', letterSpacing: '0.05em',
                             }}>
                                 <span>{t('port.stocks')}</span>
-                                <span style={{ textAlign: 'right' }}>{t('port.qty') || 'Qty'}</span>
-                                <span style={{ textAlign: 'right' }}>{t('port.avgCost') || 'Avg Cost'}</span>
+                                <span style={{ textAlign: 'right' }}>Shares</span>
+                                <span style={{ textAlign: 'right' }}>Avg Cost</span>
                                 <span style={{ textAlign: 'right' }}>P&L</span>
                             </div>
 
-                            {/* Mock position rows */}
+                            {/* Mock position rows with staggered animation */}
                             {[
                                 { sym: 'AAPL', name: 'Apple Inc.', qty: 50, avg: '$218.40', pl: '+$645.00', plPct: '+5.91%', up: true },
                                 { sym: 'NVDA', name: 'NVIDIA Corp.', qty: 15, avg: '$810.20', pl: '+$978.00', plPct: '+8.05%', up: true },
                                 { sym: 'TSLA', name: 'Tesla, Inc.', qty: 30, avg: '$255.80', pl: '-$221.40', plPct: '-2.89%', up: false },
                             ].map((row, i) => (
-                                <div key={i} style={{
-                                    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                <div key={i} className={`gp-row-${i}`} style={{
+                                    display: 'grid', gridTemplateColumns: '2fr 0.8fr 1fr 1fr',
                                     padding: '14px 24px', alignItems: 'center',
                                     borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
-                                }}>
+                                    transition: 'background 0.2s ease',
+                                }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                                >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <div style={{
-                                            width: '32px', height: '32px', borderRadius: '8px',
+                                            width: '34px', height: '34px', borderRadius: '10px',
                                             background: 'var(--bg-elevated)', border: '1px solid var(--border)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)',
@@ -405,7 +454,7 @@ export default function PortfolioPage() {
                                         </div>
                                         <div>
                                             <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{row.sym}</div>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{row.name}</div>
+                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{row.name}</div>
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right', fontWeight: 600, fontSize: '0.85rem' }}>{row.qty}</div>
@@ -418,70 +467,75 @@ export default function PortfolioPage() {
                             ))}
                         </div>
 
-                        {/* Gradient overlay with CTA */}
-                        <div style={{
+                        {/* Glassmorphism gradient overlay with CTA */}
+                        <div className="gp-glass" style={{
                             position: 'absolute', inset: 0,
-                            background: 'linear-gradient(to bottom, rgba(14,14,14,0) 5%, rgba(14,14,14,0.7) 50%, rgba(14,14,14,0.97) 100%)',
+                            background: 'linear-gradient(to bottom, rgba(14,14,14,0) 5%, rgba(14,14,14,0.55) 40%, rgba(14,14,14,0.95) 100%)',
                             display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-                            alignItems: 'center', padding: '0 24px 32px',
+                            alignItems: 'center', padding: '0 24px 36px',
                         }}>
                             <div style={{
-                                width: '48px', height: '48px', borderRadius: '14px',
-                                background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)',
+                                width: '52px', height: '52px', borderRadius: '16px',
+                                background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                marginBottom: '16px',
+                                marginBottom: '18px', animation: 'float 4s ease-in-out infinite',
                             }}>
-                                <Activity size={22} style={{ color: '#34d399' }} />
+                                <Activity size={24} style={{ color: '#34d399' }} />
                             </div>
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '6px', textAlign: 'center', letterSpacing: '-0.02em' }}>
+                            <h2 className="gp-gradient-text" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '8px', textAlign: 'center', letterSpacing: '-0.03em' }}>
                                 {t('port.loginPrompt')}
                             </h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: '420px', marginBottom: '20px', lineHeight: 1.6 }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: '420px', marginBottom: '22px', lineHeight: 1.6 }}>
                                 {t('port.loginDesc')}
                             </p>
                             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                <Link href="/register" style={{
+                                <Link href="/register" className="gp-cta-btn" style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    padding: '11px 26px', borderRadius: '100px',
+                                    padding: '12px 28px', borderRadius: '100px',
                                     background: '#22c55e', color: '#0e0e0e',
                                     fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
-                                    transition: 'opacity 0.15s',
                                 }}>
                                     {t('port.register')} <ArrowRight size={15} />
                                 </Link>
                                 <Link href="/login" style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    padding: '11px 26px', borderRadius: '100px',
+                                    padding: '12px 28px', borderRadius: '100px',
                                     background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-light)',
                                     color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                                }}>
+                                    transition: 'all 0.2s ease',
+                                }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'var(--border-light)'; }}
+                                >
                                     {t('port.login')}
                                 </Link>
                             </div>
                         </div>
                     </div>
 
-                    {/* ── Feature benefit cards ── */}
+                    {/* ── Feature benefit cards with hover interactions ── */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                         {[
                             { icon: <Layers size={18} />, title: t('port.feat1Title'), desc: t('port.feat1Desc'), accent: '#34d399' },
                             { icon: <Activity size={18} />, title: t('port.feat2Title'), desc: t('port.feat2Desc'), accent: '#7c6cf0' },
                             { icon: <TrendingUp size={18} />, title: t('port.feat3Title'), desc: t('port.feat3Desc'), accent: '#fbbf24' },
                         ].map((feat, i) => (
-                            <div key={i} className={`animate-fade-up delay-${i + 3}`} style={{
-                                padding: '22px', borderRadius: 'var(--radius-lg)',
+                            <div key={i} className={`gp-feat-card animate-fade-up delay-${i + 3}`} style={{
+                                padding: '24px', borderRadius: '14px',
                                 background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                cursor: 'default',
                             }}>
                                 <div style={{
-                                    width: '36px', height: '36px', borderRadius: '10px',
-                                    background: `${feat.accent}12`, border: `1px solid ${feat.accent}20`,
+                                    width: '40px', height: '40px', borderRadius: '12px',
+                                    background: `${feat.accent}10`, border: `1px solid ${feat.accent}18`,
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: feat.accent, marginBottom: '14px',
+                                    color: feat.accent, marginBottom: '16px',
+                                    transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
                                 }}>
                                     {feat.icon}
                                 </div>
-                                <h3 style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: '4px' }}>{feat.title}</h3>
-                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{feat.desc}</p>
+                                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{feat.title}</h3>
+                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.65 }}>{feat.desc}</p>
                             </div>
                         ))}
                     </div>

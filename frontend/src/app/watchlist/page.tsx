@@ -158,41 +158,63 @@ export default function WatchlistPage() {
                 <div className="animate-fade-up delay-1">
                     {!session?.user ? (
                         <>
-                            {/* ── Mock UI Preview ── */}
-                            <div className="animate-fade-up delay-2" style={{ position: 'relative', marginBottom: '32px', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                                <div style={{
+                            {/* ── Mock UI Preview with Animations ── */}
+                            <div className="animate-fade-up delay-2" style={{ position: 'relative', marginBottom: '36px', borderRadius: '16px', overflow: 'hidden' }}>
+                                {/* Floating ambient orbs */}
+                                <div className="gp-orb" style={{ width: '180px', height: '180px', background: 'rgba(124,108,240,0.12)', top: '-40px', right: '-30px', animationDelay: '0s' }} />
+                                <div className="gp-orb" style={{ width: '120px', height: '120px', background: 'rgba(250,204,21,0.08)', bottom: '60px', left: '-20px', animationDelay: '3s' }} />
+
+                                <div className="gp-border-shimmer" style={{
                                     background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                                    borderRadius: 'var(--radius-lg)', padding: '0', overflow: 'hidden',
+                                    borderRadius: '16px', overflow: 'hidden', position: 'relative',
                                 }}>
+                                    {/* Live indicator bar */}
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                        padding: '10px 20px', borderBottom: '1px solid var(--border)',
+                                        background: 'rgba(255,255,255,0.015)',
+                                    }}>
+                                        <div className="gp-live-dot" />
+                                        <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                            Live Market Data
+                                        </span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>5 {t('wl.items')}</span>
+                                    </div>
+
                                     {/* Mock table header */}
                                     <div style={{
-                                        display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 80px',
-                                        padding: '12px 20px', borderBottom: '1px solid var(--border)',
-                                        fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)',
+                                        display: 'grid', gridTemplateColumns: '2.2fr 80px 1fr 1fr 60px',
+                                        padding: '10px 20px', borderBottom: '1px solid var(--border)',
+                                        fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)',
                                         textTransform: 'uppercase', letterSpacing: '0.05em',
                                     }}>
-                                        <span>{t('wl.title')}</span>
-                                        <span style={{ textAlign: 'right' }}>{t('stocks.price') || 'Price'}</span>
-                                        <span style={{ textAlign: 'right' }}>{t('wl.change')}</span>
+                                        <span>Stock</span>
+                                        <span style={{ textAlign: 'center' }}>7D</span>
+                                        <span style={{ textAlign: 'right' }}>Price</span>
+                                        <span style={{ textAlign: 'right' }}>Change</span>
                                         <span />
                                     </div>
 
-                                    {/* Mock stock rows */}
+                                    {/* Mock stock rows with sparklines */}
                                     {[
-                                        { sym: 'AAPL', name: 'Apple Inc.', price: '$231.34', change: '+1.08%', up: true },
-                                        { sym: 'GOOGL', name: 'Alphabet Inc.', price: '$176.45', change: '+0.89%', up: true },
-                                        { sym: 'TSLA', name: 'Tesla, Inc.', price: '$248.42', change: '-1.85%', up: false },
-                                        { sym: 'NVDA', name: 'NVIDIA Corp.', price: '$875.40', change: '+1.42%', up: true },
-                                        { sym: 'MSFT', name: 'Microsoft', price: '$417.88', change: '+0.65%', up: true },
+                                        { sym: 'AAPL', name: 'Apple Inc.', price: '$231.34', change: '+1.08%', up: true, spark: 'M0,20 C10,18 20,22 30,15 40,17 50,10 60,12 70,8' },
+                                        { sym: 'GOOGL', name: 'Alphabet Inc.', price: '$176.45', change: '+0.89%', up: true, spark: 'M0,22 C10,20 20,18 30,22 40,16 50,14 60,12 70,10' },
+                                        { sym: 'TSLA', name: 'Tesla, Inc.', price: '$248.42', change: '-1.85%', up: false, spark: 'M0,8 C10,10 20,12 30,9 40,15 50,18 60,16 70,22' },
+                                        { sym: 'NVDA', name: 'NVIDIA Corp.', price: '$875.40', change: '+1.42%', up: true, spark: 'M0,24 C10,22 20,18 30,20 40,14 50,10 60,8 70,6' },
+                                        { sym: 'MSFT', name: 'Microsoft', price: '$417.88', change: '+0.65%', up: true, spark: 'M0,16 C10,14 20,16 30,12 40,14 50,10 60,12 70,9' },
                                     ].map((row, i) => (
-                                        <div key={i} style={{
-                                            display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 80px',
+                                        <div key={i} className={`gp-row-${i}`} style={{
+                                            display: 'grid', gridTemplateColumns: '2.2fr 80px 1fr 1fr 60px',
                                             padding: '14px 20px', alignItems: 'center',
                                             borderBottom: i < 4 ? '1px solid var(--border)' : 'none',
-                                        }}>
+                                            transition: 'background 0.2s ease',
+                                        }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                                        >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <div style={{
-                                                    width: '32px', height: '32px', borderRadius: '8px',
+                                                    width: '34px', height: '34px', borderRadius: '10px',
                                                     background: 'var(--bg-elevated)', border: '1px solid var(--border)',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)',
@@ -201,8 +223,22 @@ export default function WatchlistPage() {
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{row.sym}</div>
-                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{row.name}</div>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{row.name}</div>
                                                 </div>
+                                            </div>
+                                            {/* Mini sparkline */}
+                                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                                <svg width="70" height="28" viewBox="0 0 70 28" fill="none">
+                                                    <defs>
+                                                        <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor={row.up ? '#22c55e' : '#ef4444'} stopOpacity="0.3" />
+                                                            <stop offset="100%" stopColor={row.up ? '#22c55e' : '#ef4444'} stopOpacity="0" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <path d={row.spark + ' L70,28 L0,28 Z'} fill={`url(#grad-${i})`} opacity="0.4" />
+                                                    <path d={row.spark} className={`gp-sparkline gp-sparkline-${i}`}
+                                                        stroke={row.up ? '#22c55e' : '#ef4444'} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                                                </svg>
                                             </div>
                                             <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '0.88rem', fontVariantNumeric: 'tabular-nums' }}>{row.price}</div>
                                             <div style={{
@@ -219,70 +255,75 @@ export default function WatchlistPage() {
                                     ))}
                                 </div>
 
-                                {/* Gradient overlay with CTA */}
-                                <div style={{
+                                {/* Glassmorphism gradient overlay with CTA */}
+                                <div className="gp-glass" style={{
                                     position: 'absolute', inset: 0,
-                                    background: 'linear-gradient(to bottom, rgba(14,14,14,0) 10%, rgba(14,14,14,0.75) 55%, rgba(14,14,14,0.97) 100%)',
+                                    background: 'linear-gradient(to bottom, rgba(14,14,14,0) 5%, rgba(14,14,14,0.6) 45%, rgba(14,14,14,0.95) 100%)',
                                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-                                    alignItems: 'center', padding: '0 24px 32px',
+                                    alignItems: 'center', padding: '0 24px 36px',
                                 }}>
                                     <div style={{
-                                        width: '48px', height: '48px', borderRadius: '14px',
-                                        background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.2)',
+                                        width: '52px', height: '52px', borderRadius: '16px',
+                                        background: 'rgba(250,204,21,0.08)', border: '1px solid rgba(250,204,21,0.15)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        marginBottom: '16px',
+                                        marginBottom: '18px', animation: 'float 4s ease-in-out infinite',
                                     }}>
-                                        <Star size={22} style={{ color: '#facc15' }} />
+                                        <Star size={24} style={{ color: '#facc15' }} />
                                     </div>
-                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '6px', textAlign: 'center', letterSpacing: '-0.02em' }}>
+                                    <h2 className="gp-gradient-text" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '8px', textAlign: 'center', letterSpacing: '-0.03em' }}>
                                         {t('wl.loginTitle')}
                                     </h2>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: '380px', marginBottom: '20px', lineHeight: 1.6 }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: '400px', marginBottom: '22px', lineHeight: 1.6 }}>
                                         {t('wl.loginDesc')}
                                     </p>
                                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                        <Link href="/register" style={{
+                                        <Link href="/register" className="gp-cta-btn" style={{
                                             display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                            padding: '11px 26px', borderRadius: '100px',
+                                            padding: '12px 28px', borderRadius: '100px',
                                             background: '#22c55e', color: '#0e0e0e',
                                             fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
-                                            transition: 'opacity 0.15s',
                                         }}>
                                             {t('login.register')} <ArrowRight size={15} />
                                         </Link>
                                         <Link href="/login" style={{
                                             display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                            padding: '11px 26px', borderRadius: '100px',
+                                            padding: '12px 28px', borderRadius: '100px',
                                             background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-light)',
                                             color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                                        }}>
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'var(--border-light)'; }}
+                                        >
                                             {t('login.submit')}
                                         </Link>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* ── Feature benefit cards ── */}
+                            {/* ── Feature benefit cards with hover interactions ── */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                                 {[
                                     { icon: <Star size={18} />, title: t('wl.feat1Title'), desc: t('wl.feat1Desc'), accent: '#facc15' },
                                     { icon: <TrendingUp size={18} />, title: t('wl.feat2Title'), desc: t('wl.feat2Desc'), accent: '#34d399' },
                                     { icon: <BarChart2 size={18} />, title: t('wl.feat3Title'), desc: t('wl.feat3Desc'), accent: '#7c6cf0' },
                                 ].map((feat, i) => (
-                                    <div key={i} className={`animate-fade-up delay-${i + 3}`} style={{
-                                        padding: '22px', borderRadius: 'var(--radius-lg)',
+                                    <div key={i} className={`gp-feat-card animate-fade-up delay-${i + 3}`} style={{
+                                        padding: '24px', borderRadius: '14px',
                                         background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                        cursor: 'default',
                                     }}>
                                         <div style={{
-                                            width: '36px', height: '36px', borderRadius: '10px',
-                                            background: `${feat.accent}12`, border: `1px solid ${feat.accent}20`,
+                                            width: '40px', height: '40px', borderRadius: '12px',
+                                            background: `${feat.accent}10`, border: `1px solid ${feat.accent}18`,
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: feat.accent, marginBottom: '14px',
+                                            color: feat.accent, marginBottom: '16px',
+                                            transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
                                         }}>
                                             {feat.icon}
                                         </div>
-                                        <h3 style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: '4px' }}>{feat.title}</h3>
-                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{feat.desc}</p>
+                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.01em' }}>{feat.title}</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.65 }}>{feat.desc}</p>
                                     </div>
                                 ))}
                             </div>
