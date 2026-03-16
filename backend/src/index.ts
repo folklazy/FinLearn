@@ -10,6 +10,7 @@ import stockRoutes from './routes/stocks';
 import healthRoutes from './routes/health';
 import lessonRoutes from './routes/lessons';
 import { StockService } from './services/stockService';
+import { prisma } from './lib/prisma';
 
 // Load environment variables from monorepo root (dev only — production uses platform env vars)
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -78,6 +79,26 @@ app.listen(PORT, HOST, () => {
   📋 S&P 500:    http://localhost:${PORT}/api/stocks/sp500
   ━━━━━━━━━━━━━━━━━━━━━
   `);
+
+    // ── One-time cache flush when code changes data shape ──
+    const CACHE_VERSION = '2'; // Bump to invalidate stale cache after deploy
+    prisma.apiCache.findUnique({ where: { key: 'system:cache_version' } })
+        .then(async (entry) => {
+            const stored = (entry?.data as any);
+            if (stored === CACHE_VERSION) return;
+            // Flush stale yahoo:metrics (missing profile field) and assembled stockdata
+            const [m, s] = await Promise.all([
+                prisma.apiCache.deleteMany({ where: { key: { startsWith: 'yahoo:metrics:' } } }),
+                prisma.apiCache.deleteMany({ where: { key: { startsWith: 'stockdata:full:' } } }),
+            ]);
+            console.log(`[Startup] Cache v${CACHE_VERSION}: flushed ${m.count} yahoo:metrics + ${s.count} stockdata:full`);
+            await prisma.apiCache.upsert({
+                where: { key: 'system:cache_version' },
+                update: { data: CACHE_VERSION as any, expiresAt: new Date('2099-01-01'), updatedAt: new Date() },
+                create: { key: 'system:cache_version', provider: 'system', dataType: 'version', data: CACHE_VERSION as any, expiresAt: new Date('2099-01-01') },
+            });
+        })
+        .catch((err: Error) => console.warn('[Startup] Cache flush error:', err.message));
 
     // ── Cache warming: pre-fetch popular stocks in background ──
     const stockService = new StockService();
