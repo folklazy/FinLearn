@@ -920,8 +920,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                 <td style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>{profile.symbol} <Star size={11} style={{ color: '#f59e0b', fill: '#f59e0b' }} /></td>
                                 <td>{formatLargeNumber(profile.marketCap)}</td>
                                 <td>{keyMetrics.pe != null ? keyMetrics.pe.toFixed(1) : 'N/A'}</td>
-                                <td>{keyMetrics.profitMargin ? `${keyMetrics.profitMargin}%` : 'N/A'}</td>
-                                <td className={keyMetrics.revenueGrowth ? getPriceColor(keyMetrics.revenueGrowth) : ''}>{keyMetrics.revenueGrowth ? formatPercent(keyMetrics.revenueGrowth) : 'N/A'}</td>
+                                <td>{keyMetrics.profitMargin != null && keyMetrics.profitMargin !== 0 ? `${keyMetrics.profitMargin}%` : keyMetrics.profitMargin === 0 ? '0%' : 'N/A'}</td>
+                                <td className={keyMetrics.revenueGrowth ? getPriceColor(keyMetrics.revenueGrowth) : ''}>{keyMetrics.revenueGrowth != null ? formatPercent(keyMetrics.revenueGrowth) : 'N/A'}</td>
                                 <td>{keyMetrics.dividendYield ? `${keyMetrics.dividendYield}%` : '—'}</td>
                             </tr>
                             {competitors.map(c => (
@@ -934,8 +934,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                                     </td>
                                     <td>{formatLargeNumber(c.marketCap)}</td>
                                     <td>{c.pe?.toFixed(1) ?? 'N/A'}</td>
-                                    <td>{c.profitMargin ? `${c.profitMargin}%` : 'N/A'}</td>
-                                    <td className={c.revenueGrowth ? getPriceColor(c.revenueGrowth) : ''}>{c.revenueGrowth ? formatPercent(c.revenueGrowth) : 'N/A'}</td>
+                                    <td>{c.profitMargin != null && c.profitMargin !== 0 ? `${c.profitMargin}%` : c.profitMargin === 0 ? '0%' : 'N/A'}</td>
+                                    <td className={c.revenueGrowth ? getPriceColor(c.revenueGrowth) : ''}>{c.revenueGrowth != null ? formatPercent(c.revenueGrowth) : 'N/A'}</td>
                                     <td>{c.dividendYield ? `${c.dividendYield}%` : '—'}</td>
                                 </tr>
                             ))}

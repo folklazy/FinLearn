@@ -306,13 +306,17 @@ export class StockService {
             // ── Phase 2: Metrics for picked peers — sequential to avoid Yahoo 429 ──
             for (const p of picks) {
                 const ym = await yahoo.getKeyMetrics(p.sym).catch(() => null);
+                const cPe = ym?.pe ? parseFloat(ym.pe.toFixed(1)) : null;
+                const cPm = ym?.profitMargin != null ? parseFloat(ym.profitMargin.toFixed(2)) : null;
+                const cRg = ym?.revenueGrowth != null ? parseFloat(ym.revenueGrowth.toFixed(1)) : null;
+                console.log(`[StockService] Peer ${p.sym}: pe=${cPe} pm=${cPm} rg=${cRg} rev=${ym?.revenue} ni=${ym?.netIncome}`);
                 competitors.push({
                     symbol: p.sym,
                     name: p.name,
                     marketCap: p.marketCap,
-                    pe: ym?.pe ? parseFloat(ym.pe.toFixed(1)) : null,
-                    profitMargin: parseFloat((ym?.profitMargin ?? 0).toFixed(2)),
-                    revenueGrowth: parseFloat((ym?.revenueGrowth ?? 0).toFixed(1)),
+                    pe: cPe,
+                    profitMargin: cPm ?? 0,
+                    revenueGrowth: cRg ?? 0,
                     dividendYield: p.divYield ?? ym?.dividendYield ?? null,
                 });
             }

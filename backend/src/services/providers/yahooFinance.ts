@@ -254,13 +254,19 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         const latestFin = finRows.length ? finRows[finRows.length - 1] : null;
         const latestBs = bsRows.length ? bsRows[bsRows.length - 1] : null;
 
-        console.log(`[Yahoo] ${symbol} KeyMetrics: fd.totalRevenue=${fd?.totalRevenue} latestFin.totalRevenue=${latestFin?.totalRevenue} finRows=${finRows.length} bsRows=${bsRows.length} earningsYearly=${earningsYearly?.length ?? 0} finKeys=${latestFin ? Object.keys(latestFin).slice(0, 8).join(',') : 'none'}`);
+        console.log(`[Yahoo] ${symbol} KeyMetrics: fd.totalRevenue=${fd?.totalRevenue} latestFin.totalRevenue=${latestFin?.totalRevenue} finRows=${finRows.length} bsRows=${bsRows.length} earningsYearly=${earningsYearly?.length ?? 0} finKeys=${latestFin ? Object.keys(latestFin).join(',') : 'none'}`);
 
         if (!fd && !ks && !sd && !latestFin) return null;
 
         // ── Revenue from fundamentalsTimeSeries (primary) or quoteSummary fallback ──
         const revenue = latestFin?.totalRevenue ?? fd?.totalRevenue ?? null;
-        const netIncome = latestFin?.netIncome ?? latestFin?.dilutedNIAvailtoComStockholders ?? fd?.netIncomeToCommon ?? null;
+        const netIncome = latestFin?.netIncome
+            ?? latestFin?.netIncomeFromContinuingOperationNetMinorityInterest
+            ?? latestFin?.netIncomeContinuousOperations
+            ?? latestFin?.netIncomeFromContinuingAndDiscontinuedOperation
+            ?? latestFin?.dilutedNIAvailtoComStockholders
+            ?? fd?.netIncomeToCommon
+            ?? null;
 
         // ── EPS: from fundamentalsTimeSeries (dilutedEPS) or quoteSummary ──
         const eps = latestFin?.dilutedEPS ?? latestFin?.basicEPS ?? ks?.trailingEps ?? 0;
