@@ -5,7 +5,7 @@
 // yahoo-finance2 v3 requires instantiation from .default constructor
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const YahooFinanceCtor = require('yahoo-finance2').default;
-const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical', 'yahooSurvey', 'incomeStatementHistory', 'incomeStatementHistoryQuarterly', 'balanceSheetHistory', 'balanceSheetHistoryQuarterly', 'cashflowStatementHistory', 'cashflowStatementHistoryQuarterly'] });
+const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical', 'yahooSurvey'] });
 
 // ── Price History ──
 export interface YFHistoricalPoint {
