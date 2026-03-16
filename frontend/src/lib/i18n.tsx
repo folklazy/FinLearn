@@ -255,6 +255,14 @@ const translations: Record<Locale, Record<string, string>> = {
         'guide.step3Desc': 'ติดตามหุ้นที่สนใจ ทดลองซื้อขายด้วยเงินจำลอง $100K ไม่มีความเสี่ยงจริง',
         'guide.cta': 'เริ่มเรียนเลย',
 
+        // ── Glossary ──
+        'glossary.title': 'คำศัพท์การลงทุน',
+        'glossary.subtitle': 'รวมคำศัพท์สำคัญที่มือใหม่ควรรู้ พร้อมคำอธิบายภาษาไทย',
+        'glossary.searchPlaceholder': 'ค้นหาคำศัพท์ เช่น P/E, ปันผล, Volume...',
+        'glossary.termsCount': 'คำศัพท์',
+        'glossary.example': 'ตัวอย่าง:',
+        'glossary.noResults': 'ไม่พบคำศัพท์ที่ค้นหา',
+
         // ── Error / 404 ──
         'error.title': 'เกิดข้อผิดพลาด',
         'error.fallback': 'ระบบขัดข้อง กรุณาลองใหม่อีกครั้ง',
@@ -843,6 +851,14 @@ const translations: Record<Locale, Record<string, string>> = {
         'guide.step3Title': 'Build Watchlist & Simulate',
         'guide.step3Desc': 'Track stocks you like, practice trading with $100K virtual cash — zero real risk.',
         'guide.cta': 'Start Learning',
+
+        // ── Glossary ──
+        'glossary.title': 'Investment Glossary',
+        'glossary.subtitle': 'Essential terms every beginner investor should know',
+        'glossary.searchPlaceholder': 'Search terms e.g. P/E, dividend, volume...',
+        'glossary.termsCount': 'terms',
+        'glossary.example': 'Example:',
+        'glossary.noResults': 'No terms found',
 
         // ── Error / 404 ──
         'error.title': 'Something went wrong',

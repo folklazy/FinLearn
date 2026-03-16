@@ -12,6 +12,7 @@ export default function Footer() {
             { href: '/', label: t('footer.home') },
             { href: '/stocks', label: t('footer.stocks') },
             { href: '/learn', label: t('footer.lessons') },
+            { href: '/glossary', label: t('footer.glossary') },
         ],
     };
 

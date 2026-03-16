@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, LogIn, LogOut, User, Settings, ChevronDown, Globe } from 'lucide-react';
+import { Search, Menu, X, LogIn, LogOut, User, Settings, ChevronDown, Globe, Sun, Moon } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { useI18n, Locale } from '@/lib/i18n';
+import { useTheme } from '@/lib/theme';
 
 interface SearchResult {
     symbol: string;
@@ -37,6 +38,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const { data: session, status } = useSession();
     const { t, locale, setLocale } = useI18n();
+    const { theme, toggleTheme } = useTheme();
     const [langMenu, setLangMenu] = useState(false);
     const langRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -294,6 +296,16 @@ export default function Navbar() {
                             </Link>
                         )}
 
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            className="navbar-lang-btn"
+                            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            style={{ padding: '7px' }}
+                        >
+                            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                        </button>
+
                         {/* Language Selector */}
                         <div ref={langRef} style={{ position: 'relative' }}>
                             <button
@@ -363,8 +375,22 @@ export default function Navbar() {
                             ))}
                         </div>
 
-                        {/* Mobile Language Selector */}
+                        {/* Mobile Theme + Language */}
                         <div style={{ display: 'flex', gap: '6px', padding: '0 16px', marginTop: '8px' }}>
+                            <button
+                                onClick={toggleTheme}
+                                style={{
+                                    flex: 1, padding: '8px', borderRadius: '8px', cursor: 'pointer',
+                                    fontFamily: 'inherit', fontSize: '0.8rem', fontWeight: 600,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    background: 'var(--bg-elevated)', color: 'var(--text-secondary)',
+                                    border: '1px solid var(--border)', transition: 'all 0.15s',
+                                }}
+                            >
+                                {theme === 'dark' ? <><Sun size={14} /> Light</> : <><Moon size={14} /> Dark</>}
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', padding: '0 16px', marginTop: '6px' }}>
                             {(['th', 'en'] as Locale[]).map(l => (
                                 <button
                                     key={l}

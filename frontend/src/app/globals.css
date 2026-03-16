@@ -69,6 +69,81 @@
   --z-tooltip: 700;
 }
 
+/* ===== Light Mode ===== */
+:root[data-theme="light"] {
+  --primary: #6d5dd3;
+  --primary-light: #7c6cf0;
+  --primary-dark: #5b4ed4;
+  --accent: #8b7cf5;
+
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.08);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --warning: #d97706;
+
+  --bg-primary: #f8f8fa;
+  --bg-secondary: #ffffff;
+  --bg-elevated: #f0f0f4;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card-solid: #ffffff;
+  --bg-card-hover: #f5f5f8;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a4a6a;
+  --text-muted: #8888a0;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.14);
+  --border-accent: rgba(124, 108, 240, 0.25);
+
+  --gradient-primary: linear-gradient(135deg, #6d5dd3, #8b7cf5);
+  --gradient-subtle: linear-gradient(135deg, rgba(124, 108, 240, 0.08), rgba(167, 139, 250, 0.04));
+  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124, 108, 240, 0.06) 0%, transparent 60%);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 48px rgba(124, 108, 240, 0.06);
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+:root[data-theme="light"] ::selection {
+  background: rgba(124, 108, 240, 0.2);
+  color: #1a1a2e;
+}
+
+/* Light mode component overrides */
+:root[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:root[data-theme="light"] .glass-card:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.14);
+}
+:root[data-theme="light"] .bento-stat {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:root[data-theme="light"] .skeleton {
+  background: linear-gradient(90deg, #eeeef2 25%, #e0e0e6 50%, #eeeef2 75%);
+  background-size: 600px 100%;
+}
+:root[data-theme="light"] .navbar {
+  background: rgba(248, 248, 250, 0.85) !important;
+}
+:root[data-theme="light"] .cta-ghost:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.14) !important;
+}
+
 /* ===== Reset & Base ===== */
 *,
 *::before,

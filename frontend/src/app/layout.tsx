@@ -6,6 +6,7 @@ import OnboardingGuard from "@/components/providers/OnboardingGuard";
 import LayoutShell from "@/components/layout/LayoutShell";
 import { I18nProvider } from "@/lib/i18n";
 import { CurrencyProvider } from "@/lib/currency";
+import { ThemeProvider } from "@/lib/theme";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -90,6 +91,7 @@ export default function RootLayout({
   return (
     <html lang="th" className={inter.variable}>
       <body>
+        <ThemeProvider>
         <AuthProvider>
           <I18nProvider>
             <CurrencyProvider>
@@ -101,6 +103,7 @@ export default function RootLayout({
             </CurrencyProvider>
           </I18nProvider>
         </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

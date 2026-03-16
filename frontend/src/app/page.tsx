@@ -115,6 +115,25 @@ export default function HomePage() {
       <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 24px 96px' }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '700px', height: '400px', background: 'radial-gradient(ellipse, rgba(124,108,240,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
+          {/* Animated hero chart */}
+          <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '900px', opacity: 0.35 }}>
+            <svg width="100%" height="120" viewBox="0 0 900 120" preserveAspectRatio="none" style={{ display: 'block' }}>
+              <defs>
+                <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0,90 C50,88 100,82 150,75 C200,68 250,72 300,60 C350,48 400,55 450,42 C500,30 550,35 600,28 C650,22 700,26 750,18 C800,12 850,8 900,5 L900,120 L0,120 Z"
+                className="area-fade" fill="url(#heroChartGrad)"
+              />
+              <path
+                d="M0,90 C50,88 100,82 150,75 C200,68 250,72 300,60 C350,48 400,55 450,42 C500,30 550,35 600,28 C650,22 700,26 750,18 C800,12 850,8 900,5"
+                className="spark-draw" stroke="var(--primary)" strokeWidth="1.5" fill="none" strokeLinecap="round"
+              />
+            </svg>
+          </div>
         </div>
 
         <div style={{ maxWidth: '680px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>

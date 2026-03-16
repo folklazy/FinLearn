@@ -88,8 +88,18 @@ export default function WatchlistPage() {
 
     if (status === 'loading' || loading) {
         return (
-            <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: '32px', height: '32px', border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
+                {/* Header skeleton */}
+                <div style={{ marginBottom: '28px' }}>
+                    <div className="skeleton" style={{ width: '200px', height: '28px', borderRadius: '8px', marginBottom: '10px' }} />
+                    <div className="skeleton" style={{ width: '140px', height: '16px', borderRadius: '6px' }} />
+                </div>
+                {/* Card skeletons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="skeleton" style={{ height: '68px', borderRadius: '14px' }} />
+                    ))}
+                </div>
             </div>
         );
     }
