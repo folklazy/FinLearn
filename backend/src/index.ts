@@ -81,7 +81,7 @@ app.listen(PORT, HOST, () => {
   `);
 
     // ── One-time cache flush when code changes data shape ──
-    const CACHE_VERSION = '3'; // Bump to invalidate stale cache after deploy
+    const CACHE_VERSION = '4'; // Bump to invalidate stale cache after deploy
     prisma.apiCache.findUnique({ where: { key: 'system:cache_version' } })
         .then(async (entry) => {
             const stored = (entry?.data as any);

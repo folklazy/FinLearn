@@ -350,9 +350,16 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
             }
         }
 
+        // PE diagnostic: understand which source provides pe
+        const sdPE = sd?.trailingPE ?? null;
+        const fdPrice = fd?.currentPrice ?? null;
+        const prPrice = pr?.regularMarketPrice ?? null;
+        const calcPE = sdPE ?? (eps > 0 && (fdPrice || prPrice) ? parseFloat(((fdPrice || prPrice) / eps).toFixed(1)) : null);
+        if (calcPE == null) console.log(`[Yahoo] ${symbol} PE=null: sdPE=${sdPE} fdPrice=${fdPrice} prPrice=${prPrice} eps=${eps} result=${result ? 'ok' : 'null'}`);
+
         const rawDivYield = (sd as any)?.trailingAnnualDividendYield ?? sd?.dividendYield ?? null;
         return {
-            pe: sd?.trailingPE ?? (eps > 0 && (fd?.currentPrice || pr?.regularMarketPrice) ? parseFloat(((fd?.currentPrice || pr?.regularMarketPrice) / eps).toFixed(1)) : null),
+            pe: calcPE,
             pb: ks?.priceToBook ?? null,
             dividendYield: rawDivYield != null && rawDivYield > 0 ? parseFloat((rawDivYield * 100).toFixed(2)) : null,
             dividendPerShare: sd?.dividendRate ?? null,

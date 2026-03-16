@@ -303,13 +303,18 @@ export class StockService {
             ];
             const picks = sorted.slice(0, 4);
 
-            // ── Phase 2: Metrics for picked peers — sequential to avoid Yahoo 429 ──
+            // ── Phase 2: Metrics for picked peers — sequential Yahoo to avoid 429, parallel Finnhub ──
             for (const p of picks) {
-                const ym = await yahoo.getKeyMetrics(p.sym).catch(() => null);
-                const cPe = ym?.pe ? parseFloat(ym.pe.toFixed(1)) : null;
+                const [ym, ff] = await Promise.all([
+                    yahoo.getKeyMetrics(p.sym).catch(() => null),
+                    finnhub.getBasicFinancials(p.sym).catch(() => null),
+                ]);
+                // Mirror main-stock pe logic: Finnhub peNormalizedAnnual → Yahoo pe
+                const rawPe = ff?.peNormalizedAnnual ?? ym?.pe ?? null;
+                const cPe = rawPe != null && rawPe > 0 && rawPe < 500 ? parseFloat(rawPe.toFixed(1)) : null;
                 const cPm = ym?.profitMargin != null ? parseFloat(ym.profitMargin.toFixed(2)) : null;
                 const cRg = ym?.revenueGrowth != null ? parseFloat(ym.revenueGrowth.toFixed(1)) : null;
-                console.log(`[StockService] Peer ${p.sym}: pe=${cPe} pm=${cPm} rg=${cRg} rev=${ym?.revenue} ni=${ym?.netIncome}`);
+                console.log(`[StockService] Peer ${p.sym}: pe=${cPe} (finnhub=${ff?.peNormalizedAnnual} yahoo=${ym?.pe}) pm=${cPm} rg=${cRg} rev=${ym?.revenue} ni=${ym?.netIncome}`);
                 competitors.push({
                     symbol: p.sym,
                     name: p.name,
@@ -317,7 +322,7 @@ export class StockService {
                     pe: cPe,
                     profitMargin: cPm ?? 0,
                     revenueGrowth: cRg ?? 0,
-                    dividendYield: p.divYield ?? ym?.dividendYield ?? null,
+                    dividendYield: p.divYield ?? ff?.dividendYieldIndicatedAnnual ?? ym?.dividendYield ?? null,
                 });
             }
         }
