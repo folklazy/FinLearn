@@ -5,7 +5,7 @@
 // yahoo-finance2 v3 requires instantiation from .default constructor
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const YahooFinanceCtor = require('yahoo-finance2').default;
-const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical', 'yahooSurvey'] });
+const yahooFinance = new YahooFinanceCtor({ suppressNotices: ['ripHistorical', 'yahooSurvey', 'incomeStatementHistory', 'incomeStatementHistoryQuarterly', 'balanceSheetHistory', 'balanceSheetHistoryQuarterly', 'cashflowStatementHistory', 'cashflowStatementHistoryQuarterly'] });
 
 // ── Price History ──
 export interface YFHistoricalPoint {
@@ -21,15 +21,31 @@ export async function getHistoricalPrices(symbol: string, days = 365): Promise<Y
     try {
         const period2 = new Date();
         const period1 = new Date(Date.now() - days * 86400000);
-        const rows: any[] = await yahooFinance.historical(symbol, { period1, period2, interval: '1d' });
-        return rows.map((r: any) => ({
-            date: r.date.toISOString().split('T')[0],
-            open: r.open ?? 0,
-            high: r.high ?? 0,
-            low: r.low ?? 0,
-            close: r.close ?? 0,
-            volume: r.volume ?? 0,
-        }));
+        const opts = { period1, period2, interval: '1d' as const };
+        let rows: any[];
+        try {
+            rows = await yahooFinance.historical(symbol, opts);
+        } catch (firstErr: any) {
+            // yahoo-finance2 throws when SOME rows have null values
+            // Retry with validation disabled to get partial data
+            if (firstErr?.message?.includes('null values')) {
+                console.warn(`[Yahoo] Historical partial nulls for ${symbol} — retrying without validation`);
+                rows = await yahooFinance.historical(symbol, opts, { validateResult: false });
+            } else {
+                throw firstErr;
+            }
+        }
+        // Filter out rows with null/undefined close (bad data points)
+        return rows
+            .filter((r: any) => r.date && r.close != null)
+            .map((r: any) => ({
+                date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).split('T')[0],
+                open: r.open ?? r.close ?? 0,
+                high: r.high ?? r.close ?? 0,
+                low: r.low ?? r.close ?? 0,
+                close: r.close,
+                volume: r.volume ?? 0,
+            }));
     } catch (err) {
         console.warn(`[Yahoo] Historical error for ${symbol}:`, (err as Error).message);
         return [];

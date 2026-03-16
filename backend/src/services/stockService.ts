@@ -202,16 +202,17 @@ export class StockService {
         const week52High = (dashIdx > 0 ? parseFloat(rangeStr.slice(dashIdx + 1)) : NaN) || finnhubFinancials?.['52WeekHigh'] || 0;
 
         // Build price history — FMP first, Yahoo Finance as fallback
+        // Always filter out rows with null/zero close to prevent broken charts
         let history: PricePoint[];
         if (fmpHistory.length > 0) {
-            history = fmpHistory.map(h => ({
-                date: h.date, open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume,
-            })).reverse();
+            history = fmpHistory
+                .filter(h => h.close != null && h.close > 0)
+                .map(h => ({
+                    date: h.date, open: h.open || h.close, high: h.high || h.close, low: h.low || h.close, close: h.close, volume: h.volume || 0,
+                })).reverse();
         } else {
             const yhist = await yahoo.getHistoricalPrices(symbol, 1825);
-            history = yhist.map(h => ({
-                date: h.date, open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume,
-            }));
+            history = yhist.filter(h => h.close != null && h.close > 0);
             console.log(`[StockService] Using Yahoo history for ${symbol}: ${history.length} points`);
         }
 
@@ -279,67 +280,64 @@ export class StockService {
             }
         }
 
-        // Combine: Finnhub peers + S&P 500 sector peers, deduplicated, cap at 12
-        const peerCandidates = [...new Set([...finnhubCandidates, ...sp500Candidates])].slice(0, 12);
+        // Combine: Finnhub peers + S&P 500 sector peers, deduplicated, cap at 8
+        const peerCandidates = [...new Set([...finnhubCandidates, ...sp500Candidates])].slice(0, 8);
 
         if (finnhubCandidates.length > 0) console.log(`[StockService] ${symbol} Finnhub peers: ${finnhubCandidates.join(',')}`);
         if (sp500Candidates.length > 0) console.log(`[StockService] ${symbol} S&P 500 sector peers: ${sp500Candidates.join(',')}`);
 
         if (peerCandidates.length > 0) {
-            const [peerFmpProfiles, peerFmpMetrics, peerYahooProfiles, peerYahooMetrics] = await Promise.all([
+            // ── Phase 1: Profiles only (cheap, mostly cached) ──
+            const [peerFmpProfiles, peerYahooProfiles] = await Promise.all([
                 Promise.all(peerCandidates.map(p => fmp.getProfile(p).catch(() => null))),
-                Promise.all(peerCandidates.map(p => fmp.getKeyMetrics(p).catch(() => null))),
                 Promise.all(peerCandidates.map(p => yahoo.getProfile(p).catch(() => null))),
-                Promise.all(peerCandidates.map(p => yahoo.getKeyMetrics(p).catch(() => null))),
             ]);
 
-            const candidates: (CompetitorData & { _normSector: string })[] = [];
-
+            // Build lightweight candidate list from profiles + S&P 500 data
+            const profileCandidates: { sym: string; name: string; marketCap: number; normSector: string; divYield: number | null }[] = [];
             for (let i = 0; i < peerCandidates.length; i++) {
                 const pp = peerFmpProfiles[i];
-                const pm = peerFmpMetrics[i];
                 const yp = peerYahooProfiles[i];
-                const ym = peerYahooMetrics[i];
-
-                const peerName = pp?.companyName || yp?.name || SP500_CONSTITUENTS.find(s => s.symbol === peerCandidates[i])?.name || peerCandidates[i];
-                const peerMarketCap = pp?.marketCap || yp?.marketCap || 0;
-
-                // Normalize peer's sector for filtering
-                const peerRawSector = yp?.sector || pp?.sector || SP500_CONSTITUENTS.find(s => s.symbol === peerCandidates[i])?.sector || '';
-                const peerNormSector = normalizeSector(peerRawSector);
-
-                const peerRevGrowth = pm?.revenueGrowth != null
-                    ? pm.revenueGrowth * 100
-                    : (ym?.revenueGrowth ?? 0);
+                const sp = SP500_CONSTITUENTS.find(s => s.symbol === peerCandidates[i]);
+                const peerRawSector = yp?.sector || pp?.sector || sp?.sector || '';
                 const peerDivYield = pp?.lastDividend && pp?.price
                     ? parseFloat(((pp.lastDividend / pp.price) * 100).toFixed(2))
-                    : (ym?.dividendYield ?? null);
-                const rawPe = pm?.peRatioTTM ?? ym?.pe ?? null;
-                const rawMargin = pm?.netProfitMarginTTM ?? ym?.profitMargin ?? 0;
-
-                candidates.push({
-                    symbol: peerCandidates[i],
-                    name: peerName,
-                    marketCap: peerMarketCap,
-                    pe: rawPe ? parseFloat(rawPe.toFixed(1)) : null,
-                    profitMargin: parseFloat((rawMargin ?? 0).toFixed(2)),
-                    revenueGrowth: parseFloat((peerRevGrowth ?? 0).toFixed(1)),
-                    dividendYield: peerDivYield,
-                    _normSector: peerNormSector,
-                } as any);
+                    : null;
+                profileCandidates.push({
+                    sym: peerCandidates[i],
+                    name: pp?.companyName || yp?.name || sp?.name || peerCandidates[i],
+                    marketCap: pp?.marketCap || yp?.marketCap || 0,
+                    normSector: normalizeSector(peerRawSector),
+                    divYield: peerDivYield,
+                });
             }
 
-            // Prioritize: same normalized sector first → rest; sort by market cap desc within each tier
-            const sameSector = candidates.filter(c => matchNormalized.includes((c as any)._normSector));
-            const rest = candidates.filter(c => !sameSector.includes(c));
+            // Sort: same sector first → rest, by market cap desc
+            const sameSector = profileCandidates.filter(c => matchNormalized.includes(c.normSector));
+            const rest = profileCandidates.filter(c => !sameSector.includes(c));
             const sorted = [
                 ...sameSector.sort((a, b) => b.marketCap - a.marketCap),
                 ...rest.sort((a, b) => b.marketCap - a.marketCap),
             ];
+            const picks = sorted.slice(0, 4);
 
-            for (const c of sorted.slice(0, 4)) {
-                const { _normSector, ...comp } = c as any;
-                competitors.push(comp);
+            // ── Phase 2: Metrics only for picked peers (Yahoo only — saves FMP quota) ──
+            const pickedMetrics = await Promise.all(
+                picks.map(p => yahoo.getKeyMetrics(p.sym).catch(() => null))
+            );
+
+            for (let i = 0; i < picks.length; i++) {
+                const p = picks[i];
+                const ym = pickedMetrics[i];
+                competitors.push({
+                    symbol: p.sym,
+                    name: p.name,
+                    marketCap: p.marketCap,
+                    pe: ym?.pe ? parseFloat(ym.pe.toFixed(1)) : null,
+                    profitMargin: parseFloat((ym?.profitMargin ?? 0).toFixed(2)),
+                    revenueGrowth: parseFloat((ym?.revenueGrowth ?? 0).toFixed(1)),
+                    dividendYield: p.divYield ?? ym?.dividendYield ?? null,
+                });
             }
         }
 

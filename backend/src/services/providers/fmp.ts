@@ -5,8 +5,9 @@ const BASE = 'https://financialmodelingprep.com/stable';
 const KEY = () => process.env.FMP_API_KEY || '';
 
 // ── Global request throttle (prevents 429 rate-limit) ──
-const MAX_CONCURRENT = 3;
-const DELAY_MS = 200;
+const MAX_CONCURRENT = 2;
+const BASE_DELAY_MS = 400;
+let delayMs = BASE_DELAY_MS;           // adaptive — increases on 429
 let activeRequests = 0;
 const queue: Array<() => void> = [];
 
@@ -47,7 +48,14 @@ function releaseSlot() {
         } else {
             activeRequests--;
         }
-    }, DELAY_MS);
+    }, delayMs);
+}
+
+// When 429 is hit, temporarily slow down ALL requests
+function enter429Cooldown() {
+    delayMs = Math.min(delayMs * 2, 3000);
+    console.warn(`[FMP] 429 cooldown — delay now ${delayMs}ms (queue: ${queue.length})`);
+    setTimeout(() => { delayMs = BASE_DELAY_MS; }, 15000);
 }
 
 async function get<T>(path: string, params: Record<string, string> = {}): Promise<T | null> {
@@ -61,11 +69,20 @@ async function get<T>(path: string, params: Record<string, string> = {}): Promis
 
     await acquireSlot();
     try {
-        let res = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
-        // Retry once on 429 after a short wait
-        if (res.status === 429) {
-            await new Promise(r => setTimeout(r, 600));
-            res = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
+        // Exponential backoff: up to 3 attempts on 429
+        const RETRIES = 3;
+        let res: Response | null = null;
+        for (let attempt = 0; attempt < RETRIES; attempt++) {
+            res = await fetch(url.toString(), { signal: AbortSignal.timeout(10000) });
+            if (res.status !== 429) break;
+            enter429Cooldown();
+            const wait = 800 * Math.pow(2, attempt); // 800ms, 1600ms, 3200ms
+            console.warn(`[FMP] 429 for ${path} — retry ${attempt + 1}/${RETRIES} in ${wait}ms`);
+            await new Promise(r => setTimeout(r, wait));
+        }
+        if (!res || res.status === 429) {
+            console.warn(`[FMP] 429 exhausted retries for ${path}`);
+            return null;
         }
         if (res.status === 402) {
             premiumPaths.add(cacheKey);
