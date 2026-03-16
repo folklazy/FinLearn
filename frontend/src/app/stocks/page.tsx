@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { Search, LayoutGrid, List, ChevronLeft, ChevronRight, Flame, BarChart3, Star, X, ArrowRight, Sparkles } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -12,10 +11,11 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
 /* ─────────── Stock Logo with error fallback ─────────── */
-function StockLogo({ src, symbol, size = 30 }: { src: string; symbol: string; size?: number }) {
+function StockLogo({ src, symbol }: { src: string; symbol: string }) {
     const [err, setErr] = useState(false);
-    if (!src || err) return <span style={{ fontSize: size < 28 ? '0.6rem' : '0.7rem', fontWeight: 800, color: 'var(--text-secondary)' }}>{symbol.slice(0, 2)}</span>;
-    return <Image src={src} alt={symbol} width={size} height={size} unoptimized style={{ objectFit: 'contain', borderRadius: '4px' }} onError={() => setErr(true)} />;
+    if (!src || err) return <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)' }}>{symbol.slice(0, 2)}</span>;
+    /* eslint-disable-next-line @next/next/no-img-element */
+    return <img src={src} alt={symbol} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '6px' }} onError={() => setErr(true)} />;
 }
 
 /* ─────────── Types ─────────── */
@@ -54,7 +54,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                             padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                             boxShadow: 'var(--shadow-sm)',
                         }}>
-                            <StockLogo src={stock.logo} symbol={stock.symbol} size={30} />
+                            <StockLogo src={stock.logo} symbol={stock.symbol} />
                         </div>
                         <div>
                             <div style={{ fontWeight: 700, fontSize: '0.95rem', letterSpacing: '-0.01em', lineHeight: 1.2 }}>{stock.symbol}</div>
@@ -141,7 +141,7 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
                         padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         boxShadow: 'var(--shadow-sm)',
                     }}>
-                        <StockLogo src={stock.logo} symbol={stock.symbol} size={24} />
+                        <StockLogo src={stock.logo} symbol={stock.symbol} />
                     </div>
                     <div>
                         <div style={{ fontWeight: 700, fontSize: '0.88rem', letterSpacing: '-0.01em' }}>{stock.symbol}</div>
@@ -205,7 +205,7 @@ function SearchResultCard({ result, i }: { result: SearchResultItem; i: number }
                         padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         boxShadow: 'var(--shadow-sm)',
                     }}>
-                        <StockLogo src={result.logo || ''} symbol={result.symbol} size={28} />
+                        <StockLogo src={result.logo || ''} symbol={result.symbol} />
                     </div>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

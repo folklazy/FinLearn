@@ -333,9 +333,16 @@ export class StockService {
                     yahoo.getKeyMetrics(p.sym).catch(() => null),
                     finnhub.getBasicFinancials(p.sym).catch(() => null),
                 ]);
-                // Mirror main-stock pe logic: Finnhub peNormalizedAnnual → Yahoo pe
+                // Mirror main-stock pe logic: Finnhub peNormalizedAnnual → Yahoo pe → calculate from price/EPS
                 const rawPe = ff?.peNormalizedAnnual ?? ym?.pe ?? null;
-                const cPe = rawPe != null && rawPe > 0 && rawPe < 500 ? parseFloat(rawPe.toFixed(1)) : null;
+                let cPe = rawPe != null && rawPe > 0 && rawPe < 500 ? parseFloat(rawPe.toFixed(1)) : null;
+                if (cPe == null && ym?.eps && ym.eps > 0) {
+                    const fq = await finnhub.getQuote(p.sym).catch(() => null);
+                    if (fq?.c && fq.c > 0) {
+                        const calc = fq.c / ym.eps;
+                        if (calc > 0 && calc < 500) cPe = parseFloat(calc.toFixed(1));
+                    }
+                }
                 const cPm = ym?.profitMargin != null ? parseFloat(ym.profitMargin.toFixed(2)) : null;
                 const cRg = ym?.revenueGrowth != null ? parseFloat(ym.revenueGrowth.toFixed(1)) : null;
                 console.log(`[StockService] Peer ${p.sym}: pe=${cPe} (finnhub=${ff?.peNormalizedAnnual} yahoo=${ym?.pe}) pm=${cPm} rg=${cRg} rev=${ym?.revenue} ni=${ym?.netIncome}`);
@@ -397,7 +404,15 @@ export class StockService {
         // EPS: Yahoo → Finnhub fallback
         const eps = yahooMetrics?.eps || finnhubFinancials?.epsAnnual || 0;
         // PE: trust provider PE if available; only guard for absurd values
-        const pe = peRaw != null && peRaw > 0 && peRaw < 500 ? parseFloat(peRaw.toFixed(1)) : null;
+        // Fallback: calculate PE from price / EPS when providers don't return it
+        let pe = peRaw != null && peRaw > 0 && peRaw < 500 ? parseFloat(peRaw.toFixed(1)) : null;
+        if (pe == null && eps > 0 && price > 0) {
+            const calcPe = price / eps;
+            if (calcPe > 0 && calcPe < 500) {
+                pe = parseFloat(calcPe.toFixed(1));
+                console.log(`[StockService] ${symbol} PE calculated from price/EPS: ${price}/${eps} = ${pe}`);
+            }
+        }
         // Yahoo annual comparison is primary growth source
         const epsGrowthRaw = yahooEpsGrowth ?? yahooMetrics?.epsGrowth ?? finnhubFinancials?.epsGrowth5Y ?? 0;
         const revenueGrowthRaw = yahooRevGrowth ?? yahooMetrics?.revenueGrowth ?? finnhubFinancials?.revenueGrowth5Y ?? 0;
