@@ -158,14 +158,118 @@ export default function WatchlistPage() {
                 <div className="animate-fade-up delay-1">
                     {!session?.user ? (
                         <>
-                            {/* Feature preview cards */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '28px' }}>
+                            {/* ── Mock UI Preview ── */}
+                            <div className="animate-fade-up delay-2" style={{ position: 'relative', marginBottom: '32px', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                                <div style={{
+                                    background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-lg)', padding: '0', overflow: 'hidden',
+                                }}>
+                                    {/* Mock table header */}
+                                    <div style={{
+                                        display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 80px',
+                                        padding: '12px 20px', borderBottom: '1px solid var(--border)',
+                                        fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)',
+                                        textTransform: 'uppercase', letterSpacing: '0.05em',
+                                    }}>
+                                        <span>{t('wl.title')}</span>
+                                        <span style={{ textAlign: 'right' }}>{t('stocks.price') || 'Price'}</span>
+                                        <span style={{ textAlign: 'right' }}>{t('wl.change')}</span>
+                                        <span />
+                                    </div>
+
+                                    {/* Mock stock rows */}
+                                    {[
+                                        { sym: 'AAPL', name: 'Apple Inc.', price: '$231.34', change: '+1.08%', up: true },
+                                        { sym: 'GOOGL', name: 'Alphabet Inc.', price: '$176.45', change: '+0.89%', up: true },
+                                        { sym: 'TSLA', name: 'Tesla, Inc.', price: '$248.42', change: '-1.85%', up: false },
+                                        { sym: 'NVDA', name: 'NVIDIA Corp.', price: '$875.40', change: '+1.42%', up: true },
+                                        { sym: 'MSFT', name: 'Microsoft', price: '$417.88', change: '+0.65%', up: true },
+                                    ].map((row, i) => (
+                                        <div key={i} style={{
+                                            display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 80px',
+                                            padding: '14px 20px', alignItems: 'center',
+                                            borderBottom: i < 4 ? '1px solid var(--border)' : 'none',
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{
+                                                    width: '32px', height: '32px', borderRadius: '8px',
+                                                    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)',
+                                                }}>
+                                                    {row.sym.slice(0, 2)}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{row.sym}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{row.name}</div>
+                                                </div>
+                                            </div>
+                                            <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '0.88rem', fontVariantNumeric: 'tabular-nums' }}>{row.price}</div>
+                                            <div style={{
+                                                textAlign: 'right', fontWeight: 700, fontSize: '0.78rem',
+                                                color: row.up ? 'var(--success)' : 'var(--danger)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px',
+                                            }}>
+                                                {row.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {row.change}
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                <Star size={14} fill="#facc15" style={{ color: '#facc15' }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Gradient overlay with CTA */}
+                                <div style={{
+                                    position: 'absolute', inset: 0,
+                                    background: 'linear-gradient(to bottom, rgba(14,14,14,0) 10%, rgba(14,14,14,0.75) 55%, rgba(14,14,14,0.97) 100%)',
+                                    display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                                    alignItems: 'center', padding: '0 24px 32px',
+                                }}>
+                                    <div style={{
+                                        width: '48px', height: '48px', borderRadius: '14px',
+                                        background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.2)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        marginBottom: '16px',
+                                    }}>
+                                        <Star size={22} style={{ color: '#facc15' }} />
+                                    </div>
+                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '6px', textAlign: 'center', letterSpacing: '-0.02em' }}>
+                                        {t('wl.loginTitle')}
+                                    </h2>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: '380px', marginBottom: '20px', lineHeight: 1.6 }}>
+                                        {t('wl.loginDesc')}
+                                    </p>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                        <Link href="/register" style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                            padding: '11px 26px', borderRadius: '100px',
+                                            background: '#22c55e', color: '#0e0e0e',
+                                            fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
+                                            transition: 'opacity 0.15s',
+                                        }}>
+                                            {t('login.register')} <ArrowRight size={15} />
+                                        </Link>
+                                        <Link href="/login" style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                            padding: '11px 26px', borderRadius: '100px',
+                                            background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
+                                        }}>
+                                            {t('login.submit')}
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── Feature benefit cards ── */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                                 {[
                                     { icon: <Star size={18} />, title: t('wl.feat1Title'), desc: t('wl.feat1Desc'), accent: '#facc15' },
                                     { icon: <TrendingUp size={18} />, title: t('wl.feat2Title'), desc: t('wl.feat2Desc'), accent: '#34d399' },
                                     { icon: <BarChart2 size={18} />, title: t('wl.feat3Title'), desc: t('wl.feat3Desc'), accent: '#7c6cf0' },
                                 ].map((feat, i) => (
-                                    <div key={i} className={`animate-fade-up delay-${i + 2}`} style={{
+                                    <div key={i} className={`animate-fade-up delay-${i + 3}`} style={{
                                         padding: '22px', borderRadius: 'var(--radius-lg)',
                                         background: 'var(--bg-secondary)', border: '1px solid var(--border)',
                                     }}>
@@ -181,32 +285,6 @@ export default function WatchlistPage() {
                                         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{feat.desc}</p>
                                     </div>
                                 ))}
-                            </div>
-
-                            {/* CTA section */}
-                            <div className="detail-section animate-fade-up delay-5" style={{ textAlign: 'center', padding: '40px 24px' }}>
-                                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '8px' }}>{t('wl.loginTitle')}</h2>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '380px', margin: '0 auto 20px' }}>
-                                    {t('wl.loginDesc')}
-                                </p>
-                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                    <Link href="/login" style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                        padding: '10px 22px', borderRadius: '100px',
-                                        background: 'var(--primary)', color: 'white',
-                                        fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                                    }}>
-                                        {t('login.submit')} <ArrowRight size={15} />
-                                    </Link>
-                                    <Link href="/register" style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                        padding: '10px 22px', borderRadius: '100px',
-                                        background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)',
-                                        fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                                    }}>
-                                        {t('login.register')}
-                                    </Link>
-                                </div>
                             </div>
                         </>
                     ) : (

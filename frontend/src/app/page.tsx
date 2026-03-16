@@ -353,63 +353,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ How to Use — Guided Steps ═══ */}
-      <section className="section">
-        <div className="container">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }}>
-            <div style={{ width: '3px', height: '20px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
-            <div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{t('guide.title')}</h2>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{t('guide.subtitle')}</p>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', position: 'relative' }}>
-            {/* Connector line */}
-            <div style={{ position: 'absolute', top: '38px', left: 'calc(16.66% + 18px)', right: 'calc(16.66% + 18px)', height: '2px', background: 'var(--border)', zIndex: 0, display: 'none' }} className="lg:block" />
-
-            {[
-              { step: 1, icon: <BookOpen size={18} />, title: t('guide.step1Title'), desc: t('guide.step1Desc'), accent: '#c4b5fd', href: '/learn' },
-              { step: 2, icon: <BarChart3 size={18} />, title: t('guide.step2Title'), desc: t('guide.step2Desc'), accent: '#7c6cf0', href: '/stocks' },
-              { step: 3, icon: <Star size={18} />, title: t('guide.step3Title'), desc: t('guide.step3Desc'), accent: '#34d399', href: session?.user ? '/watchlist' : '/register' },
-            ].map(({ step, icon, title, desc, accent, href }, i) => (
-              <Link key={i} href={href} style={{ textDecoration: 'none' }}>
-                <div className={`animate-fade-up delay-${i + 1}`} style={{
-                  padding: '24px', borderRadius: '14px', height: '100%',
-                  background: 'var(--bg-card-solid)', border: '1px solid var(--border)',
-                  transition: 'border-color 0.2s, box-shadow 0.2s', cursor: 'pointer',
-                  position: 'relative', zIndex: 1,
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <div style={{
-                      width: '40px', height: '40px', borderRadius: '10px',
-                      background: `${accent}12`, border: `1px solid ${accent}20`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent,
-                    }}>
-                      {icon}
-                    </div>
-                    <span style={{
-                      fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-                      color: accent,
-                    }}>
-                      {t('guide.step')} {step}
-                    </span>
-                  </div>
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>{title}</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.65 }}>{desc}</p>
-                  <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600, color: accent }}>
-                    {t('guide.cta')} <ChevronRight size={13} />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ═══ CTA ═══ */}
       {!session?.user && (
         <section className="section" style={{ paddingBottom: '80px' }}>

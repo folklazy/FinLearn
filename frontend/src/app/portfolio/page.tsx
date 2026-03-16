@@ -342,14 +342,133 @@ export default function PortfolioPage() {
             {/* ═══ Login prompt for guests ═══ */}
             {!session?.user && (
                 <div className="animate-fade-up delay-1">
-                    {/* Feature preview cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '28px' }}>
+                    {/* ── Mock Portfolio Dashboard ── */}
+                    <div className="animate-fade-up delay-2" style={{ position: 'relative', marginBottom: '32px', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                        <div style={{
+                            background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+                        }}>
+                            {/* Mock portfolio summary */}
+                            <div style={{ padding: '24px 24px 20px', borderBottom: '1px solid var(--border)' }}>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                                    {t('port.totalValue')}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>$104,832.50</span>
+                                    <span style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                        fontSize: '0.82rem', fontWeight: 700, color: 'var(--success)',
+                                        padding: '4px 12px', borderRadius: '100px', background: 'var(--success-bg)',
+                                    }}>
+                                        <TrendingUp size={13} /> +4.83%
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '24px', marginTop: '14px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                    <span>{t('port.startingCash')}: <strong style={{ color: 'var(--text-secondary)' }}>$100,000.00</strong></span>
+                                    <span>{t('port.cash')}: <strong style={{ color: 'var(--text-secondary)' }}>$41,206.00</strong></span>
+                                    <span>3 {t('port.stocks')}</span>
+                                </div>
+                            </div>
+
+                            {/* Mock positions table header */}
+                            <div style={{
+                                display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                padding: '10px 24px', borderBottom: '1px solid var(--border)',
+                                fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)',
+                                textTransform: 'uppercase', letterSpacing: '0.05em',
+                            }}>
+                                <span>{t('port.stocks')}</span>
+                                <span style={{ textAlign: 'right' }}>{t('port.qty') || 'Qty'}</span>
+                                <span style={{ textAlign: 'right' }}>{t('port.avgCost') || 'Avg Cost'}</span>
+                                <span style={{ textAlign: 'right' }}>P&L</span>
+                            </div>
+
+                            {/* Mock position rows */}
+                            {[
+                                { sym: 'AAPL', name: 'Apple Inc.', qty: 50, avg: '$218.40', pl: '+$645.00', plPct: '+5.91%', up: true },
+                                { sym: 'NVDA', name: 'NVIDIA Corp.', qty: 15, avg: '$810.20', pl: '+$978.00', plPct: '+8.05%', up: true },
+                                { sym: 'TSLA', name: 'Tesla, Inc.', qty: 30, avg: '$255.80', pl: '-$221.40', plPct: '-2.89%', up: false },
+                            ].map((row, i) => (
+                                <div key={i} style={{
+                                    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                    padding: '14px 24px', alignItems: 'center',
+                                    borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '8px',
+                                            background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)',
+                                        }}>
+                                            {row.sym.slice(0, 2)}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{row.sym}</div>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{row.name}</div>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right', fontWeight: 600, fontSize: '0.85rem' }}>{row.qty}</div>
+                                    <div style={{ textAlign: 'right', fontWeight: 600, fontSize: '0.85rem', fontVariantNumeric: 'tabular-nums' }}>{row.avg}</div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.82rem', color: row.up ? 'var(--success)' : 'var(--danger)' }}>{row.pl}</div>
+                                        <div style={{ fontSize: '0.68rem', color: row.up ? 'var(--success)' : 'var(--danger)', opacity: 0.7 }}>{row.plPct}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Gradient overlay with CTA */}
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            background: 'linear-gradient(to bottom, rgba(14,14,14,0) 5%, rgba(14,14,14,0.7) 50%, rgba(14,14,14,0.97) 100%)',
+                            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                            alignItems: 'center', padding: '0 24px 32px',
+                        }}>
+                            <div style={{
+                                width: '48px', height: '48px', borderRadius: '14px',
+                                background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                marginBottom: '16px',
+                            }}>
+                                <Activity size={22} style={{ color: '#34d399' }} />
+                            </div>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '6px', textAlign: 'center', letterSpacing: '-0.02em' }}>
+                                {t('port.loginPrompt')}
+                            </h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', maxWidth: '420px', marginBottom: '20px', lineHeight: 1.6 }}>
+                                {t('port.loginDesc')}
+                            </p>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                <Link href="/register" style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    padding: '11px 26px', borderRadius: '100px',
+                                    background: '#22c55e', color: '#0e0e0e',
+                                    fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none',
+                                    transition: 'opacity 0.15s',
+                                }}>
+                                    {t('port.register')} <ArrowRight size={15} />
+                                </Link>
+                                <Link href="/login" style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    padding: '11px 26px', borderRadius: '100px',
+                                    background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-light)',
+                                    color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
+                                }}>
+                                    {t('port.login')}
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Feature benefit cards ── */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                         {[
                             { icon: <Layers size={18} />, title: t('port.feat1Title'), desc: t('port.feat1Desc'), accent: '#34d399' },
                             { icon: <Activity size={18} />, title: t('port.feat2Title'), desc: t('port.feat2Desc'), accent: '#7c6cf0' },
                             { icon: <TrendingUp size={18} />, title: t('port.feat3Title'), desc: t('port.feat3Desc'), accent: '#fbbf24' },
                         ].map((feat, i) => (
-                            <div key={i} className={`animate-fade-up delay-${i + 2}`} style={{
+                            <div key={i} className={`animate-fade-up delay-${i + 3}`} style={{
                                 padding: '22px', borderRadius: 'var(--radius-lg)',
                                 background: 'var(--bg-secondary)', border: '1px solid var(--border)',
                             }}>
@@ -365,32 +484,6 @@ export default function PortfolioPage() {
                                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{feat.desc}</p>
                             </div>
                         ))}
-                    </div>
-
-                    {/* CTA section */}
-                    <div className="detail-section animate-fade-up delay-5" style={{ textAlign: 'center', padding: '40px 24px', marginBottom: '0' }}>
-                        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '8px' }}>{t('port.loginPrompt')}</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '420px', margin: '0 auto 20px' }}>
-                            {t('port.loginDesc')}
-                        </p>
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <Link href="/login" style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '10px 22px', borderRadius: '100px',
-                                background: 'var(--primary)', color: 'white',
-                                fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                            }}>
-                                {t('port.login')} <ArrowRight size={15} />
-                            </Link>
-                            <Link href="/register" style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '10px 22px', borderRadius: '100px',
-                                background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)',
-                                fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none',
-                            }}>
-                                {t('port.register')}
-                            </Link>
-                        </div>
                     </div>
                 </div>
             )}
