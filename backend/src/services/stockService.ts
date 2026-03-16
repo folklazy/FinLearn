@@ -270,28 +270,23 @@ export class StockService {
         if (sp500Candidates.length > 0) console.log(`[StockService] ${symbol} S&P 500 sector peers: ${sp500Candidates.join(',')}`);
 
         if (peerCandidates.length > 0) {
-            // ── Phase 1: Profiles only (cheap, mostly cached) ──
-            const [peerFmpProfiles, peerYahooProfiles] = await Promise.all([
-                Promise.all(peerCandidates.map(p => fmp.getProfile(p).catch(() => null))),
-                Promise.all(peerCandidates.map(p => yahoo.getProfile(p).catch(() => null))),
-            ]);
+            // ── Phase 1: Profiles only (Yahoo — no FMP to avoid 429s) ──
+            const peerYahooProfiles = await Promise.all(
+                peerCandidates.map(p => yahoo.getProfile(p).catch(() => null))
+            );
 
             // Build lightweight candidate list from profiles + S&P 500 data
             const profileCandidates: { sym: string; name: string; marketCap: number; normSector: string; divYield: number | null }[] = [];
             for (let i = 0; i < peerCandidates.length; i++) {
-                const pp = peerFmpProfiles[i];
                 const yp = peerYahooProfiles[i];
                 const sp = SP500_CONSTITUENTS.find(s => s.symbol === peerCandidates[i]);
-                const peerRawSector = yp?.sector || pp?.sector || sp?.sector || '';
-                const peerDivYield = pp?.lastDividend && pp?.price
-                    ? parseFloat(((pp.lastDividend / pp.price) * 100).toFixed(2))
-                    : null;
+                const peerRawSector = yp?.sector || sp?.sector || '';
                 profileCandidates.push({
                     sym: peerCandidates[i],
-                    name: pp?.companyName || yp?.name || sp?.name || peerCandidates[i],
-                    marketCap: pp?.marketCap || yp?.marketCap || 0,
+                    name: yp?.name || sp?.name || peerCandidates[i],
+                    marketCap: yp?.marketCap || 0,
                     normSector: normalizeSector(peerRawSector),
-                    divYield: peerDivYield,
+                    divYield: null,
                 });
             }
 
@@ -359,15 +354,23 @@ export class StockService {
             || finnhubFinancials?.dividendYieldIndicatedAnnual
             || yahooMetrics?.dividendYield
             || 0;
-        const debtToEquity = finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? null;
+        // D/E: Finnhub → Yahoo → compute from balance sheet
+        const debtToEquityRaw = finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? null;
+        const debtToEquity = debtToEquityRaw != null ? debtToEquityRaw
+            : (yahooFinancials?.balanceSheet.totalLiabilities && yahooFinancials?.balanceSheet.totalEquity && yahooFinancials.balanceSheet.totalEquity > 0)
+                ? parseFloat((yahooFinancials.balanceSheet.totalLiabilities / yahooFinancials.balanceSheet.totalEquity * 100).toFixed(1))
+                : null;
         const currentRatio = finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? null;
         const pb = finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null;
-        const eps = yahooMetrics?.eps ?? 0;
-        // PE is meaningless for negative-earnings companies; also reject negative or absurdly large PE
-        const pe = eps > 0 && peRaw != null && peRaw > 0 && peRaw < 500 ? peRaw : null;
+        // EPS: Yahoo → Finnhub fallback
+        const eps = yahooMetrics?.eps || finnhubFinancials?.epsAnnual || 0;
+        // PE: trust provider PE if available; only guard for absurd values
+        const pe = peRaw != null && peRaw > 0 && peRaw < 500 ? parseFloat(peRaw.toFixed(1)) : null;
         // Yahoo annual comparison is primary growth source
         const epsGrowthRaw = yahooEpsGrowth ?? yahooMetrics?.epsGrowth ?? finnhubFinancials?.epsGrowth5Y ?? 0;
         const revenueGrowthRaw = yahooRevGrowth ?? yahooMetrics?.revenueGrowth ?? finnhubFinancials?.revenueGrowth5Y ?? 0;
+
+        console.log(`[StockService] ${symbol} metrics: eps=${eps} pe=${pe} peRaw=${peRaw} rev=${yahooMetrics?.revenue} de=${debtToEquity} revHist=${revenueHistory.length} epsHist=${epsHistory.length}`);
 
         // Volume fallback: Finnhub → Yahoo
         const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];
@@ -429,7 +432,7 @@ export class StockService {
                 pb: pb ? parseFloat(pb.toFixed(1)) : null,
                 dividendYield: divYieldRaw > 0 ? parseFloat(divYieldRaw.toFixed(2)) : null,
                 dividendPerShare: resolvedDivPerShare,
-                revenue: yahooMetrics?.revenue ?? null,
+                revenue: yahooMetrics?.revenue ?? yahooFinancials?.incomeStatement.revenue ?? null,
                 revenueGrowth: parseFloat(revenueGrowthRaw.toFixed(1)),
                 netIncome: yahooMetrics?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? null,
                 profitMargin: parseFloat(profitMarginRaw.toFixed(2)),

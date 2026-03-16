@@ -115,6 +115,8 @@ export interface FinnhubBasicFinancials {
         totalDebt2TotalEquityQuarterly: number;
         netProfitMarginTTM: number;
         revenueGrowth5Y: number;
+        epsAnnual: number;
+        revenuePerShareAnnual: number;
     };
 }
 

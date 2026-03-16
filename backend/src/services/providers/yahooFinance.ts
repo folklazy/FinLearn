@@ -159,7 +159,7 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
 
         const [result, finArr, bsArr] = await Promise.all([
             yahooFinance.quoteSummary(symbol, {
-                modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory'],
+                modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistory', 'earnings'],
             }).catch(() => null),
             (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'financials', type: 'annual' }, ftOpts).catch(() => null),
             (yahooFinance as any).fundamentalsTimeSeries(symbol, { period1, module: 'balance-sheet', type: 'annual' }, ftOpts).catch(() => null),
@@ -169,6 +169,9 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         const ks = (result as any)?.defaultKeyStatistics;
         const sd = (result as any)?.summaryDetail;
         const is: any[] | undefined = (result as any)?.incomeStatementHistory?.incomeStatementHistory;
+        const earningsYearly: any[] | undefined = (result as any)?.earnings?.financialsChart?.yearly;
+
+        console.log(`[Yahoo] ${symbol} KeyMetrics: fd.totalRevenue=${fd?.totalRevenue} fd.debtToEquity=${fd?.debtToEquity} ks.trailingEps=${ks?.trailingEps} finRows=${Array.isArray(finArr) ? finArr.length : 0} earningsYearly=${earningsYearly?.length ?? 0}`);
 
         if (!fd && !ks && !sd) return null;
 
@@ -176,18 +179,28 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
         const finRows: any[] = Array.isArray(finArr) ? finArr.filter((r: any) => r?.TYPE === 'FINANCIALS') : [];
         const bsRows: any[] = Array.isArray(bsArr) ? bsArr.filter((r: any) => r?.TYPE === 'BALANCE_SHEET') : [];
 
-        // Build revenue history — prefer fundamentalsTimeSeries financials (more complete), fallback to incomeStatementHistory
-        const revenueHistory: { year: string; value: number }[] = finRows.length >= 2
-            ? finRows.slice(-5).map((s: any) => ({
+        // Build revenue history — fundamentalsTimeSeries → incomeStatementHistory → earnings.financialsChart.yearly
+        let revenueHistory: { year: string; value: number }[] = [];
+        if (finRows.length >= 2) {
+            revenueHistory = finRows.slice(-5).map((s: any) => ({
                 year: s.date ? new Date(s.date).getFullYear().toString() : '',
                 value: s.totalRevenue ?? 0,
-              })).filter((s: any) => s.year)
-            : (is ?? []).slice(0, 5).map((s: any) => ({
+            })).filter((s: any) => s.year && s.value);
+        }
+        if (revenueHistory.length < 2 && is && is.length >= 2) {
+            revenueHistory = is.slice(0, 5).map((s: any) => ({
                 year: s.endDate ? new Date(s.endDate).getFullYear().toString() : '',
                 value: s.totalRevenue ?? 0,
-              })).filter((s: any) => s.year).reverse();
+            })).filter((s: any) => s.year && s.value).reverse();
+        }
+        if (revenueHistory.length < 2 && earningsYearly && earningsYearly.length >= 2) {
+            revenueHistory = earningsYearly.map((e: any) => ({
+                year: String(e.date),
+                value: e.revenue ?? 0,
+            })).filter((s: any) => s.year && s.value);
+        }
 
-        // Build EPS history — compute from netIncome / ordinarySharesNumber matched by year
+        // Build EPS history — fundamentalsTimeSeries → incomeStatementHistory → earnings.financialsChart.yearly
         let epsHistory: { year: string; value: number }[] = [];
         if (finRows.length >= 2 && bsRows.length >= 2) {
             const sharesMap: Record<string, number> = {};
@@ -201,11 +214,18 @@ export async function getKeyMetrics(symbol: string): Promise<YFKeyMetrics | null
                 const shares = sharesMap[yr] ?? 0;
                 return { year: yr, value: shares > 0 ? parseFloat((ni / shares).toFixed(2)) : 0 };
             }).filter((s: any) => s.year);
-        } else {
-            epsHistory = (is ?? []).slice(0, 5).map((s: any) => ({
+        }
+        if (epsHistory.length < 2 && is && is.length >= 2) {
+            epsHistory = is.slice(0, 5).map((s: any) => ({
                 year: s.endDate ? new Date(s.endDate).getFullYear().toString() : '',
                 value: s.epsdiluted ?? s.dilutedEps ?? s.eps ?? s.basicEps ?? 0,
             })).filter((s: any) => s.year).reverse();
+        }
+        if (epsHistory.length < 2 && earningsYearly && earningsYearly.length >= 2) {
+            epsHistory = earningsYearly.map((e: any) => ({
+                year: String(e.date),
+                value: e.earnings && fd?.currentPrice ? parseFloat((e.earnings / (fd.sharesOutstanding ?? 1)).toFixed(2)) : 0,
+            })).filter((s: any) => s.year && s.value);
         }
 
         // Revenue growth — prefer annual comparison (stable) over quarterly YoY from financialData
