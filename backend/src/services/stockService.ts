@@ -127,21 +127,18 @@ export class StockService {
 
     /**
      * Orchestrate multiple API providers to build complete StockData
-     * Strategy: FMP profile (free, has price) + Finnhub quote/news/peers + FMP financials + TwelveData technicals
+     * Strategy: FMP profile (cached) + Finnhub quote/news/peers + Yahoo financials/metrics/history + TwelveData technicals
      */
     private async fetchFromAPIs(symbol: string): Promise<StockData | null> {
         // Phase 1: Parallel fetch from all providers
-        const [fmpProfile, finnhubProfile, yahooProfile, finnhubQuote, fmpMetrics, fmpIncome, fmpBalance, fmpCash, fmpHistory, finnhubNews, finnhubPeers, finnhubFinancials, yahooMetrics, yahooFinancials] =
+        // FMP free tier is heavily rate-limited (429s) — only fetch profile (usually cached)
+        // Yahoo Finance provides all financials, metrics, and history without API key limits
+        const [fmpProfile, finnhubProfile, yahooProfile, finnhubQuote, finnhubNews, finnhubPeers, finnhubFinancials, yahooMetrics, yahooFinancials] =
             await Promise.all([
                 fmp.getProfile(symbol).catch(() => null),
                 finnhub.getProfile(symbol).catch(() => null),
                 yahoo.getProfile(symbol).catch(() => null),
                 finnhub.getQuote(symbol).catch(() => null),
-                fmp.getKeyMetrics(symbol).catch(() => null),
-                fmp.getIncomeStatements(symbol, 5).catch(() => []),
-                fmp.getBalanceSheet(symbol).catch(() => null),
-                fmp.getCashFlow(symbol).catch(() => null),
-                fmp.getHistoricalPrices(symbol, 1825).catch(() => []),
                 finnhub.getNews(symbol, 30).catch(() => []),
                 finnhub.getPeers(symbol).catch(() => []),
                 finnhub.getBasicFinancials(symbol).catch(() => null),
@@ -201,20 +198,10 @@ export class StockService {
         const week52Low = (dashIdx > 0 ? parseFloat(rangeStr.slice(0, dashIdx)) : NaN) || finnhubFinancials?.['52WeekLow'] || 0;
         const week52High = (dashIdx > 0 ? parseFloat(rangeStr.slice(dashIdx + 1)) : NaN) || finnhubFinancials?.['52WeekHigh'] || 0;
 
-        // Build price history — FMP first, Yahoo Finance as fallback
-        // Always filter out rows with null/zero close to prevent broken charts
-        let history: PricePoint[];
-        if (fmpHistory.length > 0) {
-            history = fmpHistory
-                .filter(h => h.close != null && h.close > 0)
-                .map(h => ({
-                    date: h.date, open: h.open || h.close, high: h.high || h.close, low: h.low || h.close, close: h.close, volume: h.volume || 0,
-                })).reverse();
-        } else {
-            const yhist = await yahoo.getHistoricalPrices(symbol, 1825);
-            history = yhist.filter(h => h.close != null && h.close > 0);
-            console.log(`[StockService] Using Yahoo history for ${symbol}: ${history.length} points`);
-        }
+        // Build price history from Yahoo Finance (FMP free tier too rate-limited)
+        const yhist = await yahoo.getHistoricalPrices(symbol, 1825);
+        const history: PricePoint[] = yhist.filter(h => h.close != null && h.close > 0);
+        console.log(`[StockService] Yahoo history for ${symbol}: ${history.length} points`);
 
         // Build news
         const news: NewsItem[] = finnhubNews.slice(0, 5).map((n, i) => ({
@@ -227,13 +214,9 @@ export class StockService {
             sentiment: finnhub.classifySentiment(n.headline),
         }));
 
-        // Build revenue/EPS history — FMP first, Yahoo Finance as fallback
-        const revenueHistory = fmpIncome.length > 0
-            ? fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.revenue })).reverse()
-            : (yahooMetrics?.revenueHistory ?? []);
-        const epsHistory = fmpIncome.length > 0
-            ? fmpIncome.map(s => ({ year: s.date.slice(0, 4), value: s.epsdiluted || s.eps })).reverse()
-            : (yahooMetrics?.epsHistory ?? []);
+        // Build revenue/EPS history from Yahoo Finance
+        const revenueHistory = yahooMetrics?.revenueHistory ?? [];
+        const epsHistory = yahooMetrics?.epsHistory ?? [];
 
         // Build competitors — use all sector/industry data from every API
         const competitors: CompetitorData[] = [];
@@ -341,15 +324,7 @@ export class StockService {
             }
         }
 
-        // Compute growth from FMP income history
-        const fmpRevGrowth = fmpIncome.length >= 2 && fmpIncome[1]?.revenue
-            ? ((fmpIncome[0].revenue - fmpIncome[1].revenue) / Math.abs(fmpIncome[1].revenue)) * 100
-            : null;
-        const fmpEpsGrowth = fmpIncome.length >= 2 && fmpIncome[1]?.epsdiluted
-            ? ((fmpIncome[0].epsdiluted - fmpIncome[1].epsdiluted) / Math.abs(fmpIncome[1].epsdiluted)) * 100
-            : null;
-
-        // Compute growth from Yahoo annual history (stable fallback when FMP income unavailable)
+        // Compute growth from Yahoo annual history
         const yahooRevHist = yahooMetrics?.revenueHistory ?? [];
         const yahooRevGrowth = yahooRevHist.length >= 2
             ? (() => {
@@ -369,32 +344,30 @@ export class StockService {
             })()
             : null;
 
-        // Extract metrics — FMP (decimal) → Finnhub (percentage) → Yahoo Finance (percentage)
-        // NOTE: FMP ratios are decimals, Finnhub & Yahoo are percentages
-        const peRaw = fmpMetrics?.peRatioTTM ?? finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null;
-        const roeRaw = (fmpMetrics?.roeTTM != null ? fmpMetrics.roeTTM * 100 : null) ?? finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0;
-        const profitMarginRaw = fmpMetrics?.netProfitMarginTTM ?? finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0;
+        // Extract metrics — Finnhub (percentage) → Yahoo Finance (percentage)
+        // FMP free tier removed from metrics chain due to persistent 429 rate limits
+        const peRaw = finnhubFinancials?.peNormalizedAnnual ?? yahooMetrics?.pe ?? null;
+        const roeRaw = finnhubFinancials?.roeTTM ?? yahooMetrics?.roe ?? 0;
+        const profitMarginRaw = finnhubFinancials?.netProfitMarginTTM ?? yahooMetrics?.profitMargin ?? 0;
         // Resolve dividendPerShare first so we can compute yield from it (most accurate)  
-        const resolvedDivPerShare = fmpMetrics?.dividendPerShareTTM ?? (fmpProfile?.lastDividend || null) ?? yahooMetrics?.dividendPerShare ?? null;
+        const resolvedDivPerShare = (fmpProfile?.lastDividend || null) ?? yahooMetrics?.dividendPerShare ?? null;
         const divYieldFromPerShare = resolvedDivPerShare != null && resolvedDivPerShare > 0 && price > 0
             ? parseFloat(((resolvedDivPerShare / price) * 100).toFixed(2))
             : null;
         // divYieldFromPerShare overrides stale pre-computed yields
         const divYieldRaw = divYieldFromPerShare
-            || (fmpMetrics?.dividendYieldTTM != null ? fmpMetrics.dividendYieldTTM * 100 : null)
             || finnhubFinancials?.dividendYieldIndicatedAnnual
             || yahooMetrics?.dividendYield
             || 0;
-        const debtToEquity = fmpMetrics?.debtToEquityTTM ?? finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? null;
-        const currentRatio = fmpMetrics?.currentRatioTTM ?? finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? null;
-        const pb = fmpMetrics?.priceToBookRatioTTM ?? finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null;
-        const eps = fmpIncome[0]?.epsdiluted ?? yahooMetrics?.eps ?? 0;
+        const debtToEquity = finnhubFinancials?.totalDebt2TotalEquityQuarterly ?? yahooMetrics?.debtToEquity ?? null;
+        const currentRatio = finnhubFinancials?.currentRatioQuarterly ?? yahooMetrics?.currentRatio ?? null;
+        const pb = finnhubFinancials?.pbAnnual ?? yahooMetrics?.pb ?? null;
+        const eps = yahooMetrics?.eps ?? 0;
         // PE is meaningless for negative-earnings companies; also reject negative or absurdly large PE
         const pe = eps > 0 && peRaw != null && peRaw > 0 && peRaw < 500 ? peRaw : null;
-        // Annual income-statement comparison (fmpRevGrowth/fmpEpsGrowth) is most reliable:
-        // avoids TTM distortions from one-time items and stale comparison periods
-        const epsGrowthRaw = fmpEpsGrowth ?? yahooEpsGrowth ?? (fmpMetrics?.epsGrowth != null ? fmpMetrics.epsGrowth * 100 : null) ?? finnhubFinancials?.epsGrowth5Y ?? 0;
-        const revenueGrowthRaw = fmpRevGrowth ?? yahooRevGrowth ?? (fmpMetrics?.revenueGrowth != null ? fmpMetrics.revenueGrowth * 100 : null) ?? finnhubFinancials?.revenueGrowth5Y ?? 0;
+        // Yahoo annual comparison is primary growth source
+        const epsGrowthRaw = yahooEpsGrowth ?? yahooMetrics?.epsGrowth ?? finnhubFinancials?.epsGrowth5Y ?? 0;
+        const revenueGrowthRaw = yahooRevGrowth ?? yahooMetrics?.revenueGrowth ?? finnhubFinancials?.revenueGrowth5Y ?? 0;
 
         // Volume fallback: Finnhub → Yahoo
         const finnhubAvgVol = finnhubFinancials?.['10DayAverageTradingVolume'];
@@ -456,9 +429,9 @@ export class StockService {
                 pb: pb ? parseFloat(pb.toFixed(1)) : null,
                 dividendYield: divYieldRaw > 0 ? parseFloat(divYieldRaw.toFixed(2)) : null,
                 dividendPerShare: resolvedDivPerShare,
-                revenue: fmpIncome[0]?.revenue ?? yahooMetrics?.revenue ?? null,
+                revenue: yahooMetrics?.revenue ?? null,
                 revenueGrowth: parseFloat(revenueGrowthRaw.toFixed(1)),
-                netIncome: fmpIncome[0]?.netIncome ?? yahooMetrics?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? null,
+                netIncome: yahooMetrics?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? null,
                 profitMargin: parseFloat(profitMarginRaw.toFixed(2)),
                 debtToEquity: debtToEquity != null ? parseFloat(debtToEquity.toFixed(1)) : null,
                 currentRatio: currentRatio != null ? parseFloat(currentRatio.toFixed(2)) : null,
@@ -470,27 +443,27 @@ export class StockService {
             },
             financials: {
                 incomeStatement: {
-                    revenue: fmpIncome[0]?.revenue ?? yahooFinancials?.incomeStatement.revenue ?? 0,
-                    costOfRevenue: fmpIncome[0]?.costOfRevenue ?? yahooFinancials?.incomeStatement.costOfRevenue ?? 0,
-                    grossProfit: fmpIncome[0]?.grossProfit ?? yahooFinancials?.incomeStatement.grossProfit ?? 0,
-                    operatingExpenses: fmpIncome[0]?.operatingExpenses ?? yahooFinancials?.incomeStatement.operatingExpenses ?? 0,
-                    operatingIncome: fmpIncome[0]?.operatingIncome ?? yahooFinancials?.incomeStatement.operatingIncome ?? 0,
-                    netIncome: fmpIncome[0]?.netIncome ?? yahooFinancials?.incomeStatement.netIncome ?? 0,
+                    revenue: yahooFinancials?.incomeStatement.revenue ?? 0,
+                    costOfRevenue: yahooFinancials?.incomeStatement.costOfRevenue ?? 0,
+                    grossProfit: yahooFinancials?.incomeStatement.grossProfit ?? 0,
+                    operatingExpenses: yahooFinancials?.incomeStatement.operatingExpenses ?? 0,
+                    operatingIncome: yahooFinancials?.incomeStatement.operatingIncome ?? 0,
+                    netIncome: yahooFinancials?.incomeStatement.netIncome ?? 0,
                 },
                 balanceSheet: {
-                    totalAssets: fmpBalance?.totalAssets ?? yahooFinancials?.balanceSheet.totalAssets ?? 0,
-                    currentAssets: fmpBalance?.totalCurrentAssets ?? yahooFinancials?.balanceSheet.currentAssets ?? 0,
-                    nonCurrentAssets: fmpBalance?.totalNonCurrentAssets ?? yahooFinancials?.balanceSheet.nonCurrentAssets ?? 0,
-                    totalLiabilities: fmpBalance?.totalLiabilities ?? yahooFinancials?.balanceSheet.totalLiabilities ?? 0,
-                    currentLiabilities: fmpBalance?.totalCurrentLiabilities ?? yahooFinancials?.balanceSheet.currentLiabilities ?? 0,
-                    nonCurrentLiabilities: fmpBalance?.totalNonCurrentLiabilities ?? yahooFinancials?.balanceSheet.nonCurrentLiabilities ?? 0,
-                    totalEquity: fmpBalance?.totalStockholdersEquity ?? yahooFinancials?.balanceSheet.totalEquity ?? 0,
+                    totalAssets: yahooFinancials?.balanceSheet.totalAssets ?? 0,
+                    currentAssets: yahooFinancials?.balanceSheet.currentAssets ?? 0,
+                    nonCurrentAssets: yahooFinancials?.balanceSheet.nonCurrentAssets ?? 0,
+                    totalLiabilities: yahooFinancials?.balanceSheet.totalLiabilities ?? 0,
+                    currentLiabilities: yahooFinancials?.balanceSheet.currentLiabilities ?? 0,
+                    nonCurrentLiabilities: yahooFinancials?.balanceSheet.nonCurrentLiabilities ?? 0,
+                    totalEquity: yahooFinancials?.balanceSheet.totalEquity ?? 0,
                 },
                 cashFlow: {
-                    operating: fmpCash?.operatingCashFlow ?? yahooFinancials?.cashFlow.operating ?? 0,
-                    investing: fmpCash?.netCashUsedForInvestingActivites ?? yahooFinancials?.cashFlow.investing ?? 0,
-                    financing: fmpCash?.netCashUsedProvidedByFinancingActivities ?? yahooFinancials?.cashFlow.financing ?? 0,
-                    netCashFlow: fmpCash?.netChangeInCash ?? yahooFinancials?.cashFlow.netCashFlow ?? 0,
+                    operating: yahooFinancials?.cashFlow.operating ?? 0,
+                    investing: yahooFinancials?.cashFlow.investing ?? 0,
+                    financing: yahooFinancials?.cashFlow.financing ?? 0,
+                    netCashFlow: yahooFinancials?.cashFlow.netCashFlow ?? 0,
                 },
             },
             news,

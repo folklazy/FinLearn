@@ -19,23 +19,15 @@ export interface YFHistoricalPoint {
 
 export async function getHistoricalPrices(symbol: string, days = 365): Promise<YFHistoricalPoint[]> {
     try {
+        // Exclude today — during market hours the current-day row has close=null
+        // which causes yahoo-finance2 to throw "SOME null values" error
         const period2 = new Date();
-        const period1 = new Date(Date.now() - days * 86400000);
-        const opts = { period1, period2, interval: '1d' as const };
-        let rows: any[];
-        try {
-            rows = await yahooFinance.historical(symbol, opts);
-        } catch (firstErr: any) {
-            // yahoo-finance2 throws when SOME rows have null values
-            // Retry with validation disabled to get partial data
-            if (firstErr?.message?.includes('null values')) {
-                console.warn(`[Yahoo] Historical partial nulls for ${symbol} — retrying without validation`);
-                rows = await yahooFinance.historical(symbol, opts, { validateResult: false });
-            } else {
-                throw firstErr;
-            }
-        }
-        // Filter out rows with null/undefined close (bad data points)
+        period2.setUTCHours(0, 0, 0, 0); // start of today UTC → excludes today's incomplete bar
+        const period1 = new Date(period2.getTime() - days * 86400000);
+        const rows: any[] = await yahooFinance.historical(symbol, {
+            period1, period2, interval: '1d' as const,
+        });
+        // Filter out any remaining rows with null/undefined close (safety net)
         return rows
             .filter((r: any) => r.date && r.close != null)
             .map((r: any) => ({
