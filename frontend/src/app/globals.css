@@ -1956,6 +1956,7 @@ input[type=number] {
   /* ── Stocks List Page ── */
   .sl-page {
     padding: 28px 14px 48px !important;
+    overflow-x: hidden !important;
   }
 
   .sl-page h1 {
@@ -1963,8 +1964,15 @@ input[type=number] {
   }
 
   .sl-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    grid-template-columns: 1fr 1fr !important;
     gap: 10px !important;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .sl-grid > a {
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
 
   /* Truncate long sector names in stock cards on mobile */
@@ -2161,6 +2169,8 @@ input[type=number] {
   /* Compact stock cards on small phones */
   .sl-grid > a > div {
     padding: 12px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
 
   /* Tighter top row gap */
