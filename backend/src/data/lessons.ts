@@ -14,8 +14,6 @@ export interface Lesson {
     description: string;
     descriptionEn?: string;
     category: string;
-    module: number;   // 1-8 learning path module
-    order: number;    // 1-25 global step order
     difficulty: 'beginner' | 'intermediate' | 'advanced';
     duration: number; // minutes
     icon: string;
@@ -26,17 +24,6 @@ export interface Lesson {
     quiz?: { question: string; questionEn?: string; options: string[]; optionsEn?: string[]; answer: number }[];
 }
 
-export interface LessonModule {
-    id: number;
-    category: string;
-    name: string;
-    nameEn: string;
-    description: string;
-    descriptionEn: string;
-    icon: string;
-    difficulty: 'beginner' | 'intermediate' | 'advanced';
-}
-
 export interface LessonCategory {
     id: string;
     name: string;
@@ -45,42 +32,23 @@ export interface LessonCategory {
     lessonCount: number;
 }
 
-// ── 8-step learning path modules ──
-export const LEARNING_MODULES: LessonModule[] = [
-    { id: 1, category: 'fundamentals', name: 'พื้นฐานตลาดหุ้น', nameEn: 'Stock Market Fundamentals', description: 'รู้จักหุ้น ตลาดหลักทรัพย์ การอ่านราคา และดัชนีสำคัญ', descriptionEn: 'Understand stocks, exchanges, price reading, and key indices', icon: '📚', difficulty: 'beginner' },
-    { id: 2, category: 'getting-started', name: 'เริ่มต้นลงทุน', nameEn: 'Getting Started', description: 'เปิดบัญชี เลือกหุ้น คำสั่งซื้อขาย และคำศัพท์สำคัญ', descriptionEn: 'Open an account, pick stocks, order types, and key terms', icon: '🚀', difficulty: 'beginner' },
-    { id: 3, category: 'tools', name: 'เครื่องมือการลงทุน', nameEn: 'Investment Tools', description: 'รู้จัก ETF กองทุนรวม และการอ่านกราฟหุ้น', descriptionEn: 'ETFs, mutual funds, and reading stock charts', icon: '🔧', difficulty: 'beginner' },
-    { id: 4, category: 'fundamental-analysis', name: 'วิเคราะห์พื้นฐาน', nameEn: 'Fundamental Analysis', description: 'PE Ratio งบการเงิน และโมเดลประเมินมูลค่า', descriptionEn: 'PE Ratio, financial statements, and valuation models', icon: '📊', difficulty: 'intermediate' },
-    { id: 5, category: 'technical-analysis', name: 'วิเคราะห์ทางเทคนิค', nameEn: 'Technical Analysis', description: 'Moving Average, RSI, MACD และเปรียบเทียบสองแนวทาง', descriptionEn: 'Moving Average, RSI, MACD and comparing both approaches', icon: '📈', difficulty: 'intermediate' },
-    { id: 6, category: 'strategies', name: 'กลยุทธ์การลงทุน', nameEn: 'Investment Strategies', description: 'DCA กระจายพอร์ต และพลังของการลงทุนระยะยาว', descriptionEn: 'DCA, diversification, and the power of long-term investing', icon: '🎯', difficulty: 'intermediate' },
-    { id: 7, category: 'risk-management', name: 'บริหารความเสี่ยง', nameEn: 'Risk Management', description: 'เข้าใจความเสี่ยง Stop Loss ข้อผิดพลาด และจิตวิทยาการลงทุน', descriptionEn: 'Understanding risk, Stop Loss, common mistakes, and psychology', icon: '🛡️', difficulty: 'intermediate' },
-    { id: 8, category: 'advanced', name: 'ความรู้ขั้นสูง', nameEn: 'Advanced Topics', description: 'เศรษฐกิจมหภาค Options Trading และภาษีค่าธรรมเนียม', descriptionEn: 'Macroeconomics, options trading, and taxes & fees', icon: '🎓', difficulty: 'advanced' },
-];
-
-// Legacy categories (backward compat)
 export const LESSON_CATEGORIES: LessonCategory[] = [
-    { id: 'fundamentals', name: 'พื้นฐานตลาดหุ้น', nameEn: 'Stock Market Fundamentals', icon: '📚', lessonCount: 4 },
-    { id: 'getting-started', name: 'เริ่มต้นลงทุน', nameEn: 'Getting Started', icon: '🚀', lessonCount: 4 },
-    { id: 'tools', name: 'เครื่องมือการลงทุน', nameEn: 'Investment Tools', icon: '🔧', lessonCount: 2 },
-    { id: 'fundamental-analysis', name: 'วิเคราะห์พื้นฐาน', nameEn: 'Fundamental Analysis', icon: '�', lessonCount: 3 },
-    { id: 'technical-analysis', name: 'วิเคราะห์ทางเทคนิค', nameEn: 'Technical Analysis', icon: '�', lessonCount: 2 },
-    { id: 'strategies', name: 'กลยุทธ์การลงทุน', nameEn: 'Investment Strategies', icon: '🎯', lessonCount: 3 },
-    { id: 'risk-management', name: 'บริหารความเสี่ยง', nameEn: 'Risk Management', icon: '🛡️', lessonCount: 4 },
-    { id: 'advanced', name: 'ความรู้ขั้นสูง', nameEn: 'Advanced Topics', icon: '🎓', lessonCount: 3 },
+    { id: 'basics', name: 'พื้นฐานการลงทุน', nameEn: 'Investment Basics', icon: '📚', lessonCount: 10 },
+    { id: 'analysis', name: 'การวิเคราะห์หุ้น', nameEn: 'Stock Analysis', icon: '📊', lessonCount: 6 },
+    { id: 'strategy', name: 'กลยุทธ์การลงทุน', nameEn: 'Investment Strategies', icon: '🎯', lessonCount: 4 },
+    { id: 'risk', name: 'การจัดการความเสี่ยง', nameEn: 'Risk Management', icon: '🛡️', lessonCount: 5 },
 ];
 
 export const LESSONS: Lesson[] = [
     // ═══════════════════════════════════
-    // Module 1: Stock Market Fundamentals
+    // Category: basics
     // ═══════════════════════════════════
     {
         id: 'what-is-stock',
         title: 'หุ้นคืออะไร?',
         titleEn: 'What is a Stock?',
         description: 'เรียนรู้พื้นฐานของหุ้น ทำไมบริษัทถึงออกหุ้น และคุณจะได้ประโยชน์อะไรจากการเป็นผู้ถือหุ้น',
-        category: 'fundamentals',
-        module: 1,
-        order: 1,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 8,
         icon: '📈',
@@ -120,9 +88,7 @@ export const LESSONS: Lesson[] = [
         title: 'อ่านราคาหุ้นอย่างไร?',
         titleEn: 'How to Read Stock Prices',
         description: 'เข้าใจตัวเลขที่เห็นบนหน้าจอ: ราคาเปิด, ราคาปิด, High, Low, Volume และอื่นๆ',
-        category: 'fundamentals',
-        module: 1,
-        order: 3,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 10,
         icon: '💰',
@@ -157,16 +123,11 @@ export const LESSONS: Lesson[] = [
         ],
     },
     {
-    // ═══════════════════════════════════
-    // Module 2: Getting Started
-    // ═══════════════════════════════════
         id: 'types-of-stocks',
         title: 'ประเภทของหุ้น',
         titleEn: 'Types of Stocks',
         description: 'รู้จักหุ้นแต่ละประเภท: Growth, Value, Dividend, Blue-chip และเลือกให้เหมาะกับตัวเอง',
-        category: 'getting-started',
-        module: 2,
-        order: 6,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 12,
         icon: '🏷️',
@@ -201,9 +162,7 @@ export const LESSONS: Lesson[] = [
         title: 'เริ่มต้นลงทุนอย่างไร?',
         titleEn: 'How to Start Investing',
         description: 'ขั้นตอนเริ่มต้นลงทุนตั้งแต่เปิดบัญชี เลือกหุ้น ไปจนถึงวิธีซื้อขาย',
-        category: 'getting-started',
-        module: 2,
-        order: 5,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 15,
         icon: '🚀',
@@ -239,9 +198,7 @@ export const LESSONS: Lesson[] = [
         title: 'ตลาดหุ้นทำงานยังไง?',
         titleEn: 'How Does the Stock Market Work?',
         description: 'เข้าใจกลไกตลาดหุ้น: เวลาเปิดปิด, Bid/Ask, การจับคู่คำสั่ง และบทบาทของผู้เล่นในตลาด',
-        category: 'fundamentals',
-        module: 1,
-        order: 2,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 12,
         icon: '🏛️',
@@ -280,9 +237,7 @@ export const LESSONS: Lesson[] = [
         title: 'คำสั่งซื้อขายหุ้นมีกี่แบบ?',
         titleEn: 'Types of Stock Orders',
         description: 'รู้จักคำสั่งซื้อขาย: Market Order, Limit Order, Stop Order และเมื่อไหร่ควรใช้แบบไหน',
-        category: 'getting-started',
-        module: 2,
-        order: 7,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 10,
         icon: '🛒',
@@ -321,9 +276,7 @@ export const LESSONS: Lesson[] = [
         title: 'ดัชนีหุ้นคืออะไร?',
         titleEn: 'What Are Stock Indices?',
         description: 'รู้จัก S&P 500, Dow Jones, NASDAQ และทำไมดัชนีสำคัญสำหรับนักลงทุนทุกคน',
-        category: 'fundamentals',
-        module: 1,
-        order: 4,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 8,
         icon: '📊',
@@ -358,16 +311,11 @@ export const LESSONS: Lesson[] = [
         ],
     },
     {
-    // ═══════════════════════════════════
-    // Module 3: Investment Tools
-    // ═══════════════════════════════════
         id: 'etf-and-funds',
         title: 'ETF และกองทุนรวมคืออะไร?',
         titleEn: 'ETFs & Mutual Funds',
         description: 'รู้จัก ETF กองทุนรวม ต่างกันยังไง? เหมาะกับใคร? และ ETF ยอดนิยมที่มือใหม่ควรรู้',
-        category: 'tools',
-        module: 3,
-        order: 9,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 12,
         icon: '🧩',
@@ -406,9 +354,7 @@ export const LESSONS: Lesson[] = [
         title: 'อ่านกราฟหุ้นเบื้องต้น',
         titleEn: 'Reading Stock Charts for Beginners',
         description: 'เข้าใจกราฟแท่งเทียน กราฟเส้น Volume bars และ Timeframe สำหรับมือใหม่',
-        category: 'tools',
-        module: 3,
-        order: 10,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 10,
         icon: '📉',
@@ -447,9 +393,7 @@ export const LESSONS: Lesson[] = [
         title: 'คำศัพท์การลงทุนที่ต้องรู้',
         titleEn: 'Must-Know Investment Terms',
         description: 'รวมคำศัพท์สำคัญที่มือใหม่ต้องเข้าใจ: Bull/Bear, Long/Short, Margin, Earnings และอื่นๆ',
-        category: 'getting-started',
-        module: 2,
-        order: 8,
+        category: 'basics',
         difficulty: 'beginner',
         duration: 15,
         icon: '📖',
@@ -486,16 +430,14 @@ export const LESSONS: Lesson[] = [
     },
 
     // ═══════════════════════════════════
-    // Module 4: Fundamental Analysis
+    // Category: analysis
     // ═══════════════════════════════════
     {
         id: 'pe-ratio',
         title: 'PE Ratio คืออะไร?',
         titleEn: 'Understanding PE Ratio',
         description: 'เข้าใจ PE Ratio ตัวเลขสำคัญที่สุดในการประเมินมูลค่าหุ้น',
-        category: 'fundamental-analysis',
-        module: 4,
-        order: 11,
+        category: 'analysis',
         difficulty: 'beginner',
         duration: 10,
         icon: '🔢',
@@ -530,9 +472,7 @@ export const LESSONS: Lesson[] = [
         title: 'อ่านงบการเงินเบื้องต้น',
         titleEn: 'Reading Financial Statements',
         description: 'เข้าใจงบกำไรขาดทุน งบดุล และงบกระแสเงินสด อย่างง่าย',
-        category: 'fundamental-analysis',
-        module: 4,
-        order: 12,
+        category: 'analysis',
         difficulty: 'intermediate',
         duration: 15,
         icon: '📋',
@@ -559,16 +499,11 @@ export const LESSONS: Lesson[] = [
         ],
     },
     {
-    // ═══════════════════════════════════
-    // Module 5: Technical Analysis
-    // ═══════════════════════════════════
         id: 'technical-analysis-basics',
         title: 'เทคนิคอลเบื้องต้น',
         titleEn: 'Technical Analysis Basics',
         description: 'เข้าใจกราฟหุ้น, Moving Average, RSI และ MACD สำหรับมือใหม่',
-        category: 'technical-analysis',
-        module: 5,
-        order: 14,
+        category: 'analysis',
         difficulty: 'intermediate',
         duration: 12,
         icon: '📉',
@@ -603,9 +538,7 @@ export const LESSONS: Lesson[] = [
         title: 'ปัจจัยพื้นฐาน vs เทคนิคอล',
         titleEn: 'Fundamental vs Technical Analysis',
         description: 'เปรียบเทียบสองแนวทางการวิเคราะห์ และเมื่อไหร่ควรใช้อันไหน',
-        category: 'technical-analysis',
-        module: 5,
-        order: 15,
+        category: 'analysis',
         difficulty: 'intermediate',
         duration: 8,
         icon: '⚖️',
@@ -635,9 +568,7 @@ export const LESSONS: Lesson[] = [
         title: 'การประเมินมูลค่าหุ้นขั้นสูง',
         titleEn: 'Advanced Stock Valuation',
         description: 'เรียนรู้โมเดล DCF, Comparable Analysis และ Sum-of-the-Parts สำหรับประเมินมูลค่าที่แท้จริงของหุ้น',
-        category: 'fundamental-analysis',
-        module: 4,
-        order: 13,
+        category: 'analysis',
         difficulty: 'advanced',
         duration: 20,
         icon: '🧮',
@@ -673,16 +604,11 @@ export const LESSONS: Lesson[] = [
         ],
     },
     {
-    // ═══════════════════════════════════
-    // Module 8: Advanced Topics
-    // ═══════════════════════════════════
         id: 'macro-economics',
         title: 'เศรษฐกิจมหภาคกับตลาดหุ้น',
         titleEn: 'Macroeconomics & the Stock Market',
         description: 'เข้าใจว่าดอกเบี้ย เงินเฟ้อ GDP และนโยบาย Fed ส่งผลต่อราคาหุ้นอย่างไร',
-        category: 'advanced',
-        module: 8,
-        order: 23,
+        category: 'analysis',
         difficulty: 'advanced',
         duration: 18,
         icon: '🌐',
@@ -719,16 +645,14 @@ export const LESSONS: Lesson[] = [
     },
 
     // ═══════════════════════════════════
-    // Module 6: Investment Strategies
+    // Category: strategy
     // ═══════════════════════════════════
     {
         id: 'dca-strategy',
         title: 'กลยุทธ์ DCA (ลงทุนสม่ำเสมอ)',
         titleEn: 'Dollar-Cost Averaging Strategy',
         description: 'เรียนรู้กลยุทธ์ DCA ที่เหมาะกับมือใหม่มากที่สุด',
-        category: 'strategies',
-        module: 6,
-        order: 16,
+        category: 'strategy',
         difficulty: 'beginner',
         duration: 8,
         icon: '📅',
@@ -759,9 +683,7 @@ export const LESSONS: Lesson[] = [
         title: 'การกระจายพอร์ต (Diversification)',
         titleEn: 'Portfolio Diversification',
         description: 'ทำไมไม่ควรใส่ไข่ทุกฟองไว้ในตะกร้าใบเดียว',
-        category: 'strategies',
-        module: 6,
-        order: 17,
+        category: 'strategy',
         difficulty: 'beginner',
         duration: 10,
         icon: '🧺',
@@ -792,9 +714,7 @@ export const LESSONS: Lesson[] = [
         title: 'การลงทุนระยะยาว',
         titleEn: 'Long-term Investing',
         description: 'พลังของดอกเบี้ยทบต้น และทำไมเวลาคือเพื่อนที่ดีที่สุดของนักลงทุน',
-        category: 'strategies',
-        module: 6,
-        order: 18,
+        category: 'strategy',
         difficulty: 'beginner',
         duration: 10,
         icon: '⏳',
@@ -825,9 +745,7 @@ export const LESSONS: Lesson[] = [
         title: 'Options Trading เบื้องต้น',
         titleEn: 'Introduction to Options Trading',
         description: 'เข้าใจ Call/Put Options, Greeks, กลยุทธ์พื้นฐาน และความเสี่ยงของ Options สำหรับนักลงทุนที่มีประสบการณ์',
-        category: 'advanced',
-        module: 8,
-        order: 24,
+        category: 'strategy',
         difficulty: 'advanced',
         duration: 20,
         icon: '🎲',
@@ -864,16 +782,14 @@ export const LESSONS: Lesson[] = [
     },
 
     // ═══════════════════════════════════
-    // Module 7: Risk Management
+    // Category: risk
     // ═══════════════════════════════════
     {
         id: 'understanding-risk',
         title: 'เข้าใจความเสี่ยงในการลงทุน',
         titleEn: 'Understanding Investment Risk',
         description: 'ความเสี่ยงมีกี่ประเภท? และทำไมความเสี่ยง ≠ ไม่ดี',
-        category: 'risk-management',
-        module: 7,
-        order: 19,
+        category: 'risk',
         difficulty: 'beginner',
         duration: 10,
         icon: '⚠️',
@@ -904,9 +820,7 @@ export const LESSONS: Lesson[] = [
         title: 'Stop Loss คืออะไร?',
         titleEn: 'Understanding Stop Loss',
         description: 'เรียนรู้วิธีตั้ง Stop Loss เพื่อจำกัดการขาดทุน',
-        category: 'risk-management',
-        module: 7,
-        order: 20,
+        category: 'risk',
         difficulty: 'intermediate',
         duration: 8,
         icon: '🛑',
@@ -933,9 +847,7 @@ export const LESSONS: Lesson[] = [
         title: 'ข้อผิดพลาดที่พบบ่อย',
         titleEn: 'Common Investment Mistakes',
         description: 'หลีกเลี่ยงข้อผิดพลาดที่นักลงทุนมือใหม่ทำบ่อยที่สุด',
-        category: 'risk-management',
-        module: 7,
-        order: 21,
+        category: 'risk',
         difficulty: 'beginner',
         duration: 10,
         icon: '🚫',
@@ -970,9 +882,7 @@ export const LESSONS: Lesson[] = [
         title: 'จิตวิทยาการลงทุน',
         titleEn: 'Investment Psychology',
         description: 'เข้าใจอคติทางจิตวิทยาที่ทำให้นักลงทุนตัดสินใจผิดพลาด และวิธีควบคุมอารมณ์ในการลงทุน',
-        category: 'risk-management',
-        module: 7,
-        order: 22,
+        category: 'risk',
         difficulty: 'beginner',
         duration: 12,
         icon: '🧠',
@@ -1012,9 +922,7 @@ export const LESSONS: Lesson[] = [
         title: 'ภาษีและค่าธรรมเนียมการลงทุน',
         titleEn: 'Investment Taxes & Fees',
         description: 'เข้าใจภาษีจากกำไรหุ้น เงินปันผล ค่าคอมมิชชัน และวิธีลดค่าใช้จ่ายในการลงทุน',
-        category: 'advanced',
-        module: 8,
-        order: 25,
+        category: 'risk',
         difficulty: 'beginner',
         duration: 10,
         icon: '🧾',
