@@ -1715,6 +1715,28 @@ input[type=number] {
   pointer-events: none;
 }
 
+.navbar-mobile-dropdown {
+  margin: 0 0 8px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  animation: fadeIn 0.15s var(--ease);
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.navbar-mobile-dropdown .navbar-dropdown-item {
+  padding: 10px 14px;
+  gap: 10px;
+}
+
+.navbar-mobile-dropdown .navbar-dropdown-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+
 .navbar-mobile-links {
   display: flex;
   flex-direction: column;

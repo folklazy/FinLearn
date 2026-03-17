@@ -345,17 +345,50 @@ export default function Navbar() {
                 {/* ── Mobile menu ── */}
                 {mobileOpen && (
                     <div id="mobile-menu" className="navbar-mobile-menu">
-                        <form onSubmit={handleSearch} className="navbar-mobile-search">
+                        <form onSubmit={handleSearch} className="navbar-mobile-search" style={{ position: 'relative' }}>
                             <Search size={14} className="navbar-mobile-search-icon" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
+                                onKeyDown={handleKeyDown}
                                 placeholder={t('nav.searchPlaceholder')}
                                 className="input"
                                 style={{ paddingLeft: '36px', fontSize: '0.88rem' }}
                             />
+                            {searchLoading && <div className="navbar-search-spinner" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }} />}
                         </form>
+
+                        {/* Mobile Search Results */}
+                        {showDropdown && searchResults.length > 0 && (
+                            <div className="navbar-mobile-dropdown">
+                                <div className="navbar-dropdown-header">
+                                    {t('nav.searchResults')} {searchResults.length} {t('nav.searchItems')}
+                                </div>
+                                {searchResults.slice(0, 6).map((result, idx) => (
+                                    <button
+                                        key={result.symbol}
+                                        onClick={() => navigateToStock(result.symbol)}
+                                        className={`navbar-dropdown-item${idx === activeIndex ? ' active' : ''}`}
+                                    >
+                                        <div className="navbar-dropdown-logo">
+                                            <StockLogo src={result.logo || ''} symbol={result.symbol} size={28} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div className="navbar-dropdown-name">{result.name}</div>
+                                            <div className="navbar-dropdown-meta">
+                                                {result.exchange ? `${result.exchange}:${result.symbol}` : result.symbol}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                                {searchResults.length > 6 && (
+                                    <div className="navbar-dropdown-footer">
+                                        + {searchResults.length - 6} {t('nav.searchMore')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="navbar-mobile-links">
                             {NAV_KEYS.map(link => (
