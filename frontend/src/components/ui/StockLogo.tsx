@@ -9,9 +9,22 @@ interface StockLogoProps {
 }
 
 export default function StockLogo({ src, symbol, size }: StockLogoProps) {
-    const [err, setErr] = useState(false);
+    // 0 = primary src, 1 = Google favicon fallback, 2 = text fallback
+    const [stage, setStage] = useState(0);
 
-    if (!src || err) {
+    const googleFallback = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(symbol.toLowerCase())}.com&sz=128`;
+
+    const handleError = () => {
+        if (stage === 0) {
+            setStage(1); // try Google favicon
+        } else {
+            setStage(2); // give up, show text
+        }
+    };
+
+    const imgSrc = stage === 0 ? src : googleFallback;
+
+    if (!src || stage === 2) {
         return (
             <span style={{
                 fontSize: size ? `${size * 0.3}px` : '0.7rem',
@@ -27,7 +40,7 @@ export default function StockLogo({ src, symbol, size }: StockLogoProps) {
 
     return (
         <img
-            src={src}
+            src={imgSrc}
             alt={symbol}
             style={{
                 width: '100%',
@@ -35,7 +48,7 @@ export default function StockLogo({ src, symbol, size }: StockLogoProps) {
                 objectFit: 'contain',
                 borderRadius: '6px',
             }}
-            onError={() => setErr(true)}
+            onError={handleError}
         />
     );
 }
