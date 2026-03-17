@@ -254,7 +254,7 @@ export default function LessonDetailPage() {
 
                     {/* ══ Mobile Section Nav (visible only on mobile) ══ */}
                     <div className="lesson-mobile-nav">
-                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', WebkitOverflowScrolling: 'touch' }}>
+                        <div className="lesson-mobile-nav-scroll" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', paddingRight: '20px', WebkitOverflowScrolling: 'touch' }}>
                             {lesson.sections.map((s, i) => {
                                 const isActive = activeSection === i;
                                 const isDone = visitedSections.has(i) && activeSection !== i;

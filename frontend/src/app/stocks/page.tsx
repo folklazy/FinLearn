@@ -72,8 +72,8 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                 </div>
 
                 {/* Bottom: Change + Sector + Score/MCap */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
                         <span style={{
                             fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: '100px',
                             background: isUp ? 'rgba(52,211,153,0.1)' : 'rgba(251,113,133,0.1)',
@@ -83,7 +83,7 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                             {formatPercent(stock.changePercent)}
                         </span>
                         {stock.sector && (
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'var(--tint-bg)', border: '1px solid var(--border)' }}>
+                            <span className="stock-card-sector" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'var(--tint-bg)', border: '1px solid var(--border)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {stock.sector}
                             </span>
                         )}

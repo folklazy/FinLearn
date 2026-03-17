@@ -1857,6 +1857,15 @@ input[type=number] {
   display: none;
 }
 
+/* Hide scrollbar on mobile nav scroll container */
+.lesson-mobile-nav-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.lesson-mobile-nav-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
 /* ===== Responsive utilities ===== */
 @media (max-width: 768px) {
   .hidden-mobile {
@@ -1954,6 +1963,11 @@ input[type=number] {
     gap: 10px !important;
   }
 
+  /* Truncate long sector names in stock cards on mobile */
+  .stock-card-sector {
+    max-width: 80px !important;
+  }
+
   /* ── Homepage ── */
   .homepage-hero {
     padding: 48px 20px 56px !important;
@@ -1985,7 +1999,11 @@ input[type=number] {
   /* ── Lesson Detail ── */
   .lesson-layout {
     flex-direction: column !important;
-    gap: 20px !important;
+    gap: 16px !important;
+  }
+
+  .lesson-layout h1 {
+    font-size: 1.25rem !important;
   }
 
   .lesson-sidebar {
@@ -1994,7 +2012,20 @@ input[type=number] {
 
   .lesson-mobile-nav {
     display: block !important;
-    margin-bottom: 20px;
+    position: sticky;
+    top: 60px;
+    z-index: 20;
+    background: var(--bg-primary);
+    padding: 12px 0 4px;
+    margin: 0 -20px 16px;
+    padding-left: 20px;
+    padding-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Tighter lesson container padding on mobile */
+  .lesson-layout > div:first-child {
+    padding: 0 !important;
   }
 
   /* ── Portfolio ── */
