@@ -189,9 +189,9 @@ export class StockService {
 
         // Merge profile — FMP → Finnhub → Yahoo fallback chain
         const profileName = fmpProfile?.companyName || finnhubProfile?.name || yahooProfile?.name || symbol;
-        // Logo: Finnhub direct → DuckDuckGo icon from website domain
+        // Logo: Finnhub direct → FMP image → DuckDuckGo icon from website domain
         const profileWebsiteForLogo = fmpProfile?.website || finnhubProfile?.weburl || yahooProfile?.website || '';
-        const profileLogo = buildLogoUrl(finnhubProfile?.logo, profileWebsiteForLogo || null, symbol);
+        const profileLogo = buildLogoUrl(finnhubProfile?.logo || fmpProfile?.image, profileWebsiteForLogo || null, symbol);
         // Prefer Yahoo sector/industry — it uses proper GICS classification
         // FMP free tier returns simplified names (e.g. "Automobiles" instead of "Consumer Cyclical")
         const rawSector = yahooProfile?.sector || fmpProfile?.sector || finnhubProfile?.finnhubIndustry || 'Other';
@@ -951,7 +951,7 @@ export class StockService {
                 return {
                     symbol: sym,
                     name: (p as any)?.companyName ?? sym,
-                    logo: buildLogoUrl(null, (p as any)?.website, sym),
+                    logo: buildLogoUrl((p as any)?.image, (p as any)?.website, sym),
                     sector: (p as any)?.sector ?? '',
                     price: (p as any)?.price ?? 0,
                     change: (p as any)?.change ?? 0,
@@ -1084,7 +1084,7 @@ export class StockService {
                 if (fmpP && fmpP.price > 0) {
                     result.push({
                         symbol: fmpP.symbol, name: fmpP.companyName,
-                        logo: buildLogoUrl(null, fmpP.website, fmpP.symbol),
+                        logo: buildLogoUrl(fmpP.image, fmpP.website, fmpP.symbol),
                         sector: fmpP.sector, price: fmpP.price,
                         change: fmpP.change, changePercent: fmpP.changePercentage,
                         marketCap: fmpP.marketCap, overallScore: score,
@@ -1222,7 +1222,7 @@ export class StockService {
                 return {
                     symbol: fmpP.symbol,
                     name: fmpP.companyName,
-                    logo: buildLogoUrl(null, fmpP.website, fmpP.symbol),
+                    logo: buildLogoUrl(fmpP.image, fmpP.website, fmpP.symbol),
                     sector: fmpP.sector || item.sector,
                     price: fmpP.price,
                     change: fmpP.change,
