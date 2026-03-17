@@ -30,6 +30,7 @@ npm run dev                 # http://localhost:4000
 | GET | `/api/stocks/popular` | Popular stocks with scores |
 | GET | `/api/stocks/search?q=apple` | Search stocks by name/symbol |
 | GET | `/api/stocks/sp500?page=1&limit=50` | Browse S&P 500 |
+| GET | `/api/stocks/batch?symbols=AAPL,MSFT` | Batch price lookup (up to 20 symbols) |
 | GET | `/api/stocks/:symbol` | Full stock data (profile, price, financials, etc.) |
 
 ### Lessons
@@ -65,9 +66,11 @@ src/
 │       ├── fmp.ts           #     Financial Modeling Prep (primary)
 │       ├── finnhub.ts       #     Finnhub (quotes, peers, news)
 │       ├── twelveData.ts    #     Twelve Data (MA, RSI, MACD)
-│       └── yahooFinance.ts  #     Yahoo Finance (fallback metrics)
+│       ├── wikipedia.ts     #     Wikipedia (fallback company descriptions)
+│       ├── yahooFinance.ts  #     Yahoo Finance (fallback metrics)
+│       └── index.ts         #     Re-exports all providers
 ├── data/                    # Static content & seed data
-│   ├── lessons.ts           #   25 lessons in Thai (interfaces + data)
+│   ├── lessons.ts           #   27 lessons in Thai (interfaces + data)
 │   ├── lessonsEn.ts         #   English translations (merged by route)
 │   ├── mockData.ts          #   Mock data for AAPL/GOOGL/MSFT/TSLA/AMZN
 │   ├── popularStocks.ts     #   Popular stock list for homepage
@@ -77,6 +80,7 @@ src/
 ├── lib/
 │   └── prisma.ts            #   Prisma client singleton
 └── middleware/
+    ├── auth.ts              #   JWT verification (NextAuth token)
     └── rateLimiter.ts       #   Rate limiting middleware
 ```
 
@@ -91,9 +95,9 @@ StockService.getStockData(symbol)
     ↓
 1. Check PostgreSQL cache (stockdata:full:SYMBOL, TTL 5min)
     ↓ miss
-2. fetchFromAPIs() — parallel calls to FMP + Finnhub + Yahoo + TwelveData
+2. fetchFromAPIs() — parallel calls to FMP + Finnhub + Yahoo + TwelveData + Wikipedia
     ↓
-3. Assemble StockData (profile, price, metrics, financials, scores, tips)
+3. Assemble StockData (profile, price, metrics, financials, scores, tips, descriptions)
     ↓
 4. Store in cache → return to client
 ```

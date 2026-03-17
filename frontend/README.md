@@ -18,7 +18,7 @@ Requires the backend running on port 4000 for stock/lesson data.
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start Next.js dev server |
-| `npm run build` | Production build |
+| `npm run build` | Production build (includes `prisma generate`) |
 | `npm start` | Run production build |
 | `npm run lint` | ESLint check |
 
@@ -29,49 +29,63 @@ src/
 ├── app/                        # Next.js App Router
 │   ├── layout.tsx              #   Root layout (Navbar, Footer, Providers)
 │   ├── page.tsx                #   Homepage / Dashboard
-│   ├── globals.css             #   Global styles (dark theme tokens)
+│   ├── globals.css             #   Global styles + responsive rules + theme tokens
 │   │
 │   ├── stocks/                 #   Stock pages
-│   │   ├── page.tsx            #     /stocks — S&P 500 browser
+│   │   ├── page.tsx            #     /stocks — S&P 500 browser (grid/table, filters)
 │   │   └── [symbol]/page.tsx   #     /stocks/AAPL — full stock detail
 │   │
 │   ├── learn/                  #   Lesson pages
-│   │   ├── page.tsx            #     /learn — lesson listing
-│   │   └── [id]/page.tsx       #     /learn/what-is-stock — lesson detail
+│   │   ├── page.tsx            #     /learn — lesson listing with category filters
+│   │   └── [id]/page.tsx       #     /learn/what-is-stock — lesson reader + quiz
 │   │
 │   ├── portfolio/page.tsx      #   Paper trading simulator
-│   ├── watchlist/page.tsx      #   Watchlist
-│   ├── settings/page.tsx       #   User settings
-│   ├── onboarding/page.tsx     #   New user onboarding
+│   ├── watchlist/page.tsx      #   Watchlist with live prices
+│   ├── glossary/page.tsx       #   Financial terms dictionary (TH/EN)
+│   ├── settings/page.tsx       #   User settings (profile, security, preferences)
+│   ├── onboarding/page.tsx     #   Full-screen new user onboarding wizard
 │   │
 │   ├── (auth)/                 #   Auth pages (route group, no layout nesting)
 │   │   ├── login/              #     /login
 │   │   ├── register/           #     /register
 │   │   ├── forgot-password/    #     /forgot-password
-│   │   └── ...                 #     verify-email, reset-password
+│   │   ├── reset-password/     #     /reset-password
+│   │   └── verify-email/       #     /verify-email + /verify-email/confirm
 │   │
 │   └── api/                    #   Next.js API routes (server-side)
-│       ├── auth/               #     NextAuth + register/verify/reset
+│       ├── auth/               #     NextAuth + register/verify/reset/resend
 │       ├── portfolio/          #     Portfolio trades & history
 │       ├── watchlist/          #     Watchlist add/remove
-│       └── user/               #     Profile & settings
+│       ├── user/               #     Profile, password, email change, delete
+│       └── health/             #     Frontend health check
 │
 ├── components/                 #   Shared components
 │   ├── layout/
-│   │   ├── Navbar.tsx          #     Top nav with search, auth, locale toggle
-│   │   └── Footer.tsx          #     Site footer
+│   │   ├── Navbar.tsx          #     Frosted glass nav: search, auth, locale, theme
+│   │   ├── Footer.tsx          #     Site footer with links
+│   │   └── LayoutShell.tsx     #     Conditional chrome (hides nav on onboarding)
+│   ├── ui/
+│   │   └── StockLogo.tsx       #     Reusable stock logo with fallback
+│   ├── PageTip.tsx             #     Contextual page tips
+│   ├── ProductTour.tsx         #     driver.js guided walkthrough
 │   └── providers/
 │       ├── AuthProvider.tsx    #     NextAuth session provider
-│       └── ThemeProvider.tsx   #     Theme context (dark mode)
+│       └── OnboardingGuard.tsx #     Redirects new users to onboarding
 │
 ├── lib/                        #   Utilities
-│   ├── api.ts                  #     Backend API client (fetch wrapper)
-│   ├── i18n.tsx                #     All TH/EN translations + useI18n hook
-│   ├── auth.ts                 #     NextAuth configuration
+│   ├── api.ts                  #     Backend API client (fetch wrapper → :4000)
+│   ├── auth.ts                 #     NextAuth config (Credentials + Google OAuth)
+│   ├── currency.tsx            #     CurrencyContext — USD/THB/EUR/JPY formatting
+│   ├── email.ts                #     Nodemailer — verification & reset emails
+│   ├── i18n.tsx                #     All TH/EN translations + useI18n() hook
+│   ├── logger.ts               #     Structured logging utility
+│   ├── login-limiter.ts        #     DB-backed brute-force protection (login)
+│   ├── market-hours.ts         #     NYSE/SET open/close schedule helpers
+│   ├── otp-limiter.ts          #     DB-backed brute-force protection (OTP)
 │   ├── prisma.ts               #     Prisma client singleton
-│   ├── email.ts                #     Email sending (nodemailer)
-│   ├── market-hours.ts         #     US/Thai market open/close helpers
-│   ├── tokens.ts               #     JWT utility functions
+│   ├── rate-limiter.ts         #     Generic rate limiter utility
+│   ├── theme.tsx               #     ThemeContext — dark/light mode toggle
+│   ├── tokens.ts               #     OTP/JWT generation & DB persistence
 │   └── utils.ts                #     Number formatting, helpers
 │
 ├── types/
@@ -86,14 +100,17 @@ src/
 All translations are in `lib/i18n.tsx` using a custom `useI18n()` hook that returns `{ t, locale, setLocale }`. No external i18n library needed.
 
 ### Styling
-Pure CSS with custom properties (no CSS modules). Theme tokens are in `globals.css`. The app uses a "Soft Dark Minimal" theme.
+Tailwind CSS v4 + pure CSS with custom properties (design tokens) in `globals.css`. Supports dark/light mode via `ThemeContext`. Responsive mobile layouts with breakpoint-aware grids.
 
 ### Data Fetching
 - **Stock/lesson data** → fetched client-side from Express backend (port 4000) via `lib/api.ts`
 - **Auth/portfolio/watchlist** → handled by Next.js API routes → Prisma → PostgreSQL
 
 ### Auth Flow
-NextAuth v5 with credentials provider. Email verification via OTP codes sent by nodemailer.
+NextAuth v5 with dual providers: Credentials (email/password + OTP verification) and Google OAuth. OAuth-aware settings page detects Google users and disables email changes.
+
+### Currency
+`CurrencyContext` provides `formatPrice()` and `formatLarge()` globally. Supports USD, THB, EUR, JPY with live exchange rates. User preference persisted in DB.
 
 ## Adding a New Page
 
