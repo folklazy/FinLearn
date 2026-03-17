@@ -112,7 +112,7 @@ export default function HomePage() {
       </div>
 
       {/* ═══ Hero ═══ */}
-      <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 24px 96px' }}>
+      <section className="homepage-hero" style={{ position: 'relative', overflow: 'hidden', padding: '80px 24px 96px' }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '700px', height: '400px', background: 'radial-gradient(ellipse, rgba(124,108,240,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
           {/* Animated hero chart */}
@@ -179,7 +179,7 @@ export default function HomePage() {
           </div>
 
           {/* Stats strip */}
-          <div className="animate-fade-up delay-4" style={{
+          <div className="animate-fade-up delay-4 homepage-stats" style={{
             display: 'inline-flex', gap: '0', marginTop: '52px',
             background: 'var(--bg-secondary)', border: '1px solid var(--border)',
             borderRadius: '14px', overflow: 'hidden',
@@ -334,7 +334,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div className="homepage-features" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             {[
               { Icon: BarChart3, title: t('features.data.title'), desc: t('features.data.desc'), accent: '#7c6cf0', href: '/stocks' },
               { Icon: Shield, title: t('features.sim.title'), desc: t('features.sim.desc'), accent: '#34d399', href: '/portfolio' },

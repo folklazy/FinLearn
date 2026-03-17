@@ -160,7 +160,7 @@ export default function LessonDetailPage() {
             </Link>
 
             {/* ══════ Two-column layout ══════ */}
-            <div className="animate-fade-up" style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+            <div className="animate-fade-up lesson-layout" style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
 
                 {/* ── LEFT COLUMN (main content) ── */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -250,6 +250,44 @@ export default function LessonDetailPage() {
                                 </li>
                             ))}
                         </ul>
+                    </div>
+
+                    {/* ══ Mobile Section Nav (visible only on mobile) ══ */}
+                    <div className="lesson-mobile-nav">
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', WebkitOverflowScrolling: 'touch' }}>
+                            {lesson.sections.map((s, i) => {
+                                const isActive = activeSection === i;
+                                const isDone = visitedSections.has(i) && activeSection !== i;
+                                return (
+                                    <button key={i} onClick={() => goToSection(i)} style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        padding: '7px 14px', borderRadius: '100px', whiteSpace: 'nowrap',
+                                        fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                                        flexShrink: 0, transition: 'all 0.15s',
+                                        background: isActive ? 'var(--primary)' : isDone ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)',
+                                        color: isActive ? 'white' : isDone ? 'var(--success)' : 'var(--text-secondary)',
+                                        border: isActive ? '1px solid var(--primary)' : isDone ? '1px solid rgba(34,197,94,0.2)' : '1px solid var(--border)',
+                                    }}>
+                                        {isDone && <CheckCircle2 size={11} />}
+                                        {locale === 'th' ? `หัวข้อ ${i + 1}` : `Section ${i + 1}`}
+                                    </button>
+                                );
+                            })}
+                            {hasQuiz && (
+                                <button onClick={() => { if (allSectionsDone) goToSection(quizStepIdx); }} style={{
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    padding: '7px 14px', borderRadius: '100px', whiteSpace: 'nowrap',
+                                    fontSize: '0.75rem', fontWeight: 600, cursor: allSectionsDone ? 'pointer' : 'default',
+                                    fontFamily: 'inherit', flexShrink: 0, transition: 'all 0.15s',
+                                    opacity: allSectionsDone ? 1 : 0.4,
+                                    background: isQuizStep ? 'var(--primary)' : 'var(--bg-secondary)',
+                                    color: isQuizStep ? 'white' : 'var(--text-secondary)',
+                                    border: isQuizStep ? '1px solid var(--primary)' : '1px solid var(--border)',
+                                }}>
+                                    <Award size={11} /> Quiz
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* ══════ READING MODE ══════ */}
@@ -475,14 +513,7 @@ export default function LessonDetailPage() {
                 </div>
             </div>
 
-            {/* Responsive: hide sidebar on mobile via CSS class */}
-            <style>{`
-                @media (max-width: 768px) {
-                    .lesson-sidebar {
-                        display: none !important;
-                    }
-                }
-            `}</style>
+            {/* Responsive handled by globals.css */}
         </div>
     );
 }

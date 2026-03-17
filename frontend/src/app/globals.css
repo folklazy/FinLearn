@@ -1852,6 +1852,11 @@ input[type=number] {
   }
 }
 
+/* ── Lesson mobile nav (hidden on desktop, shown on mobile) ── */
+.lesson-mobile-nav {
+  display: none;
+}
+
 /* ===== Responsive utilities ===== */
 @media (max-width: 768px) {
   .hidden-mobile {
@@ -1947,6 +1952,75 @@ input[type=number] {
   .sl-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
     gap: 10px !important;
+  }
+
+  /* ── Homepage ── */
+  .homepage-hero {
+    padding: 48px 20px 56px !important;
+  }
+
+  .homepage-features {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .homepage-stats {
+    flex-direction: row !important;
+  }
+
+  .homepage-stats > div {
+    padding: 12px 16px !important;
+  }
+
+  /* ── Learn Page ── */
+  .learn-featured {
+    grid-template-columns: 1fr !important;
+  }
+
+  .learn-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* ── Lesson Detail ── */
+  .lesson-layout {
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  .lesson-sidebar {
+    display: none !important;
+  }
+
+  .lesson-mobile-nav {
+    display: block !important;
+    margin-bottom: 20px;
+  }
+
+  /* ── Portfolio ── */
+  .port-overview {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .port-stats-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .port-stats-row > *:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .port-alloc-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .port-alloc-grid > div:first-child {
+    width: 100% !important;
+    max-width: 240px;
+    margin: 0 auto;
   }
 }
 
@@ -2059,6 +2133,43 @@ input[type=number] {
   .chip {
     font-size: 0.7rem !important;
     padding: 5px 10px !important;
+  }
+
+  /* ── Homepage small phones ── */
+  .homepage-hero {
+    padding: 36px 16px 40px !important;
+  }
+
+  .homepage-stats > div {
+    padding: 10px 12px !important;
+  }
+
+  .homepage-stats > div > div:first-child {
+    font-size: 1.1rem !important;
+  }
+
+  /* ── Learn small phones ── */
+  .learn-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  /* ── Lesson Detail small phones ── */
+  .lesson-layout {
+    gap: 12px !important;
+  }
+
+  /* ── Portfolio small phones ── */
+  .port-stats-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .port-stats-row > *:last-child {
+    grid-column: auto;
+  }
+
+  .port-overview > div:last-child {
+    grid-template-columns: 1fr 1fr !important;
   }
 }
 

@@ -471,7 +471,7 @@ export default function PortfolioPage() {
                     </div>
 
                     {/* ── Bottom row: stats + feature ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '12px', marginBottom: '40px' }}>
+                    <div className="port-stats-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '12px', marginBottom: '40px' }}>
                         <div className="bento-stat animate-fade-up delay-3">
                             <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '4px', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>$100k</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('port.startingCash')}</div>
@@ -560,7 +560,7 @@ export default function PortfolioPage() {
 
             {/* ═══ Performance Overview ═══ */}
             <div className="animate-fade-up delay-1 detail-section" style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'start' }}>
+                <div className="port-overview" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'start' }}>
                     {/* Left — Total Value + allocation bar */}
                     <div id="tour-portfolio-overview">
                         <p className="sub-label" style={{ marginBottom: '10px' }}><BarChart2 size={12} /> {t('port.totalValue')}</p>
@@ -671,7 +671,7 @@ export default function PortfolioPage() {
                                 <span className="accent-bar" />
                                 <PieIcon size={16} className="heading-icon" /> {t('port.allocation')}
                             </h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '32px', alignItems: 'start' }}>
+                            <div className="port-alloc-grid" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '32px', alignItems: 'start' }}>
                                 {/* Donut with center label */}
                                 <div style={{ position: 'relative', width: '220px', height: '220px', flexShrink: 0 }}>
                                     <ResponsiveContainer width="100%" height="100%">

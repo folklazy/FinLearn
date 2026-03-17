@@ -255,7 +255,7 @@ export default function LearnPage() {
             {/* ── Loading skeleton ── */}
             {loading ? (
                 <div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px', marginBottom: '36px' }}>
+                    <div className="learn-featured" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px', marginBottom: '36px' }}>
                         <div className="skeleton" style={{ aspectRatio: '16/9', borderRadius: 'var(--radius-md)' }} />
                         <div>
                             <div className="skeleton" style={{ aspectRatio: '16/10', borderRadius: 'var(--radius-md)', marginBottom: '12px' }} />
@@ -263,7 +263,7 @@ export default function LearnPage() {
                             <div className="skeleton" style={{ height: '18px', width: '80%' }} />
                         </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                    <div className="learn-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
                         {Array.from({ length: 6 }).map((_, i) => (
                             <div key={i}>
                                 <div className="skeleton" style={{ aspectRatio: '16/10', borderRadius: 'var(--radius-md)', marginBottom: '12px' }} />
@@ -282,7 +282,7 @@ export default function LearnPage() {
                 <div id="tour-lessons">
                     {/* ── Featured hero + side card ── */}
                     {featured && (
-                        <div className="animate-fade-up delay-2" style={{
+                        <div className="animate-fade-up delay-2 learn-featured" style={{
                             display: 'grid', gap: '24px', marginBottom: '40px',
                             gridTemplateColumns: sideCard ? '1.5fr 1fr' : '1fr',
                         }}>
