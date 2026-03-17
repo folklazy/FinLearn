@@ -29,10 +29,10 @@ A bilingual Thai/English stock investment learning platform targeting retail inv
 ┌──────────────────┐    ┌──────────────────────────────┐
 │  PostgreSQL DB   │    │  External APIs               │
 │  (Neon)          │    │  FMP → Finnhub → Yahoo       │
-│                  │    │  Twelve Data (technicals)    │
-│  Users, auth,    │    │                              │
-│  trades,         │◄───│  PostgreSQL cache (TTL)      │
-│  favorites       │    │  api_cache table             │
+│                  │    │  Twelve Data · Wikipedia     │
+│  Users, auth,    │◄───│  PostgreSQL cache (TTL)      │
+│  trades,         │    │  api_cache table             │
+│  favorites       │    │                              │
 └──────────────────┘    └──────────────────────────────┘
 ```
 
@@ -55,7 +55,8 @@ A bilingual Thai/English stock investment learning platform targeting retail inv
 | Database | PostgreSQL (Neon) | JSONB for cache blobs, reliable at free-tier cloud |
 | Auth | NextAuth v5 (Auth.js) | Credentials + Google OAuth, JWT strategy |
 | Email | Nodemailer | OTP verification & password reset emails |
-| API providers | FMP, Finnhub, Twelve Data, Yahoo Finance | Free tiers sufficient; multi-provider for resilience |
+| API providers | FMP, Finnhub, Twelve Data, Yahoo Finance, Wikipedia | Free tiers sufficient; multi-provider for resilience |
+| Product tour | driver.js | Guided onboarding walkthrough for new users |
 | i18n | Custom hook (`useI18n`) | No external library needed for 2 languages |
 | Currency | Custom context (`useCurrency`) | Dynamic USD/THB/EUR/JPY conversion with live rates |
 
@@ -76,7 +77,7 @@ A bilingual Thai/English stock investment learning platform targeting retail inv
 ### Stock Data & Analysis
 - **S&P 500 browser** — paginated list with sector filters, search, grid/table views
 - **Stock detail page** — company profile, live price, financials, technicals, news, peer comparison
-- **Beginner score** — proprietary 0–100 rating per stock (stability, dividend, brand recognition)
+- **Beginner score** — 1–5 beginner-friendly score per stock (P/E, growth, profitability, dividends, debt)
 - **Technical indicators** — MA50/200, RSI, MACD with beginner-friendly explanations
 - **Multi-provider data** — FMP → Finnhub → Yahoo fallback chain, field-by-field merge
 - **PostgreSQL cache** — per-type TTLs (quote: 2min, full: 5min, profile: 24h) to stay within free quotas
@@ -90,7 +91,7 @@ A bilingual Thai/English stock investment learning platform targeting retail inv
 - **PDT warning** detection for frequent traders
 
 ### Learning Platform
-- **25 structured lessons** — from "What is a Stock?" to advanced analysis
+- **27 structured lessons** — from "What is a Stock?" to advanced analysis
 - **Category filters** — basics, fundamental analysis, technical analysis, portfolio strategy
 - **Interactive quizzes** at the end of each lesson
 - **Bilingual content** — Thai primary, English translations merged at API level
@@ -98,6 +99,10 @@ A bilingual Thai/English stock investment learning platform targeting retail inv
 ### Watchlist
 - **Star/unstar** any stock from detail pages or the stocks browser
 - **Dedicated watchlist page** with live prices and quick access to detail
+
+### Glossary
+- **Searchable dictionary** of financial terms with Thai and English definitions
+- **Alphabetical browsing** with instant search filtering
 
 ### Settings
 - **Display name & avatar** management
@@ -112,7 +117,9 @@ A bilingual Thai/English stock investment learning platform targeting retail inv
 - **Soft dark theme** — #0e0e0e backgrounds, frosted glass navbar, green accents
 - **Responsive** — mobile-first layouts with breakpoint-aware grids
 - **Full-screen chromeless pages** — onboarding runs without navbar/footer for focus
+- **Dark/light theme** — CSS custom properties (design tokens), user-togglable
 - **Bilingual UI** — TH/EN toggle in navbar, persisted in localStorage
+- **Product tour** — guided walkthrough for first-time users via driver.js
 - **Auto-redirect auth flows** — no intermediate screens between verification → login
 
 ---
@@ -142,9 +149,10 @@ FinLearn/
 │       │       ├── fmp.ts        #   Financial Modeling Prep (primary)
 │       │       ├── finnhub.ts    #   Finnhub (quotes, peers, news)
 │       │       ├── twelveData.ts #   Twelve Data (MA50/200, RSI, MACD)
+│       │       ├── wikipedia.ts  #   Wikipedia (fallback company descriptions)
 │       │       └── yahooFinance.ts#  Yahoo Finance (fallback metrics)
 │       ├── data/
-│       │   ├── lessons.ts        # 25 lessons — Thai content (sections, quiz)
+│       │   ├── lessons.ts        # 27 lessons — Thai content (sections, quiz)
 │       │   ├── lessonsEn.ts      # English translations — merged in route handler
 │       │   ├── mockData.ts       # Hard-coded fallback for 5 core stocks
 │       │   ├── popularStocks.ts  # Curated list for homepage
@@ -168,6 +176,7 @@ FinLearn/
         │   ├── watchlist/        # Starred stocks with live prices
         │   ├── settings/         # Profile, email, password, preferences, danger zone
         │   ├── onboarding/       # Full-screen multi-step new-user setup
+        │   ├── glossary/         # Financial terms dictionary (TH/EN)
         │   ├── (auth)/           # login, register, forgot/reset password, verify-email
         │   └── api/              # Next.js route handlers (server-side only)
         │       ├── auth/         #   NextAuth + register + OTP verification
@@ -176,20 +185,29 @@ FinLearn/
         │       └── user/         #   Profile, password, email change, delete
         ├── components/
         │   ├── layout/
-        │   │   ├── Navbar.tsx    # Frosted glass nav: search, auth, locale toggle
+        │   │   ├── Navbar.tsx    # Frosted glass nav: search, auth, locale, theme toggle
         │   │   ├── Footer.tsx    # Site footer with links
         │   │   └── LayoutShell.tsx # Conditional chrome (hides nav/footer on onboarding)
+        │   ├── ui/
+        │   │   └── StockLogo.tsx  # Reusable stock logo with fallback
+        │   ├── PageTip.tsx       # Contextual page tips
+        │   ├── ProductTour.tsx   # driver.js guided walkthrough
         │   └── providers/
         │       ├── AuthProvider.tsx     # NextAuth SessionProvider
         │       └── OnboardingGuard.tsx  # Redirects new users to onboarding
         ├── lib/
         │   ├── api.ts            # Typed fetch wrapper → backend :4000
-        │   ├── i18n.tsx          # All TH/EN strings + useI18n() hook
-        │   ├── currency.tsx      # CurrencyContext — dynamic formatting + live rates
         │   ├── auth.ts           # NextAuth config (credentials + Google OAuth)
-        │   ├── prisma.ts         # Prisma client singleton
+        │   ├── currency.tsx      # CurrencyContext — dynamic formatting + live rates
         │   ├── email.ts          # Nodemailer — verification & reset emails
+        │   ├── i18n.tsx          # All TH/EN strings + useI18n() hook
+        │   ├── logger.ts         # Structured logging utility
+        │   ├── login-limiter.ts  # DB-backed brute-force protection (login)
         │   ├── market-hours.ts   # NYSE/SET open/close schedule helpers
+        │   ├── otp-limiter.ts    # DB-backed brute-force protection (OTP)
+        │   ├── prisma.ts         # Prisma client singleton
+        │   ├── rate-limiter.ts   # Generic rate limiter utility
+        │   ├── theme.tsx         # ThemeContext — dark/light mode toggle
         │   ├── tokens.ts         # OTP/JWT generation & DB persistence
         │   └── utils.ts          # Number formatting (currency, %, K/M/B)
         └── types/stock.ts        # Frontend-side StockData interfaces
@@ -253,7 +271,7 @@ cd frontend && npm run dev      # http://localhost:3000
 ## Key Design Decisions
 
 ### Multi-provider Stock Data with Graceful Fallback
-The backend never relies on a single API. Each provider is tried in order — FMP → Finnhub → Yahoo Finance — and results are merged field-by-field. A missing metric from one provider is filled by another. All raw responses are cached in PostgreSQL with per-type TTLs to avoid redundant calls on free-tier quotas.
+The backend never relies on a single API. Each provider is tried in order — FMP → Finnhub → Yahoo Finance — and results are merged field-by-field. A missing metric from one provider is filled by another. Company descriptions fall back through FMP → Yahoo → Wikipedia. All raw responses are cached in PostgreSQL with per-type TTLs to avoid redundant calls on free-tier quotas.
 
 ```
 stockService.fetchFromAPIs(symbol)
@@ -382,6 +400,6 @@ The project uses `next-auth@5.0.0-beta.30` which is not yet stable. Monitor [rel
 - **No real-time WebSocket** — stock prices refresh on page load / manual trigger. Add Socket.io or SSE for live ticking.
 - **Paper trading settlement** — trades execute at the current API price regardless of market hours; no bid/ask spread simulation.
 - **Lesson progress not persisted** — `UserLessonProgress` schema exists but is not wired up yet.
-- **Thai lesson descriptions** — live API stocks get a structured Thai summary; only mock stocks (AAPL, MSFT, etc.) have hand-written Thai descriptions in `mockData.ts`.
+- **Thai lesson descriptions** — live API stocks get a structured Thai summary auto-generated from metadata + Wikipedia; mock stocks have hand-written Thai descriptions.
 - **Single database** — both frontend and backend point to the same PostgreSQL instance. For production, split into two DBs with the backend cache DB on a faster/cheaper storage tier.
 - **No SSO linking** — users who register with email and later try Google OAuth with the same email get a separate account.

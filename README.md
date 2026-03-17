@@ -3,7 +3,7 @@
 # FinLearn
 
 **A bilingual stock investment learning platform for beginners.**  
-Real market data · Paper trading · 25 structured lessons · Thai / English
+Real market data · Paper trading · 27 structured lessons · Thai / English
 
 **[→ Live Demo](https://fin-learn-nu.vercel.app/)**
 
@@ -46,7 +46,7 @@ The project is separated into two services that share a single PostgreSQL databa
 │                                                   │
 │  GET /api/stocks/:symbol                          │
 │    → parallel: FMP + Finnhub + Yahoo + TwelveData │
-│    → merge fields, score, cache                   │
+│    → merge fields, score, cache, Wikipedia desc   │
 │  GET /api/lessons/:id  (TH + EN merged)           │
 └───────────────┬───────────────────────────────────┘
                 │
@@ -65,7 +65,7 @@ The project is separated into two services that share a single PostgreSQL databa
 ## Key Engineering Decisions
 
 **Multi-provider data with graceful fallback**  
-The backend never depends on a single API. FMP, Finnhub, Yahoo Finance, and Twelve Data are called in parallel. Fields are merged one-by-one, so a missing value from one provider is filled by another. All results are cached in PostgreSQL with per-type TTLs — `quote: 2min`, `full: 5min`, `profile: 24h` — to stay within free-tier quotas.
+The backend never depends on a single API. FMP, Finnhub, Yahoo Finance, Twelve Data, and Wikipedia are called in parallel. Fields are merged one-by-one, so a missing value from one provider is filled by another. Company descriptions fall back through FMP → Yahoo → Wikipedia. All results are cached in PostgreSQL with per-type TTLs — `quote: 2min`, `full: 5min`, `profile: 24h` — to stay within free-tier quotas.
 
 **Dual authentication with OAuth-aware settings**  
 Credentials (email + OTP verification) and Google OAuth coexist via Auth.js. The settings page detects OAuth users and disables email changes with a "Managed by Google" message — matching the behaviour of Notion, Linear, and other production SaaS apps. `callbackUrl` is propagated through middleware so protected routes redirect correctly after login.
@@ -90,15 +90,18 @@ Portfolio positions and P&L are derived from the raw `paper_trades` ledger on ev
 |---|---|
 | **Auth** | Email/password + Google OAuth, OTP email verification, forgot/reset password, brute-force lockout |
 | **Onboarding** | Full-screen 2-step wizard — experience level, goal, risk tolerance, starting cash |
-| **Stocks** | S&P 500 browser (503 stocks), sector filters, grid/table view, search |
+| **Stocks** | S&P 500 browser (306 stocks), sector filters, grid/table view, search |
 | **Stock detail** | Live price, chart, financials, technicals (MA50/200, RSI, MACD), news, peer comparison |
-| **Beginner score** | 0–100 proprietary rating per stock based on stability, dividend history, brand recognition |
+| **Beginner score** | 1–5 beginner-friendly score per stock based on P/E, growth, profitability, dividends, and debt |
 | **Paper trading** | Buy/sell at real prices, P&L tracking (realized + unrealized), allocation chart, trade history |
-| **Learning** | 25 lessons with sections and quizzes, category filters, bilingual (TH + EN) |
+| **Learning** | 27 lessons with sections and quizzes, category filters, bilingual (TH + EN) |
 | **Watchlist** | Per-user starred stocks with live prices |
 | **Settings** | Display name, email (OTP-verified or Google-locked), password, currency, investment profile, account deletion |
+| **Glossary** | Searchable financial terms dictionary with Thai/English definitions |
 | **i18n** | Full Thai/English — UI strings, lessons, stock summaries, auth flows |
 | **Currency** | USD · THB · EUR · JPY — live exchange rates, persisted per user |
+| **Theme** | Dark/light mode with CSS custom properties (design tokens) |
+| **Product tour** | Guided walkthrough for new users via driver.js |
 
 ---
 
@@ -115,7 +118,7 @@ Portfolio positions and P&L are derived from the raw `paper_trades` ledger on ev
 | Database | PostgreSQL on Neon |
 | Auth | NextAuth v5 (Auth.js) — Credentials + Google OAuth |
 | Email | Nodemailer (SMTP) |
-| External data | Financial Modeling Prep, Finnhub, Twelve Data, Yahoo Finance |
+| External data | Financial Modeling Prep, Finnhub, Twelve Data, Yahoo Finance, Wikipedia |
 
 ---
 
