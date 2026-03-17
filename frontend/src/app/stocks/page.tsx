@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
-import { Search, LayoutGrid, List, ChevronLeft, ChevronRight, Flame, BarChart3, Star, X, ArrowRight, Sparkles } from 'lucide-react';
+import { Search, LayoutGrid, List, ChevronLeft, ChevronRight, Flame, BarChart3, Star, X, ArrowRight, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { formatPercent } from '@/lib/utils';
@@ -78,8 +78,9 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                             fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: '100px',
                             background: isUp ? 'rgba(52,211,153,0.1)' : 'rgba(251,113,133,0.1)',
                             color: isUp ? 'var(--success)' : 'var(--danger)',
-                            letterSpacing: '-0.01em',
+                            letterSpacing: '-0.01em', display: 'inline-flex', alignItems: 'center', gap: '3px',
                         }}>
+                            {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                             {formatPercent(stock.changePercent)}
                         </span>
                         {stock.sector && (
@@ -148,7 +149,9 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
                     fontWeight: 600, fontSize: '0.78rem', padding: '3px 10px', borderRadius: '100px',
                     background: isUp ? 'rgba(52,211,153,0.08)' : 'rgba(251,113,133,0.08)',
                     color: isUp ? 'var(--success)' : 'var(--danger)',
+                    display: 'inline-flex', alignItems: 'center', gap: '3px',
                 }}>
+                    {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                     {formatPercent(stock.changePercent)}
                 </span>
             </td>
