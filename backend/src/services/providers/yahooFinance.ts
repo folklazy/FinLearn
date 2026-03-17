@@ -221,9 +221,7 @@ export async function getQuote(symbol: string): Promise<YFQuote | null> {
             changePercent: pr?.regularMarketChangePercent ? pr.regularMarketChangePercent * 100 : 0,
             marketCap: pr?.marketCap ?? 0,
             sector: ap?.sector ?? '',
-            logo: ap?.website
-                ? `https://icons.duckduckgo.com/ip3/${(() => { try { const u = ap.website.startsWith('http') ? ap.website : 'https://' + ap.website; return new URL(u).hostname.replace(/^www\./, ''); } catch { return symbol.toLowerCase() + '.com'; } })()}.ico`
-                : `https://icons.duckduckgo.com/ip3/${symbol.toLowerCase()}.com.ico`,
+            logo: `https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/${symbol.toUpperCase()}.svg`,
         };
     } catch (err) {
         console.warn(`[Yahoo] Quote error for ${symbol}:`, (err as Error).message);

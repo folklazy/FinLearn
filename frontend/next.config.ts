@@ -17,7 +17,7 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://icons.duckduckgo.com https://financialmodelingprep.com https://images.financialmodelingprep.com https://images.unsplash.com https://lh3.googleusercontent.com https://static.finnhub.io https://static2.finnhub.io",
+      "img-src 'self' data: blob: https://icons.duckduckgo.com https://www.google.com https://financialmodelingprep.com https://images.financialmodelingprep.com https://images.unsplash.com https://lh3.googleusercontent.com https://static.finnhub.io https://static2.finnhub.io",
       "font-src 'self'",
       "connect-src 'self' http: https:",
       "frame-ancestors 'none'",
@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "icons.duckduckgo.com" },
+      { protocol: "https", hostname: "www.google.com" },
       { protocol: "https", hostname: "financialmodelingprep.com" },
       { protocol: "https", hostname: "images.financialmodelingprep.com" },
       { protocol: "https", hostname: "images.unsplash.com" },

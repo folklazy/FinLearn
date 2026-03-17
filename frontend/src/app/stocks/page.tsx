@@ -305,7 +305,7 @@ function StocksContent() {
                 setSearchResults(results.map((r: SearchResultItem) => ({
                     symbol: r.symbol,
                     name: r.name,
-                    logo: r.logo || `https://icons.duckduckgo.com/ip3/${r.symbol.toLowerCase()}.com.ico`,
+                    logo: r.logo || `https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/${r.symbol.toUpperCase()}.svg`,
                     sector: r.sector || r.exchange || '',
                     exchange: r.exchange || '',
                 })));

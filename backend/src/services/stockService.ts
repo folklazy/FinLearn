@@ -247,7 +247,7 @@ export class StockService {
 
         // Merge profile — FMP → Finnhub → Yahoo fallback chain
         const profileName = fmpProfile?.companyName || finnhubProfile?.name || yahooProfile?.name || symbol;
-        // Logo: Finnhub direct → FMP image → DuckDuckGo icon from website domain
+        // Logo: Finnhub direct → Finnhub static CDN fallback
         const profileWebsiteForLogo = fmpProfile?.website || finnhubProfile?.weburl || yahooProfile?.website || '';
         const profileLogo = buildLogoUrl(finnhubProfile?.logo || fmpProfile?.image, profileWebsiteForLogo || null, symbol);
         // Prefer Yahoo sector/industry — it uses proper GICS classification

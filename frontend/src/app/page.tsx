@@ -17,12 +17,12 @@ interface PopularStock {
 }
 
 const FALLBACK: PopularStock[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.', logo: 'https://icons.duckduckgo.com/ip3/apple.com.ico', sector: 'Tech', price: 231.34, change: 2.47, changePercent: 1.08, marketCap: 3450000000000, overallScore: 4.2 },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', logo: 'https://icons.duckduckgo.com/ip3/google.com.ico', sector: 'Tech', price: 176.45, change: 1.56, changePercent: 0.89, marketCap: 2100000000000, overallScore: 4.5 },
-  { symbol: 'MSFT', name: 'Microsoft', logo: 'https://icons.duckduckgo.com/ip3/microsoft.com.ico', sector: 'Tech', price: 417.88, change: 2.68, changePercent: 0.65, marketCap: 3100000000000, overallScore: 4.6 },
-  { symbol: 'TSLA', name: 'Tesla, Inc.', logo: 'https://icons.duckduckgo.com/ip3/tesla.com.ico', sector: 'Auto', price: 248.42, change: -4.68, changePercent: -1.85, marketCap: 800000000000, overallScore: 3.2 },
-  { symbol: 'AMZN', name: 'Amazon.com', logo: 'https://icons.duckduckgo.com/ip3/amazon.com.ico', sector: 'Tech', price: 186.21, change: 1.66, changePercent: 0.90, marketCap: 1900000000000, overallScore: 4.0 },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.', logo: 'https://icons.duckduckgo.com/ip3/nvidia.com.ico', sector: 'Tech', price: 875.40, change: 12.30, changePercent: 1.42, marketCap: 2150000000000, overallScore: 4.7 },
+  { symbol: 'AAPL', name: 'Apple Inc.', logo: 'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.svg', sector: 'Tech', price: 231.34, change: 2.47, changePercent: 1.08, marketCap: 3450000000000, overallScore: 4.2 },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', logo: 'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/GOOGL.svg', sector: 'Tech', price: 176.45, change: 1.56, changePercent: 0.89, marketCap: 2100000000000, overallScore: 4.5 },
+  { symbol: 'MSFT', name: 'Microsoft', logo: 'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/MSFT.svg', sector: 'Tech', price: 417.88, change: 2.68, changePercent: 0.65, marketCap: 3100000000000, overallScore: 4.6 },
+  { symbol: 'TSLA', name: 'Tesla, Inc.', logo: 'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/TSLA.svg', sector: 'Auto', price: 248.42, change: -4.68, changePercent: -1.85, marketCap: 800000000000, overallScore: 3.2 },
+  { symbol: 'AMZN', name: 'Amazon.com', logo: 'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AMZN.svg', sector: 'Tech', price: 186.21, change: 1.66, changePercent: 0.90, marketCap: 1900000000000, overallScore: 4.0 },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.', logo: 'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/NVDA.svg', sector: 'Tech', price: 875.40, change: 12.30, changePercent: 1.42, marketCap: 2150000000000, overallScore: 4.7 },
 ];
 
 export default function HomePage() {
