@@ -22,6 +22,6 @@ export const api = {
         if (sector) url += `&sector=${encodeURIComponent(sector)}`;
         return fetchAPI<{ stocks: any[]; total: number; sectors: string[] }>(url);
     },
-    getLessons: () => fetchAPI<{ categories: any[]; lessons: any[] }>('/api/lessons'),
+    getLessons: () => fetchAPI<{ categories: any[]; modules: any[]; lessons: any[] }>('/api/lessons'),
     getLesson: (id: string) => fetchAPI<any>(`/api/lessons/${id}`),
 };

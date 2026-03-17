@@ -1,16 +1,18 @@
 import { Router, Request, Response } from 'express';
-import { LESSONS, LESSON_CATEGORIES } from '../data/lessons';
+import { LESSONS, LESSON_CATEGORIES, LEARNING_MODULES } from '../data/lessons';
 import { LESSONS_EN } from '../data/lessonsEn';
 
 const router = Router();
 
-// GET /api/lessons — all lessons (summary only)
+// GET /api/lessons — all lessons (summary only), sorted by learning path order
 router.get('/', (_req: Request, res: Response) => {
-    const summaries = LESSONS.map(({ sections, quiz, ...rest }) => {
-        const en = LESSONS_EN[rest.id];
-        return { ...rest, descriptionEn: en?.descriptionEn || rest.descriptionEn };
-    });
-    res.json({ categories: LESSON_CATEGORIES, lessons: summaries });
+    const summaries = LESSONS
+        .map(({ sections, quiz, ...rest }) => {
+            const en = LESSONS_EN[rest.id];
+            return { ...rest, descriptionEn: en?.descriptionEn || rest.descriptionEn };
+        })
+        .sort((a, b) => a.order - b.order);
+    res.json({ categories: LESSON_CATEGORIES, modules: LEARNING_MODULES, lessons: summaries });
 });
 
 // GET /api/lessons/categories — lesson categories
