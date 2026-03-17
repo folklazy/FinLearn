@@ -9,20 +9,20 @@ interface StockLogoProps {
 }
 
 export default function StockLogo({ src, symbol, size }: StockLogoProps) {
-    // 0 = primary src, 1 = Google favicon fallback, 2 = text fallback
+    // 0 = primary src, 1 = Finnhub static logo, 2 = text fallback
     const [stage, setStage] = useState(0);
 
-    const googleFallback = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(symbol.toLowerCase())}.com&sz=128`;
+    const finnhubFallback = `https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/${symbol.toUpperCase()}.svg`;
 
     const handleError = () => {
         if (stage === 0) {
-            setStage(1); // try Google favicon
+            setStage(1); // try Finnhub static logo
         } else {
             setStage(2); // give up, show text
         }
     };
 
-    const imgSrc = stage === 0 ? src : googleFallback;
+    const imgSrc = stage === 0 ? src : finnhubFallback;
 
     if (!src || stage === 2) {
         return (

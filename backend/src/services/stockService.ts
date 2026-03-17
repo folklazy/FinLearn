@@ -97,28 +97,17 @@ const SYMBOL_DOMAINS: Record<string, string> = {
     'VZ': 'verizon.com', 'TMUS': 't-mobile.com',
 };
 
-/** Google Favicon helper — returns a 128px PNG for any domain (free, reliable, no auth) */
-function googleFavicon(domain: string): string {
-    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+/** Finnhub static logo CDN — publicly accessible SVG logos for US stocks (same source the detail page uses) */
+function finnhubLogo(symbol: string): string {
+    return `https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/${symbol.toUpperCase()}.svg`;
 }
 
-/** Build a logo URL. Prefer direct logo URL, fallback to Google Favicon from domain */
+/** Build a logo URL. Prefer direct logo URL, fallback to Finnhub static logo CDN */
 function buildLogoUrl(directLogo: string | undefined | null, website: string | undefined | null, symbol: string): string {
-    // 1. Direct logo URL from provider (e.g. Finnhub SVG) — but reject FMP image-stock URLs (need auth in browser)
+    // 1. Direct logo URL from provider (e.g. Finnhub profile) — but reject FMP image-stock URLs (need auth in browser)
     if (directLogo && !directLogo.includes('financialmodelingprep.com/image-stock')) return directLogo;
-    // 2. Google Favicon from company website domain
-    if (website) {
-        try {
-            const url = website.startsWith('http') ? website : `https://${website}`;
-            const domain = new URL(url).hostname.replace(/^www\./, '');
-            if (domain) return googleFavicon(domain);
-        } catch { /* ignore */ }
-    }
-    // 3. Known symbol → domain mapping for short/ambiguous tickers
-    const knownDomain = SYMBOL_DOMAINS[symbol.toUpperCase()];
-    if (knownDomain) return googleFavicon(knownDomain);
-    // 4. Last resort: guess domain from symbol
-    return googleFavicon(`${symbol.toLowerCase()}.com`);
+    // 2. Finnhub static logo CDN — works for most US-listed stocks
+    return finnhubLogo(symbol);
 }
 
 /**
