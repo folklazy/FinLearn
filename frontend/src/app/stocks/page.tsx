@@ -344,7 +344,7 @@ function StocksContent() {
         <div className="sl-page" style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 24px 80px' }}>
 
             {/* ═══ Header ═══ */}
-            <div style={{ marginBottom: '36px' }}>
+            <div style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <div style={{ width: '4px', height: '28px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
                     <h1 style={{ fontSize: '1.7rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>
@@ -417,7 +417,7 @@ function StocksContent() {
             </form>
 
             {/* ═══ Tabs ═══ */}
-            <div id="tour-stock-tabs" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '20px', overflowX: 'auto' }}>
+            <div id="tour-stock-tabs" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px', overflowX: 'auto' }}>
                 {tabs.map(t => (
                     <button key={t.key} onClick={() => setTab(t.key)} style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
@@ -640,7 +640,7 @@ export default function StocksPage() {
     return (
         <Suspense fallback={
             <div className="sl-page" style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 24px' }}>
-                <div style={{ height: '32px', width: '240px', background: 'var(--bg-elevated)', borderRadius: '8px', marginBottom: '36px' }} />
+                <div style={{ height: '32px', width: '240px', background: 'var(--bg-elevated)', borderRadius: '8px', marginBottom: '32px' }} />
                 <div style={{ height: '48px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-lg)', marginBottom: '24px' }} />
                 <div className="sl-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                     {Array.from({ length: 8 }).map((_, i) => (

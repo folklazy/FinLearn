@@ -146,7 +146,7 @@ function LessonCard({ lesson, index = 0, featured = false }: { lesson: LessonSum
 }
 
 export default function LearnPage() {
-    const { t, locale } = useI18n();
+    const { t } = useI18n();
     const [lessons, setLessons] = useState<LessonSummary[]>([]);
     const [selectedDiff, setSelectedDiff] = useState<Difficulty>('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -174,10 +174,10 @@ export default function LearnPage() {
     const totalDuration = lessons.reduce((s, l) => s + l.duration, 0);
 
     return (
-        <div className="container" style={{ paddingTop: '40px', paddingBottom: '80px', maxWidth: '1040px' }}>
+        <div className="container" style={{ paddingTop: '48px', paddingBottom: '80px', maxWidth: '1040px' }}>
 
             {/* ── Page header ── */}
-            <div className="animate-fade-up" style={{ marginBottom: '36px' }}>
+            <div className="animate-fade-up" style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <div style={{ width: '4px', height: '28px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
                     <h1 style={{ fontSize: '1.7rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>
@@ -230,7 +230,7 @@ export default function LearnPage() {
             </div>
 
             {/* ── Difficulty level tabs ── */}
-            <div id="tour-learn-tabs" className="animate-fade-up delay-1" style={{ display: 'flex', gap: '6px', marginBottom: '32px', flexWrap: 'wrap' }}>
+            <div id="tour-learn-tabs" className="animate-fade-up delay-1" style={{ display: 'flex', gap: '6px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 {DIFFICULTY_KEYS.map(tab => {
                     const active = selectedDiff === tab.key;
                     const meta = tab.key ? DIFF_META[tab.key] : null;

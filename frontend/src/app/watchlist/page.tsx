@@ -90,7 +90,7 @@ export default function WatchlistPage() {
         return (
             <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
                 {/* Header skeleton */}
-                <div style={{ marginBottom: '28px' }}>
+                <div style={{ marginBottom: '32px' }}>
                     <div className="skeleton" style={{ width: '200px', height: '28px', borderRadius: '8px', marginBottom: '10px' }} />
                     <div className="skeleton" style={{ width: '140px', height: '16px', borderRadius: '6px' }} />
                 </div>
@@ -108,7 +108,7 @@ export default function WatchlistPage() {
         <div id="tour-watchlist" style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
 
             {/* ═══ Header ═══ */}
-            <div id="tour-watchlist-header" className="animate-fade-up" style={{ marginBottom: '28px' }}>
+            <div id="tour-watchlist-header" className="animate-fade-up" style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <div style={{ width: '4px', height: '28px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
                     <h1 style={{ fontSize: '1.7rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>

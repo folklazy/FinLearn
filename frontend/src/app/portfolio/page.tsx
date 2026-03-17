@@ -77,7 +77,7 @@ function pct(n: number) {
 export default function PortfolioPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const { t, locale } = useI18n();
+    const { t } = useI18n();
 
     const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
     const [positions, setPositions] = useState<Position[]>([]);
@@ -311,7 +311,7 @@ export default function PortfolioPage() {
         return (
             <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px 80px' }}>
                 {/* Header skeleton */}
-                <div style={{ marginBottom: '28px' }}>
+                <div style={{ marginBottom: '32px' }}>
                     <div className="skeleton" style={{ width: '220px', height: '28px', borderRadius: '8px', marginBottom: '10px' }} />
                     <div className="skeleton" style={{ width: '160px', height: '16px', borderRadius: '6px' }} />
                 </div>
@@ -345,7 +345,7 @@ export default function PortfolioPage() {
             )}
 
             {/* ═══ Header ═══ */}
-            <div className="animate-fade-up" style={{ marginBottom: '28px' }}>
+            <div className="animate-fade-up" style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <div style={{ width: '4px', height: '28px', borderRadius: '100px', background: 'var(--gradient-primary)' }} />
                     <h1 style={{ fontSize: '1.7rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>
