@@ -928,8 +928,9 @@ export class StockService {
             return cached;
         }
 
-        const [profiles, metricsArr] = await Promise.all([
+        const [profiles, finnhubQuotes, metricsArr] = await Promise.all([
             fmp.getBatchProfiles(syms),
+            Promise.all(syms.map(s => finnhub.getQuote(s).catch(() => null))),
             Promise.all(syms.map(s => fmp.getKeyMetrics(s).catch(() => null))),
         ]);
 
@@ -937,18 +938,19 @@ export class StockService {
         const profileMap = new Map<string, (typeof profiles)[0]>();
         for (const p of profiles) profileMap.set(p.symbol, p);
 
-        // Finnhub fallback for symbols missing FMP profiles (rate-limited)
+        // Build Finnhub quote map (for real-time prices synced with detail page)
+        const fhQuoteMap = new Map<string, typeof finnhubQuotes[0]>();
+        syms.forEach((sym, i) => { if (finnhubQuotes[i]) fhQuoteMap.set(sym, finnhubQuotes[i]); });
+
+        // Finnhub profile fallback for symbols missing FMP profiles (rate-limited)
         const missingProfileSyms = syms.filter(s => !profileMap.has(s));
         const finnhubMap = new Map<string, { name: string; logo: string; price: number; change: number; changePercent: number; marketCap: number; sector: string }>();
         if (missingProfileSyms.length > 0) {
             console.log(`[StockService] Batch: FMP missing profiles for ${missingProfileSyms.join(',')}, trying Finnhub`);
-            const [fhProfiles, fhQuotes] = await Promise.all([
-                Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null))),
-                Promise.all(missingProfileSyms.map(s => finnhub.getQuote(s).catch(() => null))),
-            ]);
+            const fhProfiles = await Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null)));
             missingProfileSyms.forEach((sym, i) => {
                 const fp = fhProfiles[i];
-                const fq = fhQuotes[i];
+                const fq = fhQuoteMap.get(sym);
                 if (fp || fq) {
                     finnhubMap.set(sym, {
                         name: fp?.name || sym,
@@ -994,6 +996,7 @@ export class StockService {
 
         const result = syms.map(sym => {
             const p = profileMap.get(sym);
+            const fhQ = fhQuoteMap.get(sym);
             const fhP = finnhubMap.get(sym);
             const m = metricsMap.get(sym);
             let score = 0;
@@ -1005,15 +1008,17 @@ export class StockService {
                 const debtToEquity = m.debtToEquityTTM ?? null;
                 score = this.computeQuickScore(pe, revenueGrowth, profitMargin, divYield, debtToEquity);
             }
+            // Use Finnhub quote for price (same source as detail page), fallback to FMP profile
+            const price = fhQ?.c ?? (p as any)?.price ?? fhP?.price ?? 0;
+            const change = fhQ?.d ?? (p as any)?.change ?? fhP?.change ?? 0;
+            const changePercent = fhQ?.dp ?? (p as any)?.changePercentage ?? fhP?.changePercent ?? 0;
             if (p) {
                 return {
                     symbol: sym,
                     name: (p as any)?.companyName ?? sym,
                     logo: buildLogoUrl((p as any)?.image, (p as any)?.website, sym),
                     sector: (p as any)?.sector ?? '',
-                    price: (p as any)?.price ?? 0,
-                    change: (p as any)?.change ?? 0,
-                    changePercent: (p as any)?.changePercentage ?? 0,
+                    price, change, changePercent,
                     marketCap: (p as any)?.marketCap ?? 0,
                     overallScore: score,
                 };
@@ -1022,16 +1027,15 @@ export class StockService {
                 return {
                     symbol: sym, name: fhP.name,
                     logo: fhP.logo, sector: fhP.sector,
-                    price: fhP.price, change: fhP.change,
-                    changePercent: fhP.changePercent,
+                    price, change, changePercent,
                     marketCap: fhP.marketCap, overallScore: score,
                 };
             }
             return {
                 symbol: sym, name: sym,
                 logo: buildLogoUrl(null, null, sym),
-                sector: '', price: 0, change: 0,
-                changePercent: 0, marketCap: 0, overallScore: 0,
+                sector: '', price, change,
+                changePercent, marketCap: 0, overallScore: 0,
             };
         }).filter(s => s.price > 0);
 
@@ -1060,9 +1064,10 @@ export class StockService {
         ];
 
         try {
-            // Batch fetch FMP profiles + key metrics in parallel
-            const [fmpProfiles, metricsArr] = await Promise.all([
+            // Batch fetch FMP profiles + Finnhub quotes (for real-time price) + key metrics in parallel
+            const [fmpProfiles, finnhubQuotes, metricsArr] = await Promise.all([
                 fmp.getBatchProfiles(TOP_SYMBOLS),
+                Promise.all(TOP_SYMBOLS.map(s => finnhub.getQuote(s).catch(() => null))),
                 Promise.all(TOP_SYMBOLS.map(s => fmp.getKeyMetrics(s).catch(() => null))),
             ]);
 
@@ -1070,18 +1075,19 @@ export class StockService {
             const fmpMap = new Map<string, (typeof fmpProfiles)[0]>();
             for (const p of fmpProfiles) fmpMap.set(p.symbol, p);
 
-            // Finnhub fallback for symbols missing FMP profiles (rate-limited)
+            // Build Finnhub quote map (for real-time prices synced with detail page)
+            const fhQuoteMap = new Map<string, typeof finnhubQuotes[0]>();
+            TOP_SYMBOLS.forEach((sym, i) => { if (finnhubQuotes[i]) fhQuoteMap.set(sym, finnhubQuotes[i]); });
+
+            // Finnhub profile fallback for symbols missing FMP profiles (rate-limited)
             const missingProfileSyms = TOP_SYMBOLS.filter(s => !fmpMap.has(s));
             const finnhubMap = new Map<string, { name: string; logo: string; price: number; change: number; changePercent: number; marketCap: number; sector: string }>();
             if (missingProfileSyms.length > 0) {
                 console.log(`[StockService] Popular: FMP missing ${missingProfileSyms.length} profiles, fetching Finnhub`);
-                const [fhProfiles, fhQuotes] = await Promise.all([
-                    Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null))),
-                    Promise.all(missingProfileSyms.map(s => finnhub.getQuote(s).catch(() => null))),
-                ]);
+                const fhProfiles = await Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null)));
                 missingProfileSyms.forEach((sym, i) => {
                     const fp = fhProfiles[i];
-                    const fq = fhQuotes[i];
+                    const fq = fhQuoteMap.get(sym);
                     if (fp || fq) {
                         finnhubMap.set(sym, {
                             name: fp?.name || sym,
@@ -1124,10 +1130,11 @@ export class StockService {
                 });
             }
 
-            // Build result from FMP + Finnhub fallback
+            // Build result — prefer Finnhub quote for price (synced with detail page)
             const result: SimplifiedStock[] = [];
             for (const sym of TOP_SYMBOLS) {
                 const fmpP = fmpMap.get(sym);
+                const fhQ = fhQuoteMap.get(sym);
                 const fhP = finnhubMap.get(sym);
                 const m = metricsMap.get(sym);
                 let score = 0;
@@ -1139,20 +1146,22 @@ export class StockService {
                     const debtToEquity = m.debtToEquityTTM ?? null;
                     score = this.computeQuickScore(pe, revenueGrowth, profitMargin, divYield, debtToEquity);
                 }
-                if (fmpP && fmpP.price > 0) {
+                // Use Finnhub quote for price (same source as detail page), fallback to FMP profile
+                const price = fhQ?.c ?? fmpP?.price ?? fhP?.price ?? 0;
+                const change = fhQ?.d ?? fmpP?.change ?? fhP?.change ?? 0;
+                const changePercent = fhQ?.dp ?? fmpP?.changePercentage ?? fhP?.changePercent ?? 0;
+                if (fmpP) {
                     result.push({
                         symbol: fmpP.symbol, name: fmpP.companyName,
                         logo: buildLogoUrl(fmpP.image, fmpP.website, fmpP.symbol),
-                        sector: fmpP.sector, price: fmpP.price,
-                        change: fmpP.change, changePercent: fmpP.changePercentage,
+                        sector: fmpP.sector, price, change, changePercent,
                         marketCap: fmpP.marketCap, overallScore: score,
                     });
-                } else if (fhP && fhP.price > 0) {
+                } else if (fhP) {
                     result.push({
                         symbol: sym, name: fhP.name,
                         logo: fhP.logo, sector: fhP.sector,
-                        price: fhP.price, change: fhP.change,
-                        changePercent: fhP.changePercent,
+                        price, change, changePercent,
                         marketCap: fhP.marketCap, overallScore: score,
                     });
                 }
@@ -1198,9 +1207,10 @@ export class StockService {
         const pageItems = filtered.slice(start, start + limit);
         const pageSymbols = pageItems.map(c => c.symbol);
 
-        // Fetch FMP profiles + key metrics in parallel
-        const [fmpProfiles, metricsArr] = await Promise.all([
+        // Fetch FMP profiles + Finnhub quotes (for real-time price) + key metrics in parallel
+        const [fmpProfiles, finnhubQuotes, metricsArr] = await Promise.all([
             fmp.getBatchProfiles(pageSymbols),
+            Promise.all(pageSymbols.map(s => finnhub.getQuote(s).catch(() => null))),
             Promise.all(pageSymbols.map(s => fmp.getKeyMetrics(s).catch(() => null))),
         ]);
 
@@ -1208,18 +1218,19 @@ export class StockService {
         const fmpProfileMap = new Map<string, (typeof fmpProfiles)[0]>();
         for (const p of fmpProfiles) fmpProfileMap.set(p.symbol, p);
 
-        // Finnhub fallback for symbols missing FMP profiles (rate-limited)
+        // Build Finnhub quote map (for real-time prices synced with detail page)
+        const fhQuoteMap = new Map<string, typeof finnhubQuotes[0]>();
+        pageSymbols.forEach((sym, i) => { if (finnhubQuotes[i]) fhQuoteMap.set(sym, finnhubQuotes[i]); });
+
+        // Finnhub profile fallback for symbols missing FMP profiles (rate-limited)
         const missingProfileSyms = pageSymbols.filter(s => !fmpProfileMap.has(s));
         const finnhubMap = new Map<string, { name: string; logo: string; price: number; change: number; changePercent: number; marketCap: number; sector: string }>();
         if (missingProfileSyms.length > 0) {
             console.log(`[StockService] SP500: FMP missing ${missingProfileSyms.length} profiles, fetching Finnhub`);
-            const [fhProfiles, fhQuotes] = await Promise.all([
-                Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null))),
-                Promise.all(missingProfileSyms.map(s => finnhub.getQuote(s).catch(() => null))),
-            ]);
+            const fhProfiles = await Promise.all(missingProfileSyms.map(s => finnhub.getProfile(s).catch(() => null)));
             missingProfileSyms.forEach((sym, i) => {
                 const fp = fhProfiles[i];
-                const fq = fhQuotes[i];
+                const fq = fhQuoteMap.get(sym);
                 if (fp || fq) {
                     finnhubMap.set(sym, {
                         name: fp?.name || sym,
@@ -1267,6 +1278,7 @@ export class StockService {
 
         const stocks: SimplifiedStock[] = pageItems.map(item => {
             const fmpP = fmpProfileMap.get(item.symbol);
+            const fhQ = fhQuoteMap.get(item.symbol);
             const fhP = finnhubMap.get(item.symbol);
             const m = metricsMap.get(item.symbol);
             const pe = m?.peRatioTTM ?? null;
@@ -1276,15 +1288,18 @@ export class StockService {
             const debtToEquity = m?.debtToEquityTTM ?? null;
             const score = m ? this.computeQuickScore(pe, revenueGrowth, profitMargin, divYield, debtToEquity) : 0;
 
+            // Use Finnhub quote for price (same source as detail page), fallback to FMP profile
+            const price = fhQ?.c ?? fmpP?.price ?? fhP?.price ?? 0;
+            const change = fhQ?.d ?? fmpP?.change ?? fhP?.change ?? 0;
+            const changePercent = fhQ?.dp ?? fmpP?.changePercentage ?? fhP?.changePercent ?? 0;
+
             if (fmpP) {
                 return {
                     symbol: fmpP.symbol,
                     name: fmpP.companyName,
                     logo: buildLogoUrl(fmpP.image, fmpP.website, fmpP.symbol),
                     sector: fmpP.sector || item.sector,
-                    price: fmpP.price,
-                    change: fmpP.change,
-                    changePercent: fmpP.changePercentage,
+                    price, change, changePercent,
                     marketCap: fmpP.marketCap,
                     overallScore: score,
                 };
@@ -1295,9 +1310,7 @@ export class StockService {
                     name: fhP.name || item.name,
                     logo: fhP.logo,
                     sector: fhP.sector || item.sector,
-                    price: fhP.price,
-                    change: fhP.change,
-                    changePercent: fhP.changePercent,
+                    price, change, changePercent,
                     marketCap: fhP.marketCap,
                     overallScore: score,
                 };
@@ -1308,9 +1321,7 @@ export class StockService {
                 name: item.name,
                 logo: buildLogoUrl(null, null, item.symbol),
                 sector: item.sector,
-                price: 0,
-                change: 0,
-                changePercent: 0,
+                price, change, changePercent,
                 marketCap: 0,
                 overallScore: 0,
             };
