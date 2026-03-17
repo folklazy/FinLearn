@@ -8,6 +8,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { api } from '@/lib/api';
 import { useI18n, Locale } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
+import StockLogo from '@/components/ui/StockLogo';
 
 interface SearchResult {
     symbol: string;
@@ -224,14 +225,7 @@ export default function Navbar() {
                                             className={`navbar-dropdown-item${idx === activeIndex ? ' active' : ''}`}
                                         >
                                             <div className="navbar-dropdown-logo">
-                                                <img
-                                                    src={result.logo || `https://financialmodelingprep.com/image-stock/${result.symbol}.png`}
-                                                    alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    onError={(e) => {
-                                                        e.currentTarget.style.display = 'none';
-                                                        e.currentTarget.parentElement!.innerHTML = `<span style="font-size:0.7rem;font-weight:700;color:var(--text-muted)">${result.symbol.slice(0, 3)}</span>`;
-                                                    }}
-                                                />
+                                                <StockLogo src={result.logo || ''} symbol={result.symbol} size={32} />
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div className="navbar-dropdown-name">{result.name}</div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import Image from 'next/image';
+import StockLogo from '@/components/ui/StockLogo';
 import {
     Star, TrendingUp, TrendingDown, ExternalLink, Trash2,
     Search, X, ArrowRight, BarChart2,
@@ -364,17 +364,11 @@ export default function WatchlistPage() {
                                         {/* Logo */}
                                         <div style={{
                                             width: '40px', height: '40px', borderRadius: '10px',
-                                            background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                            background: 'var(--logo-bg)', padding: '5px',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            overflow: 'hidden', flexShrink: 0,
+                                            flexShrink: 0, boxShadow: 'var(--shadow-sm)',
                                         }}>
-                                            {stock.logo ? (
-                                                <Image src={stock.logo} alt={stock.symbol} width={24} height={24} style={{ borderRadius: '4px' }}
-                                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                                />
-                                            ) : (
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)' }}>{stock.symbol.slice(0, 2)}</span>
-                                            )}
+                                            <StockLogo src={stock.logo || ''} symbol={stock.symbol} size={40} />
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <p style={{ fontWeight: 700, fontSize: '0.92rem', margin: 0, color: 'var(--text-primary)' }}>{stock.symbol}</p>

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import StockLogo from '@/components/ui/StockLogo';
 import {
     ChevronRight, ChevronLeft, BookOpen, TrendingUp, Coins, BarChart3, Zap,
     Check, Star, Sparkles, GraduationCap, LineChart, Shield, ArrowRight,
@@ -111,7 +111,7 @@ export default function OnboardingPage() {
                 setSearchResults((results as any[]).slice(0, 8).map((r: any) => ({
                     symbol: r.symbol,
                     name: r.name,
-                    logo: r.logo || `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
+                    logo: r.logo || '',
                 })));
                 /* eslint-enable @typescript-eslint/no-explicit-any */
             } catch { setSearchResults([]); }
@@ -561,14 +561,10 @@ export default function OnboardingPage() {
                                                     onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent'; }}
                                                 >
                                                     <div style={{
-                                                        width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                                                        width: 30, height: 30, borderRadius: 8, flexShrink: 0, padding: 3,
                                                         background: 'var(--logo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        overflow: 'hidden',
                                                     }}>
-                                                        <Image src={r.logo || ''} alt={r.symbol} width={22} height={22} unoptimized
-                                                            style={{ objectFit: 'contain' }}
-                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                                        />
+                                                        <StockLogo src={r.logo || ''} symbol={r.symbol} size={30} />
                                                     </div>
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>{r.symbol}</span>
@@ -626,11 +622,7 @@ export default function OnboardingPage() {
                                                 background: 'var(--logo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 boxShadow: 'var(--shadow-sm)', padding: 4,
                                             }}>
-                                                {logo ? (
-                                                    <Image src={logo} alt={stock.symbol} width={26} height={26} unoptimized style={{ objectFit: 'contain', borderRadius: 4 }} />
-                                                ) : (
-                                                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#555' }}>{stock.symbol.slice(0, 2)}</span>
-                                                )}
+                                                <StockLogo src={logo || ''} symbol={stock.symbol} size={36} />
                                             </div>
 
                                             <div style={{ minWidth: 0 }}>

@@ -92,7 +92,7 @@ export async function getHistoricalPrices(symbol: string, days = 365): Promise<Y
         const period1 = new Date(period2.getTime() - days * 86400000);
         const rows: any[] = await yahooFinance.historical(symbol, {
             period1, period2, interval: '1d' as const,
-        });
+        }, { validateResult: false });
         // Filter out any remaining rows with null/undefined close (safety net)
         return rows
             .filter((r: any) => r.date && r.close != null)

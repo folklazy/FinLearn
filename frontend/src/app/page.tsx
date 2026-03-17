@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ArrowRight, BarChart3, BookOpen, Shield, Sparkles, Star, TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
@@ -9,6 +8,7 @@ import { api } from '@/lib/api';
 import { formatPercent } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { useCurrency } from '@/lib/currency';
+import StockLogo from '@/components/ui/StockLogo';
 
 
 interface PopularStock {
@@ -17,12 +17,12 @@ interface PopularStock {
 }
 
 const FALLBACK: PopularStock[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.', logo: 'https://logo.clearbit.com/apple.com', sector: 'Tech', price: 231.34, change: 2.47, changePercent: 1.08, marketCap: 3450000000000, overallScore: 4.2 },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', logo: 'https://logo.clearbit.com/google.com', sector: 'Tech', price: 176.45, change: 1.56, changePercent: 0.89, marketCap: 2100000000000, overallScore: 4.5 },
-  { symbol: 'MSFT', name: 'Microsoft', logo: 'https://logo.clearbit.com/microsoft.com', sector: 'Tech', price: 417.88, change: 2.68, changePercent: 0.65, marketCap: 3100000000000, overallScore: 4.6 },
-  { symbol: 'TSLA', name: 'Tesla, Inc.', logo: 'https://logo.clearbit.com/tesla.com', sector: 'Auto', price: 248.42, change: -4.68, changePercent: -1.85, marketCap: 800000000000, overallScore: 3.2 },
-  { symbol: 'AMZN', name: 'Amazon.com', logo: 'https://logo.clearbit.com/amazon.com', sector: 'Tech', price: 186.21, change: 1.66, changePercent: 0.90, marketCap: 1900000000000, overallScore: 4.0 },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.', logo: 'https://logo.clearbit.com/nvidia.com', sector: 'Tech', price: 875.40, change: 12.30, changePercent: 1.42, marketCap: 2150000000000, overallScore: 4.7 },
+  { symbol: 'AAPL', name: 'Apple Inc.', logo: 'https://icons.duckduckgo.com/ip3/apple.com.ico', sector: 'Tech', price: 231.34, change: 2.47, changePercent: 1.08, marketCap: 3450000000000, overallScore: 4.2 },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', logo: 'https://icons.duckduckgo.com/ip3/google.com.ico', sector: 'Tech', price: 176.45, change: 1.56, changePercent: 0.89, marketCap: 2100000000000, overallScore: 4.5 },
+  { symbol: 'MSFT', name: 'Microsoft', logo: 'https://icons.duckduckgo.com/ip3/microsoft.com.ico', sector: 'Tech', price: 417.88, change: 2.68, changePercent: 0.65, marketCap: 3100000000000, overallScore: 4.6 },
+  { symbol: 'TSLA', name: 'Tesla, Inc.', logo: 'https://icons.duckduckgo.com/ip3/tesla.com.ico', sector: 'Auto', price: 248.42, change: -4.68, changePercent: -1.85, marketCap: 800000000000, overallScore: 3.2 },
+  { symbol: 'AMZN', name: 'Amazon.com', logo: 'https://icons.duckduckgo.com/ip3/amazon.com.ico', sector: 'Tech', price: 186.21, change: 1.66, changePercent: 0.90, marketCap: 1900000000000, overallScore: 4.0 },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.', logo: 'https://icons.duckduckgo.com/ip3/nvidia.com.ico', sector: 'Tech', price: 875.40, change: 12.30, changePercent: 1.42, marketCap: 2150000000000, overallScore: 4.7 },
 ];
 
 export default function HomePage() {
@@ -258,14 +258,11 @@ export default function HomePage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{
                               width: '38px', height: '38px', borderRadius: '10px',
-                              background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden',
+                              background: 'var(--logo-bg)', padding: '5px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                              boxShadow: 'var(--shadow-sm)',
                             }}>
-                              {stock.logo ? (
-                                <Image src={stock.logo} alt="" width={22} height={22} unoptimized style={{ objectFit: 'contain' }} />
-                              ) : (
-                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)' }}>{stock.symbol.slice(0, 2)}</span>
-                              )}
+                              <StockLogo src={stock.logo} symbol={stock.symbol} size={38} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontWeight: 700, fontSize: '0.92rem', letterSpacing: '-0.01em' }}>{stock.symbol}</div>

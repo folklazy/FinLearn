@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Fragment } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import StockLogo from '@/components/ui/StockLogo';
 import {
     TrendingUp, TrendingDown, RefreshCw, ArrowUpRight, ArrowRight,
     ArrowDownLeft, Clock, BarChart2, ExternalLink,
@@ -1100,10 +1100,9 @@ export default function PortfolioPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {selectedStock ? (
-                                    <Image src={selectedStock.logo} alt="" width={36} height={36} unoptimized
-                                        style={{ borderRadius: '10px', background: 'white', padding: '3px' }}
-                                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                    />
+                                    <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'var(--logo-bg)', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <StockLogo src={selectedStock.logo} symbol={selectedStock.symbol} size={36} />
+                                    </div>
                                 ) : (
                                     <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <Search size={16} style={{ color: 'var(--text-muted)' }} />
@@ -1191,24 +1190,8 @@ export default function PortfolioPage() {
                                             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--tint-bg-hover)'; }}
                                             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                                         >
-                                            <Image
-                                                src={stock.logo}
-                                                alt={stock.symbol}
-                                                width={32} height={32} unoptimized
-                                                style={{ borderRadius: '8px', background: 'white', padding: '2px', flexShrink: 0 }}
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                                    const el = e.target as HTMLImageElement;
-                                                    el.style.display = 'none';
-                                                    const fallback = el.parentElement?.querySelector('.logo-fallback') as HTMLElement;
-                                                    if (fallback) fallback.style.display = 'flex';
-                                                }}
-                                            />
-                                            <div className="logo-fallback" style={{
-                                                display: 'none', width: 32, height: 32, borderRadius: '8px',
-                                                background: 'var(--bg-secondary)', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', flexShrink: 0,
-                                            }}>
-                                                {stock.symbol.slice(0, 2)}
+                                            <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'var(--logo-bg)', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                <StockLogo src={stock.logo} symbol={stock.symbol} size={32} />
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

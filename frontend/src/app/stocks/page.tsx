@@ -9,14 +9,7 @@ import { formatPercent } from '@/lib/utils';
 import { useCurrency } from '@/lib/currency';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
-
-/* ─────────── Stock Logo with error fallback ─────────── */
-function StockLogo({ src, symbol }: { src: string; symbol: string }) {
-    const [err, setErr] = useState(false);
-    if (!src || err) return <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)' }}>{symbol.slice(0, 2)}</span>;
-    /* eslint-disable-next-line @next/next/no-img-element */
-    return <img src={src} alt={symbol} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '6px' }} onError={() => setErr(true)} />;
-}
+import StockLogo from '@/components/ui/StockLogo';
 
 /* ─────────── Types ─────────── */
 interface StockItem {

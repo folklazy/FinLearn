@@ -256,9 +256,29 @@ export class StockService {
         const week52High = (dashIdx > 0 ? parseFloat(rangeStr.slice(dashIdx + 1)) : NaN) || finnhubFinancials?.['52WeekHigh'] || 0;
 
         // Build price history from Yahoo Finance (FMP free tier too rate-limited)
+        // Fallback to TwelveData if Yahoo returns 0 points
         const yhist = await yahoo.getHistoricalPrices(symbol, 1825);
-        const history: PricePoint[] = yhist.filter(h => h.close != null && h.close > 0);
+        let history: PricePoint[] = yhist.filter(h => h.close != null && h.close > 0);
         console.log(`[StockService] Yahoo history for ${symbol}: ${history.length} points`);
+        if (history.length === 0) {
+            try {
+                const tdHist = await twelveData.getTimeSeries(symbol, 365);
+                history = tdHist
+                    .filter(h => h.close && parseFloat(h.close) > 0)
+                    .map(h => ({
+                        date: h.datetime.split(' ')[0],
+                        open: parseFloat(h.open) || 0,
+                        high: parseFloat(h.high) || 0,
+                        low: parseFloat(h.low) || 0,
+                        close: parseFloat(h.close),
+                        volume: parseInt(h.volume) || 0,
+                    }))
+                    .reverse(); // TwelveData returns newest-first
+                console.log(`[StockService] TwelveData fallback history for ${symbol}: ${history.length} points`);
+            } catch (e) {
+                console.warn(`[StockService] TwelveData history fallback failed for ${symbol}:`, (e as Error).message);
+            }
+        }
 
         // Build news
         const news: NewsItem[] = finnhubNews.slice(0, 5).map((n, i) => ({
