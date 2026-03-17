@@ -28,6 +28,8 @@ interface Lesson {
     titleEn: string;
     description: string;
     category: string;
+    module: number;
+    order: number;
     difficulty: string;
     duration: number;
     icon: string;
@@ -36,6 +38,14 @@ interface Lesson {
     keyTakeaways: string[];
     keyTakeawaysEn?: string[];
     quiz?: QuizQuestion[];
+}
+
+interface LessonNav {
+    id: string;
+    title: string;
+    titleEn: string;
+    order: number;
+    icon: string;
 }
 
 const DIFF_COLORS_BASE: Record<string, { key: string; color: string; bg: string; border: string }> = {
@@ -97,6 +107,7 @@ export default function LessonDetailPage() {
     const params = useParams();
     const { t, locale } = useI18n();
     const [lesson, setLesson] = useState<Lesson | null>(null);
+    const [allLessons, setAllLessons] = useState<LessonNav[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState(0);
     const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
@@ -104,10 +115,13 @@ export default function LessonDetailPage() {
 
     useEffect(() => {
         if (!params.id) return;
-        api.getLesson(params.id as string)
-            .then(data => setLesson(data))
-            .catch(() => {})
-            .finally(() => setLoading(false));
+        Promise.all([
+            api.getLesson(params.id as string),
+            api.getLessons(),
+        ]).then(([lessonData, listData]) => {
+            setLesson(lessonData);
+            setAllLessons((listData.lessons || []).sort((a: LessonNav, b: LessonNav) => a.order - b.order));
+        }).catch(() => {}).finally(() => setLoading(false));
     }, [params.id]);
 
     const goToSection = useCallback((idx: number) => {
@@ -441,8 +455,61 @@ export default function LessonDetailPage() {
                 </div>
             )}
 
+            {/* ── Next / Prev lesson navigation ── */}
+            {allLessons.length > 0 && (() => {
+                const idx = allLessons.findIndex(l => l.id === lesson.id);
+                const prev = idx > 0 ? allLessons[idx - 1] : null;
+                const next = idx < allLessons.length - 1 ? allLessons[idx + 1] : null;
+                return (
+                    <div style={{
+                        display: 'flex', gap: '12px', marginTop: '36px',
+                        flexDirection: prev && next ? 'row' : 'column', alignItems: 'stretch',
+                    }}>
+                        {prev && (
+                            <Link href={`/learn/${prev.id}`} style={{
+                                flex: 1, display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 18px', borderRadius: 'var(--radius-lg)',
+                                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                textDecoration: 'none', color: 'inherit', transition: 'all 0.15s var(--ease)',
+                            }}
+                                onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+                                onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                            >
+                                <ChevronLeft size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '2px' }}>{t('learn.prevLesson')}</div>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 650, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {prev.icon} {locale === 'en' ? prev.titleEn : prev.title}
+                                    </div>
+                                </div>
+                            </Link>
+                        )}
+                        {next && (
+                            <Link href={`/learn/${next.id}`} style={{
+                                flex: 1, display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 18px', borderRadius: 'var(--radius-lg)',
+                                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                textDecoration: 'none', color: 'inherit', transition: 'all 0.15s var(--ease)',
+                                justifyContent: 'flex-end', textAlign: 'right',
+                            }}
+                                onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+                                onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                            >
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '2px' }}>{t('learn.nextLesson')}</div>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 650, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {locale === 'en' ? next.titleEn : next.title} {next.icon}
+                                    </div>
+                                </div>
+                                <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                            </Link>
+                        )}
+                    </div>
+                );
+            })()}
+
             {/* ── Back to lessons CTA ── */}
-            <div style={{ textAlign: 'center', marginTop: '36px' }}>
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
                 <Link href="/learn" style={{
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                     color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600,
