@@ -36,6 +36,67 @@ function normalizeExchange(ex: string): string {
     return ex;
 }
 
+/** Known symbol → domain overrides for stocks with short/ambiguous tickers */
+const SYMBOL_DOMAINS: Record<string, string> = {
+    // Single-letter / two-letter symbols
+    'A': 'agilent.com', 'B': 'barnescorp.com', 'C': 'citigroup.com', 'D': 'dominionenergy.com',
+    'E': 'eni.com', 'F': 'ford.com', 'G': 'genpact.com', 'H': 'hyatt.com',
+    'I': 'inteliq.com', 'J': 'jacobs.com', 'K': 'kellanova.com', 'L': 'loews.com',
+    'M': 'macy.com', 'N': 'netsuite.com', 'O': 'realtyincome.com', 'P': 'pandora.net',
+    'Q': 'qantas.com', 'R': 'ryder.com', 'S': 'sentinelone.com', 'T': 'att.com',
+    'U': 'unity.com', 'V': 'visa.com', 'W': 'wayfair.com', 'X': 'ussteel.com',
+    'Y': 'yum.com', 'Z': 'zillow.com',
+    'AI': 'c3.ai', 'ON': 'onsemi.com', 'SE': 'sea.com', 'NU': 'nu.com.br',
+    'LI': 'lixiang.com', 'JD': 'jd.com', 'TD': 'td.com', 'TM': 'toyota.com',
+    // Common well-known tickers
+    'AAPL': 'apple.com', 'MSFT': 'microsoft.com', 'GOOGL': 'google.com', 'GOOG': 'google.com',
+    'AMZN': 'amazon.com', 'META': 'meta.com', 'TSLA': 'tesla.com', 'NVDA': 'nvidia.com',
+    'NFLX': 'netflix.com', 'SPOT': 'spotify.com', 'UBER': 'uber.com', 'LYFT': 'lyft.com',
+    'SNAP': 'snap.com', 'PINS': 'pinterest.com', 'HOOD': 'robinhood.com', 'COIN': 'coinbase.com',
+    'SHOP': 'shopify.com', 'SNOW': 'snowflake.com', 'DDOG': 'datadoghq.com', 'CRWD': 'crowdstrike.com',
+    'PLTR': 'palantir.com', 'ABNB': 'airbnb.com', 'DASH': 'doordash.com', 'RBLX': 'roblox.com',
+    'DUOL': 'duolingo.com', 'TWLO': 'twilio.com', 'OKTA': 'okta.com', 'NET': 'cloudflare.com',
+    'ZS': 'zscaler.com', 'MDB': 'mongodb.com', 'PATH': 'uipath.com', 'CFLT': 'confluent.io',
+    'BILL': 'bill.com', 'TTD': 'thetradedesk.com', 'ETSY': 'etsy.com', 'CHWY': 'chewy.com',
+    'LULU': 'lululemon.com', 'DKS': 'dickssportinggoods.com', 'GME': 'gamestop.com',
+    'AMC': 'amctheatres.com', 'MSTR': 'microstrategy.com', 'MARA': 'mara.com',
+    'RIOT': 'riotplatforms.com', 'IBIT': 'ishares.com', 'SPY': 'ssga.com',
+    'QQQ': 'invesco.com', 'VOO': 'vanguard.com', 'VTI': 'vanguard.com',
+    'SCHD': 'schwab.com', 'GLD': 'spdrgoldshares.com', 'TLT': 'ishares.com',
+    'BABA': 'alibaba.com', 'NIO': 'nio.com', 'PDD': 'pddholdings.com', 'BIDU': 'baidu.com',
+    'XPEV': 'xpeng.com', 'BILI': 'bilibili.com', 'FUTU': 'futuhk.com',
+    'TSM': 'tsmc.com', 'ASML': 'asml.com', 'ARM': 'arm.com', 'SONY': 'sony.com',
+    'NVO': 'novonordisk.com', 'SAP': 'sap.com', 'MELI': 'mercadolibre.com',
+    'GRAB': 'grab.com', 'MRNA': 'modernatx.com', 'BNTX': 'biontech.com',
+    'SMCI': 'supermicro.com', 'MRVL': 'marvell.com', 'ENPH': 'enphase.com',
+    // Major S&P 500 stocks
+    'JPM': 'jpmorganchase.com', 'BAC': 'bankofamerica.com', 'WFC': 'wellsfargo.com',
+    'GS': 'goldmansachs.com', 'MS': 'morganstanley.com', 'BLK': 'blackrock.com',
+    'UNH': 'unitedhealthgroup.com', 'JNJ': 'jnj.com', 'PFE': 'pfizer.com',
+    'ABBV': 'abbvie.com', 'MRK': 'merck.com', 'ABT': 'abbott.com', 'LLY': 'lilly.com',
+    'TMO': 'thermofisher.com', 'DHR': 'danaher.com', 'MDT': 'medtronic.com',
+    'BMY': 'bmy.com', 'AMGN': 'amgen.com', 'GILD': 'gilead.com', 'ISRG': 'intuitive.com',
+    'MA': 'mastercard.com', 'AXP': 'americanexpress.com', 'BRK-B': 'berkshirehathaway.com',
+    'AVGO': 'broadcom.com', 'INTC': 'intel.com', 'AMD': 'amd.com', 'QCOM': 'qualcomm.com',
+    'TXN': 'ti.com', 'AMAT': 'appliedmaterials.com', 'LRCX': 'lamresearch.com',
+    'KLAC': 'kla.com', 'MU': 'micron.com', 'WDC': 'westerndigital.com',
+    'CRM': 'salesforce.com', 'ORCL': 'oracle.com', 'ADBE': 'adobe.com',
+    'NOW': 'servicenow.com', 'INTU': 'intuit.com', 'ADP': 'adp.com',
+    'PYPL': 'paypal.com', 'FIS': 'fisglobal.com', 'FISV': 'fiserv.com',
+    'COST': 'costco.com', 'WMT': 'walmart.com', 'HD': 'homedepot.com', 'LOW': 'lowes.com',
+    'TGT': 'target.com', 'MCD': 'mcdonalds.com', 'SBUX': 'starbucks.com',
+    'NKE': 'nike.com', 'PG': 'pg.com', 'KO': 'coca-cola.com', 'PEP': 'pepsico.com',
+    'PM': 'pmi.com', 'MO': 'altria.com', 'CL': 'colgate.com',
+    'XOM': 'exxonmobil.com', 'CVX': 'chevron.com', 'COP': 'conocophillips.com',
+    'LIN': 'linde.com', 'APD': 'airproducts.com', 'ECL': 'ecolab.com',
+    'NEE': 'nexteraenergy.com', 'DUK': 'duke-energy.com', 'SO': 'southerncompany.com',
+    'RTX': 'rtx.com', 'LMT': 'lockheedmartin.com', 'BA': 'boeing.com', 'GD': 'gd.com',
+    'NOC': 'northropgrumman.com', 'GE': 'ge.com', 'HON': 'honeywell.com', 'MMM': '3m.com',
+    'CAT': 'cat.com', 'DE': 'deere.com', 'UPS': 'ups.com', 'FDX': 'fedex.com',
+    'DIS': 'thewaltdisneycompany.com', 'CMCSA': 'comcast.com',
+    'VZ': 'verizon.com', 'TMUS': 't-mobile.com',
+};
+
 /** Build a logo URL. Prefer direct logo URL, fallback to DuckDuckGo icon from website domain */
 function buildLogoUrl(directLogo: string | undefined | null, website: string | undefined | null, symbol: string): string {
     // 1. Direct logo URL from provider (e.g. Finnhub)
@@ -48,7 +109,10 @@ function buildLogoUrl(directLogo: string | undefined | null, website: string | u
             if (domain) return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
         } catch { /* ignore */ }
     }
-    // 3. Fallback: guess domain from symbol
+    // 3. Known symbol → domain mapping for short/ambiguous tickers
+    const knownDomain = SYMBOL_DOMAINS[symbol.toUpperCase()];
+    if (knownDomain) return `https://icons.duckduckgo.com/ip3/${knownDomain}.ico`;
+    // 4. Last resort: guess domain from symbol
     return `https://icons.duckduckgo.com/ip3/${symbol.toLowerCase()}.com.ico`;
 }
 
@@ -753,7 +817,7 @@ export class StockService {
                     name: s.name,
                     sector: s.sector,
                     exchange: 'NASDAQ',
-                    logo: `https://financialmodelingprep.com/image-stock/${s.symbol}.png`,
+                    logo: buildLogoUrl(null, null, s.symbol),
                 });
             }
         }
@@ -764,7 +828,7 @@ export class StockService {
                     name: s.name,
                     sector: s.sector,
                     exchange: 'NASDAQ',
-                    logo: `https://financialmodelingprep.com/image-stock/${s.symbol}.png`,
+                    logo: buildLogoUrl(null, null, s.symbol),
                 });
             }
         }
@@ -783,7 +847,7 @@ export class StockService {
                 name: r.name,
                 sector: '',
                 exchange: r.exchange || '',
-                logo: `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
+                logo: buildLogoUrl(null, null, r.symbol),
             }));
 
         // Normalize Finnhub results (already filtered to Common Stock by provider)
@@ -794,7 +858,7 @@ export class StockService {
                 name: r.description,
                 sector: '',
                 exchange: '',
-                logo: `https://financialmodelingprep.com/image-stock/${r.symbol}.png`,
+                logo: buildLogoUrl(null, null, r.symbol),
             }));
 
         // ── Merge all sources — local first for priority, then API results ──
@@ -832,7 +896,7 @@ export class StockService {
         if (merged.length === 0) {
             return mockSearchResults
                 .filter(s => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q))
-                .map(s => ({ ...s, logo: `https://financialmodelingprep.com/image-stock/${s.symbol}.png` }));
+                .map(s => ({ ...s, logo: buildLogoUrl(null, null, s.symbol) }));
         }
 
         return merged.slice(0, 12);
