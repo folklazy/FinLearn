@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { ArrowLeft, Clock, BookOpen, CheckCircle2, ChevronRight, ChevronLeft, Award, CheckCircle, XCircle, Lightbulb, RotateCcw, Play, FileText } from 'lucide-react';
+import { ArrowLeft, Clock, BookOpen, CheckCircle2, ChevronRight, ChevronLeft, Award, CheckCircle, XCircle, RotateCcw, Play, FileText } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
@@ -78,6 +78,7 @@ export default function LessonDetailPage() {
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState(-1);
+    const [visitedSections, setVisitedSections] = useState<Set<number>>(new Set());
     const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
     const [quizSubmitted, setQuizSubmitted] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -92,8 +93,11 @@ export default function LessonDetailPage() {
 
     const goToSection = useCallback((idx: number) => {
         setActiveSection(idx);
+        if (idx >= 0 && idx < (lesson?.sections.length ?? 0)) {
+            setVisitedSections(prev => new Set(prev).add(idx));
+        }
         setTimeout(() => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    }, []);
+    }, [lesson?.sections.length]);
 
     if (loading) {
         return (
@@ -138,7 +142,7 @@ export default function LessonDetailPage() {
     const progress = activeSection >= 0 ? (Math.min(activeSection + 1, totalSteps) / totalSteps) * 100 : 0;
     const quizScore = lesson.quiz ? Object.entries(quizAnswers).filter(([i, a]) => lesson.quiz![Number(i)].answer === a).length : 0;
     const isLastSection = activeSection === lesson.sections.length - 1;
-    const allSectionsDone = activeSection >= lesson.sections.length - 1;
+    const allSectionsDone = visitedSections.size >= lesson.sections.length;
     const estPerSection = Math.round(lesson.duration / lesson.sections.length);
 
     return (
@@ -164,7 +168,7 @@ export default function LessonDetailPage() {
                     {/* Hero thumbnail */}
                     <div style={{
                         position: 'relative', width: '100%', aspectRatio: '16/9',
-                        borderRadius: '16px', overflow: 'hidden', marginBottom: '24px',
+                        borderRadius: '16px', overflow: 'hidden', marginBottom: '20px',
                         background: 'linear-gradient(135deg, #1a1c2e 0%, #2d1f3d 100%)',
                     }}>
                         {lesson.thumbnail ? (
@@ -200,7 +204,7 @@ export default function LessonDetailPage() {
                     </div>
 
                     {/* Metadata pills */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
                         {catLabel && (
                             <span style={{
                                 fontSize: '0.68rem', fontWeight: 700, padding: '4px 12px', borderRadius: '6px',
@@ -225,54 +229,15 @@ export default function LessonDetailPage() {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.3, marginBottom: '8px' }}>
                         {locale === 'en' ? lesson.titleEn : lesson.title}
                     </h1>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: 1.6 }}>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.6 }}>
                         {lesson.description}
                     </p>
 
-                    {/* Instructor card */}
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '14px 18px', borderRadius: '12px',
-                        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                        marginBottom: '32px',
-                    }}>
-                        <div style={{
-                            width: '40px', height: '40px', borderRadius: '50%',
-                            background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1rem', flexShrink: 0,
-                        }}>
-                            {lesson.icon}
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                {locale === 'th' ? 'สอนโดย fin.learn' : 'Taught by fin.learn'}
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                {locale === 'th' ? 'แพลตฟอร์มการเรียนรู้การลงทุน' : 'Investment Learning Platform'}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ── About section ── */}
-                    <div style={{
-                        padding: '24px', borderRadius: '14px',
-                        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                        marginBottom: '24px',
-                    }}>
-                        <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Lightbulb size={16} style={{ color: 'var(--primary-light)' }} />
-                            {locale === 'th' ? 'เกี่ยวกับบทเรียนนี้' : 'About this lesson'}
-                        </h2>
-                        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                            {lesson.description}
-                        </p>
-                    </div>
-
                     {/* ── What you'll learn ── */}
                     <div style={{
-                        padding: '24px', borderRadius: '14px',
+                        padding: '20px 24px', borderRadius: '14px',
                         background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                        marginBottom: '32px',
+                        marginBottom: '24px',
                     }}>
                         <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '16px' }}>
                             {locale === 'th' ? 'สิ่งที่คุณจะได้เรียนรู้' : 'What you\'ll learn'}
@@ -332,7 +297,7 @@ export default function LessonDetailPage() {
                                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '100px', background: 'var(--bg-secondary)' }}>
                                         {activeSection + 1} / {lesson.sections.length}
                                     </span>
-                                    {isLastSection && hasQuiz ? (
+                                    {isLastSection && hasQuiz && allSectionsDone ? (
                                         <button onClick={() => goToSection(quizStepIdx)}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, fontFamily: 'inherit',
@@ -341,12 +306,12 @@ export default function LessonDetailPage() {
                                             {locale === 'th' ? 'ทำแบบทดสอบ' : 'Take Quiz'} <Award size={15} />
                                         </button>
                                     ) : (
-                                        <button onClick={() => goToSection(activeSection + 1)} disabled={isLastSection && !hasQuiz}
+                                        <button onClick={() => goToSection(activeSection + 1)} disabled={isLastSection}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, fontFamily: 'inherit',
-                                                color: (isLastSection && !hasQuiz) ? 'var(--text-muted)' : 'var(--primary-light)',
-                                                background: 'none', border: 'none', cursor: (isLastSection && !hasQuiz) ? 'default' : 'pointer',
-                                                opacity: (isLastSection && !hasQuiz) ? 0.3 : 1, transition: 'opacity 0.15s',
+                                                color: isLastSection ? 'var(--text-muted)' : 'var(--primary-light)',
+                                                background: 'none', border: 'none', cursor: isLastSection ? 'default' : 'pointer',
+                                                opacity: isLastSection ? 0.3 : 1, transition: 'opacity 0.15s',
                                             }}>
                                             {t('learn.next')} <ChevronRight size={16} />
                                         </button>
@@ -393,15 +358,10 @@ export default function LessonDetailPage() {
 
                     {/* CTA card */}
                     <div style={{
-                        padding: '24px', borderRadius: '16px',
+                        padding: '20px', borderRadius: '16px',
                         background: 'var(--bg-secondary)', border: '1px solid var(--border)',
                         marginBottom: '16px',
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '16px' }}>
-                            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>
-                                {locale === 'th' ? 'ฟรี' : 'Free'}
-                            </span>
-                        </div>
                         <button onClick={() => goToSection(isReading || isQuizStep ? activeSection : 0)} style={{
                             width: '100%', padding: '13px', borderRadius: '12px', border: 'none',
                             background: 'var(--success)', color: '#fff', fontSize: '0.9rem', fontWeight: 700,
@@ -442,7 +402,7 @@ export default function LessonDetailPage() {
                         <div style={{ padding: '8px 12px 12px' }}>
                             {lesson.sections.map((s, i) => {
                                 const isActive = activeSection === i;
-                                const isDone = i < activeSection;
+                                const isDone = visitedSections.has(i) && activeSection !== i;
                                 return (
                                     <button key={i} onClick={() => goToSection(i)} style={{
                                         width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
