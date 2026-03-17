@@ -129,11 +129,16 @@ export default function LessonDetailPage() {
     const diffBase = DIFF_COLORS[lesson.difficulty] || DIFF_COLORS.beginner;
     const diff = { ...diffBase, label: t(diffBase.key) };
     const catLabel = CAT_LABELS[lesson.category];
-    const isReading = activeSection >= 0;
+    const hasQuiz = !!(lesson.quiz && lesson.quiz.length > 0);
+    const quizStepIdx = lesson.sections.length;
+    const isQuizStep = activeSection === quizStepIdx;
+    const isReading = activeSection >= 0 && activeSection < lesson.sections.length;
     const section = isReading ? lesson.sections[activeSection] : null;
-    const progress = isReading ? ((activeSection + 1) / lesson.sections.length) * 100 : 0;
+    const totalSteps = lesson.sections.length + (hasQuiz ? 1 : 0);
+    const progress = activeSection >= 0 ? (Math.min(activeSection + 1, totalSteps) / totalSteps) * 100 : 0;
     const quizScore = lesson.quiz ? Object.entries(quizAnswers).filter(([i, a]) => lesson.quiz![Number(i)].answer === a).length : 0;
     const isLastSection = activeSection === lesson.sections.length - 1;
+    const allSectionsDone = activeSection >= lesson.sections.length - 1;
     const estPerSection = Math.round(lesson.duration / lesson.sections.length);
 
     return (
@@ -327,25 +332,57 @@ export default function LessonDetailPage() {
                                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '100px', background: 'var(--bg-secondary)' }}>
                                         {activeSection + 1} / {lesson.sections.length}
                                     </span>
-                                    <button onClick={() => goToSection(activeSection + 1)} disabled={isLastSection}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, fontFamily: 'inherit',
-                                            color: isLastSection ? 'var(--text-muted)' : 'var(--primary-light)',
-                                            background: 'none', border: 'none', cursor: isLastSection ? 'default' : 'pointer',
-                                            opacity: isLastSection ? 0.3 : 1, transition: 'opacity 0.15s',
-                                        }}>
-                                        {t('learn.next')} <ChevronRight size={16} />
-                                    </button>
+                                    {isLastSection && hasQuiz ? (
+                                        <button onClick={() => goToSection(quizStepIdx)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, fontFamily: 'inherit',
+                                                color: 'var(--success)', background: 'none', border: 'none', cursor: 'pointer', transition: 'opacity 0.15s',
+                                            }}>
+                                            {locale === 'th' ? 'ทำแบบทดสอบ' : 'Take Quiz'} <Award size={15} />
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => goToSection(activeSection + 1)} disabled={isLastSection && !hasQuiz}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, fontFamily: 'inherit',
+                                                color: (isLastSection && !hasQuiz) ? 'var(--text-muted)' : 'var(--primary-light)',
+                                                background: 'none', border: 'none', cursor: (isLastSection && !hasQuiz) ? 'default' : 'pointer',
+                                                opacity: (isLastSection && !hasQuiz) ? 0.3 : 1, transition: 'opacity 0.15s',
+                                            }}>
+                                            {t('learn.next')} <ChevronRight size={16} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Quiz (show after last section) */}
-                            {isLastSection && lesson.quiz && lesson.quiz.length > 0 && (
-                                <QuizBlock quiz={lesson.quiz} locale={locale} t={t}
-                                    quizAnswers={quizAnswers} setQuizAnswers={setQuizAnswers}
-                                    quizSubmitted={quizSubmitted} setQuizSubmitted={setQuizSubmitted}
-                                    quizScore={quizScore} />
-                            )}
+                        </div>
+                    )}
+
+                    {/* ══════ QUIZ MODE ══════ */}
+                    {isQuizStep && hasQuiz && (
+                        <div ref={contentRef}>
+                            {/* Progress bar */}
+                            <div style={{ marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                        {locale === 'th' ? 'แบบทดสอบความเข้าใจ' : 'Comprehension Quiz'}
+                                    </span>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary-light)' }}>100%</span>
+                                </div>
+                                <div className="progress-bar" style={{ height: '4px' }}>
+                                    <div className="progress-fill" style={{ width: '100%', transition: 'width 0.4s var(--ease)' }} />
+                                </div>
+                            </div>
+                            <QuizBlock quiz={lesson.quiz!} locale={locale} t={t}
+                                quizAnswers={quizAnswers} setQuizAnswers={setQuizAnswers}
+                                quizSubmitted={quizSubmitted} setQuizSubmitted={setQuizSubmitted}
+                                quizScore={quizScore} />
+                            {/* Back to sections */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '8px' }}>
+                                <button onClick={() => goToSection(lesson.sections.length - 1)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, fontFamily: 'inherit', color: 'var(--primary-light)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                    <ChevronLeft size={16} /> {locale === 'th' ? 'กลับไปเนื้อหา' : 'Back to content'}
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -365,7 +402,7 @@ export default function LessonDetailPage() {
                                 {locale === 'th' ? 'ฟรี' : 'Free'}
                             </span>
                         </div>
-                        <button onClick={() => goToSection(isReading ? activeSection : 0)} style={{
+                        <button onClick={() => goToSection(isReading || isQuizStep ? activeSection : 0)} style={{
                             width: '100%', padding: '13px', borderRadius: '12px', border: 'none',
                             background: 'var(--success)', color: '#fff', fontSize: '0.9rem', fontWeight: 700,
                             fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s',
@@ -373,7 +410,7 @@ export default function LessonDetailPage() {
                         }}
                             onMouseOver={e => { e.currentTarget.style.opacity = '0.9'; }}
                             onMouseOut={e => { e.currentTarget.style.opacity = '1'; }}>
-                            {isReading
+                            {isReading || isQuizStep
                                 ? (locale === 'th' ? 'อ่านต่อ' : 'Continue Reading')
                                 : (locale === 'th' ? 'เริ่มเรียนเลย' : 'Start Learning')}
                         </button>
@@ -445,22 +482,33 @@ export default function LessonDetailPage() {
                             })}
 
                             {/* Quiz row */}
-                            {lesson.quiz && lesson.quiz.length > 0 && (
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', gap: '10px',
-                                    padding: '10px 10px', opacity: 0.6,
-                                }}>
+                            {hasQuiz && (
+                                <button onClick={() => { if (allSectionsDone) goToSection(quizStepIdx); }} style={{
+                                    width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                                    padding: '10px 10px', borderRadius: '10px', border: 'none',
+                                    background: isQuizStep ? 'var(--tint-bg)' : 'transparent',
+                                    cursor: allSectionsDone ? 'pointer' : 'default',
+                                    opacity: allSectionsDone ? 1 : 0.45,
+                                    fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s',
+                                }}
+                                    onMouseOver={e => { if (allSectionsDone && !isQuizStep) e.currentTarget.style.background = 'var(--tint-bg)'; }}
+                                    onMouseOut={e => { if (!isQuizStep) e.currentTarget.style.background = 'transparent'; }}>
                                     <div style={{
                                         width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        background: 'var(--tint-bg)', border: '1px solid var(--border)',
+                                        background: isQuizStep ? 'rgba(124,108,240,0.12)' : quizSubmitted ? 'rgba(34,197,94,0.12)' : 'var(--tint-bg)',
+                                        border: `1px solid ${isQuizStep ? 'rgba(124,108,240,0.25)' : quizSubmitted ? 'rgba(34,197,94,0.25)' : 'var(--border)'}`,
                                     }}>
-                                        <Award size={12} style={{ color: 'var(--text-muted)' }} />
+                                        {quizSubmitted ? (
+                                            <CheckCircle size={13} style={{ color: 'var(--success)' }} />
+                                        ) : (
+                                            <Award size={12} style={{ color: isQuizStep ? 'var(--primary-light)' : 'var(--text-muted)' }} />
+                                        )}
                                     </div>
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                    <span style={{ fontSize: '0.78rem', fontWeight: isQuizStep ? 650 : 500, color: isQuizStep ? 'var(--text-primary)' : quizSubmitted ? 'var(--success)' : 'var(--text-muted)' }}>
                                         {locale === 'th' ? 'แบบทดสอบความเข้าใจ' : 'Comprehension Quiz'}
                                     </span>
-                                </div>
+                                </button>
                             )}
                         </div>
                     </div>
