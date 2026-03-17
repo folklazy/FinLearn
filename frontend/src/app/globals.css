@@ -1958,6 +1958,10 @@ input[type=number] {
     padding: 28px 14px 48px !important;
   }
 
+  .sl-page h1 {
+    font-size: 1.4rem !important;
+  }
+
   .sl-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
     gap: 10px !important;
@@ -1966,6 +1970,37 @@ input[type=number] {
   /* Truncate long sector names in stock cards on mobile */
   .stock-card-sector {
     max-width: 80px !important;
+  }
+
+  /* Sector chips: horizontal scroll instead of wrap on mobile */
+  .sl-sector-chips {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 4px !important;
+  }
+  .sl-sector-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .sl-sector-chips .chip {
+    flex-shrink: 0;
+  }
+
+  /* Hide heavy table columns on mobile */
+  .sl-table-hide-mobile {
+    display: none !important;
+  }
+
+  /* Better stock card sizing */
+  .sl-grid > a > div {
+    padding: 16px !important;
+  }
+
+  /* Compact pagination */
+  .pagination {
+    padding: 12px 0 !important;
   }
 
   /* ── Homepage ── */
@@ -2125,24 +2160,40 @@ input[type=number] {
 
   /* Compact stock cards on small phones */
   .sl-grid > a > div {
-    padding: 14px !important;
+    padding: 12px !important;
+  }
+
+  /* Tighter top row gap */
+  .sl-grid > a > div > div:first-child {
+    margin-bottom: 12px !important;
+  }
+  .sl-grid > a > div > div:first-child > div:first-child {
+    gap: 8px !important;
   }
 
   /* Smaller logo containers in stock cards */
   .sl-grid > a > div > div:first-child > div:first-child > div:first-child {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 10px !important;
-    padding: 4px !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    padding: 3px !important;
+  }
+
+  /* Smaller symbol + name text */
+  .sl-grid > a > div > div:first-child > div:first-child > div:last-child > div:first-child {
+    font-size: 0.82rem !important;
   }
 
   /* Smaller price in stock cards */
   .sl-grid > a > div > div:nth-child(2) > div:first-child {
-    font-size: 1.15rem !important;
+    font-size: 1.1rem !important;
+  }
+  .sl-grid > a > div > div:nth-child(2) {
+    margin-bottom: 10px !important;
   }
 
-  /* Hide sector badges on very small screens */
-  .sl-grid > a > div > div:last-child > div:first-child > span:nth-child(2) {
+  /* Hide sector badges on very small screens (use class instead of fragile selector) */
+  .stock-card-sector {
     display: none !important;
   }
 

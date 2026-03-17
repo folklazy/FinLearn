@@ -49,9 +49,9 @@ function StockCard({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: n
                         }}>
                             <StockLogo src={stock.logo} symbol={stock.symbol} />
                         </div>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                             <div style={{ fontWeight: 700, fontSize: '0.95rem', letterSpacing: '-0.01em', lineHeight: 1.2 }}>{stock.symbol}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{stock.name}</div>
+                            <div className="stock-card-name" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{stock.name}</div>
                         </div>
                     </div>
                     {onToggle && (
@@ -126,7 +126,7 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--tint-overlay)'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
         >
-            <td style={{ color: 'var(--text-muted)', fontSize: '0.76rem', width: '40px', fontWeight: 500 }}>{i + 1}</td>
+            <td className="sl-table-hide-mobile" style={{ color: 'var(--text-muted)', fontSize: '0.76rem', width: '40px', fontWeight: 500 }}>{i + 1}</td>
             <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
@@ -152,13 +152,13 @@ function StockRow({ stock, i, inWatchlist, onToggle }: { stock: StockItem; i: nu
                     {formatPercent(stock.changePercent)}
                 </span>
             </td>
-            <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatLarge(stock.marketCap)}</td>
-            <td>
+            <td className="sl-table-hide-mobile" style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatLarge(stock.marketCap)}</td>
+            <td className="sl-table-hide-mobile">
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '3px 8px', borderRadius: '100px', background: 'var(--tint-bg)', border: '1px solid var(--border)' }}>
                     {stock.sector}
                 </span>
             </td>
-            <td style={{ textAlign: 'right' }}>
+            <td className="sl-table-hide-mobile" style={{ textAlign: 'right' }}>
                 {(stock.overallScore ?? 0) > 0 ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                         <Sparkles size={11} style={{ color: 'var(--primary-light)' }} />
@@ -441,7 +441,7 @@ function StocksContent() {
 
             {/* ═══ Sector Filter ═══ */}
             {tab === 'popular' && popularSectors.length > 1 && (
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                <div className="sl-sector-chips" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
                     <button onClick={() => setPopularSector('')}
                         className={`chip${!popularSector ? ' active' : ''}`} style={{ fontSize: '0.76rem' }}>
                         All
@@ -453,7 +453,7 @@ function StocksContent() {
                 </div>
             )}
             {tab === 'sp500' && sp500Sectors.length > 0 && (
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                <div className="sl-sector-chips" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
                     <button onClick={() => { setSp500Sector(''); setSp500Page(1); }}
                         className={`chip${!sp500Sector ? ' active' : ''}`} style={{ fontSize: '0.76rem' }}>All</button>
                     {sp500Sectors.map(s => (
@@ -538,13 +538,13 @@ function StocksContent() {
                         <table className="data-table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <th className="sl-table-hide-mobile">#</th>
                                     <th>Stock</th>
                                     <th style={{ textAlign: 'right' }}>Price</th>
                                     <th style={{ textAlign: 'right' }}>Change</th>
-                                    <th style={{ textAlign: 'right' }}>MCap</th>
-                                    <th>Sector</th>
-                                    <th style={{ textAlign: 'right' }}>Score</th>
+                                    <th className="sl-table-hide-mobile" style={{ textAlign: 'right' }}>MCap</th>
+                                    <th className="sl-table-hide-mobile" style={{}}>Sector</th>
+                                    <th className="sl-table-hide-mobile" style={{ textAlign: 'right' }}>Score</th>
                                     {session?.user && <th style={{ width: '44px' }}></th>}
                                 </tr>
                             </thead>
